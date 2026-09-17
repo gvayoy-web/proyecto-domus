@@ -403,8 +403,11 @@ int8_t teclaIrPendiente = -1;
 // Estado de las cinco cargas físicas del diseño vigente.
 bool estadoSalidas[TOTAL_SALIDAS] = {false, false, false, false, false};
 
+// Nueva: estadísticas globales (acumuladas, no por salida)
+extern std::atomic<EstadisticasDOMUS> estadisticas;
+
 // Toda fuente de control pasa por el mismo contrato. Esto evita que controles
-// físicos, Serial, automatización y voz mantengan estados incompatibles.
+// físicos, Serial, automatización y voz mantienen estados incompatibles.
 enum PropietarioActuador {
   PROPIETARIO_NINGUNO,
   PROPIETARIO_MANUAL_ON,
@@ -519,15 +522,149 @@ void log(const String &etiqueta, const String &mensaje) {
 }
 
 // ============================================================================
-// SECCIÓN 5B: ALMACENAMIENTO MICROSD LOCAL
+// SECCIÓN 5B: ALMACENAMIENTO MICROSD LOCAL Y HISTORIAL
 // ============================================================================
-void registrarLineaMicroSD(const String &linea) {
+#define MAX_REGISTROS_HISTORIAL 64
+
+enum class TipoRegistroHistorial {
+  RIEGO_AUTO, RIEGO_MANUAL, LUZ_ENCENDIDA, LUZ_APAGADA,
+  VENT_ENCENDIDO, VENT_APAGADO, PARO_EMERGENCIA, MODO_SEGURO,
+  SENSOR_TEMP, SENSOR_HUMEDAD, SENSOR_LDR, SENSOR_PIR,
+  SENSOR_NIVEL, CONFIGURACION, DIAGNOSTICO, DEMO_SECUENCIA
+};
+
+struct RegistroHistorial {
+  TipoRegistroHistorial tipo;
+  uint8_t indice;
+  bool valor;
+  float datoAdicional;
+  unsigned long momento;
+};
+
+std::atomic<uint32_t> sdRegistrosHistorial{0};
+std::atomic<uint16_t> indiceHistorial {0};
+RegistroHistorial bufferHistorial[MAX_REGISTROS_HISTORIAL];
+
+void registrarHistorial(TipoRegistroHistorial tipo, uint8_t indice, bool valor, float datoAdicional = 0) {
   if (!microSdMontada || colaSD == nullptr) return;
-  if (linea.length() >= sizeof(TrabajoSD::linea)) { sdDescartados++; return; }
+  uint16_t idx = indiceHistorial.fetch_add(1) % MAX_REGISTROS_HISTORIAL;
+  RegistroHistorial &reg = bufferHistorial[idx];
+  reg.tipo = tipo;
+  reg.indice = indice;
+  reg.valor = valor;
+  reg.datoAdicional = datoAdicional;
+  reg.momento = millis();
+
   TrabajoSD trabajo = {};
+  trabajo.prueba = false;
   trabajo.momento = millis();
+  snprintf(reg.linea, sizeof(reg.linea), "%u;%d;%d;%f;%lu",
+           static_cast<uint8_t>(tipo), indice, valor, datoAdicional, millis());
   linea.toCharArray(trabajo.linea, sizeof(trabajo.linea));
-  if (xQueueSend(colaSD, &trabajo, 0) != pdTRUE) sdDescartados++;
+  // Usamos la cola existente para logging SD
+  if (xQueueSend(colaSD, &trabajo, 0) != pdTRUE) {
+    sdRegistrosHistorial++;
+  }
+  indiceHistorial.store(idx);
+}
+
+// Registros de estadísticas acumuladas
+struct EstadisticasDOMUS {
+  uint32_t totalEncendidos{0};
+  uint32_t totalApagados{0};
+  uint32_t totalRiiegosAutomaticos{0};
+  uint32_t totalVentAutomaticos{0};
+  uint32_t totalCambiosLuz{0};
+  uint32_t totalEmergencias{0};
+  uint32_t totalErroresSensores{0};
+  unsigned long tiempoEncendidoBomba{0};
+  unsigned long tiempoEncendidoVentilador{0};
+};
+
+std::atomic<EstadisticasDOMUS> estadisticas;
+
+void estadisticarEncendido(int indice) {
+  estadisticas.encender(indice); // placeholder - usaremos operadores
+}
+
+// Operadores para el struct atómico (Arduino no tiene ++ atómico para structs completos,
+// así que usamos campos individuales)
+void incrementarTotalEncendidos() {
+  estadisticas.totalEncendidos++;
+}
+void incrementarTotalApagados() {
+  estadisticas.totalApagados++;
+}
+void incrementarTotalRiiegosAutomaticos() {
+  estadisticas.totalRiiegosAutomaticos++;
+}
+void incrementarTotalVentAutomaticos() {
+  estadisticas.totalVentAutomaticos++;
+}
+void incrementarTotalCambiosLuz() {
+  estadisticas.totalCambiosLuz++;
+}
+void incrementarTotalEmergencias() {
+  estadisticas.totalEmergencias++;
+}
+void incrementarTotalErroresSensores() {
+  estadisticas.totalErroresSensores++;
+}
+void sumarTiempoEncendidoBomba(unsigned long ms) {
+  estadisticas.tiempoEncendidoBomba += ms;
+}
+void sumarTiempoEncendidoVentilador(unsigned long ms) {
+  estadisticas.tiempoEncendidoVentilador += ms;
+}
+
+// ============================================================================
+// Función para emitir eventos de historial por Serial
+// ============================================================================
+void emitirEventoHistorial() {
+  if (bufferHistorial[indiceHistorial.load()].momento > 0) {
+    int idx = (indiceHistorial.load() - 1 + MAX_REGISTROS_HISTORIAL) % MAX_REGISTROS_HISTORIAL;
+    String linea = String(bufferHistorial[idx].tipo) + ";" +
+                   String(bufferHistorial[idx].indice) + ";" +
+                   String(bufferHistorial[idx].valor ? 1 : 0) + ";" +
+                   String(bufferHistorial[idx].datoAdicional) + ";" +
+                   String(bufferHistorial[idx].momento);
+    emitirEventoLocal("HISTORIAL;" + linea);
+  }
+}
+
+// ============================================================================
+// SECCIÓN 5C: EVENTOS DE HISTORIAL ESPECÍFICOS
+// ============================================================================
+
+void registrarRiegoAutomatico() {
+  incrementarTotalRiiegosAutomaticos();
+  registrarHistorial(TipoRegistroHistorial::RIEGO_AUTO, 0, true);
+}
+
+void registrarApagadoBomba() {
+  incrementarTotalApagados();
+  registrarHistorial(TipoRegistroHistorial::RIEGO_AUTO, 0, false);
+}
+
+void registrarCambioLuz(int indice) {
+  incrementarTotalCambiosLuz();
+  registrarHistorial(TipoRegistroHistorial::LUZ_ENCENDIDA + indice, indice, true);
+}
+
+void registrarEmergenciaActivada() {
+  incrementarTotalEmergencias();
+  registrarHistorial(TipoRegistroHistorial::PARO_EMERGENCIA, 0, true);
+}
+
+void registrarEstadistica(const String &clave, uint32_t valor) {
+  if (clave == "TOTAL_ENCENDIDOS") incrementarTotalEncendidos();
+  else if (clave == "TOTAL_APAGADOS") incrementarTotalApagados();
+  else if (clave == "TOTAL_RIEGOS_AUTO") incrementarTotalRiiegosAutomaticos();
+  else if (clave == "TOTAL_VENT_AUTO") incrementarTotalVentAutomaticos();
+  else if (clave == "TOTAL_CAMBIOS_LUZ") incrementarTotalCambiosLuz();
+  else if (clave == "TOTAL_EMERGENCIAS") incrementarTotalEmergencias();
+  else if (clave == "TOTAL_ERROR_SENSOR") incrementarTotalErroresSensores();
+  registrarHistorial(TipoRegistroHistorial::CONFIGURACION, 0, true, (float)valor);
 }
 
 bool probarMicroSD() {
@@ -755,10 +892,11 @@ bool solicitarSalida(int indice, bool anunciarPorVoz = true) {
     return false;
   }
 
-  fallosVerificacionSalida[indice] = 0;
+fallosVerificacionSalida[indice] = 0;
   estadoSalidas[indice] = true;
   log("SALIDA", String(NOMBRES_SALIDAS[indice]) + " -> ENCENDIDO (nivel GPIO verificado)");
-
+  incrementarTotalEncendidos();
+  registrarHistorial(TipoRegistroHistorial::LUZ_ENCENDIDA + indice, indice, true);
   if (anunciarPorVoz && MP3_HABILITADO) {
     if (indice == 0) anunciarJarvis(EventoJarvis::RIEGO_INICIADO);
     else anunciarJarvis(EventoJarvis::LUZ_ENCENDIDA);
@@ -781,10 +919,11 @@ bool desactivarSalida(int indice, bool anunciarPorVoz = true) {
     return false;
   }
 
-  fallosVerificacionSalida[indice] = 0;
+fallosVerificacionSalida[indice] = 0;
   estadoSalidas[indice] = false;
   log("SALIDA", String(NOMBRES_SALIDAS[indice]) + " -> APAGADO (nivel GPIO verificado)");
-
+  incrementarTotalApagados();
+  registrarHistorial(TipoRegistroHistorial::LUZ_APAGADA + indice, indice, false);
   if (anunciarPorVoz && MP3_HABILITADO) {
     if (indice == 0) anunciarJarvis(EventoJarvis::RIEGO_DETENIDO);
     else anunciarJarvis(EventoJarvis::LUZ_APAGADA);
@@ -1174,6 +1313,7 @@ void verificarRiegoAutomatico() {
     OrdenActuador orden = {0, true, ORIGEN_AUTOMATICO, 1.0f, "RIEGO_AUTO_ON"};
     if (ejecutarOrdenActuador(orden).exito) {
       emitirEventoLocal("EVENTO;RIEGO_AUTO_ON;" + String(pct));
+      registrarRiegoAutomatico();
     }
   } else if (pct >= UMBRAL_HUMEDAD_HUMEDA_PCT && estadoSalidas[0] &&
              propietarioSalidas[0] == PROPIETARIO_AUTOMATICO) {
@@ -1184,16 +1324,124 @@ void verificarRiegoAutomatico() {
     OrdenActuador orden = {0, false, ORIGEN_AUTOMATICO, 1.0f, "RIEGO_AUTO_OFF"};
     if (ejecutarOrdenActuador(orden).exito) {
       emitirEventoLocal("EVENTO;RIEGO_AUTO_OFF;" + String(pct));
+      registrarApagadoBomba();
     }
   }
 }
 
-// Misma filosofía que verificarRiegoAutomatico(): solo actúa si el estado
-// actual del relé fue decisión del propio modo automático, para no pisar
-// una decisión manual del usuario (índice 3 = Ventilador, ver MAPA_CASA.salidas).
-unsigned long ultimaVerificacionVentilador = 0;
+// Nueva regla combinada: temperatura alta + tierra seca + nivel suficiente
+void verificarRiegoAutomaticoCombinado() {
+  if (modoSeguroActivo) return;
 
-void verificarVentiladorAutomatico() {
+  int crudo, pct;
+  bool humValida = leerHumedad(crudo, pct);
+  bool tempValida = leerAmbiente(tempC, humAire);
+  bool nivelValido = leerNivelAgua(nivelAgua);
+
+  // Regla: si hace calor y la tierra está seca y hay agua, iniciar riego enfriamiento
+  if (tempValida && tempC >= UMBRAL_TEMP_ALTA_C && humValida && pct < UMBRAL_HUMEDAD_SECA_PCT &&
+      nivelValido && nivelAgua >= calibracion.nivelMinimo) {
+    if (!estadoSalidas[0] || propietarioSalidas[0] == PROPIETARIO_AUTOMATICO) {
+      log("AUTO_COMBINADO", "Calor + tierra seca + nivel OK: riego de enfriamiento");
+      OrdenActuador orden = {0, true, ORIGEN_AUTOMATICO, 1.0f, "RIEGO_COOLING"};
+      if (ejecutarOrdenActuador(orden).exito) {
+        emitirEventoLocal("EVENTO;RIEGO_AUTO_COMBINADO;CALOR_TERRA_SECA");
+      }
+    }
+  }
+  // Regla: si hace calor y la tierra está húmeda, solo ventilador, no riego
+  else if (tempValida && tempC >= UMBRAL_TEMP_ALTA_C && humValida && pct >= UMBRAL_HUMEDAD_HUMEDA_PCT) {
+    // Ya maneja ventilador automático abajo
+  }
+}
+
+// Automación: ventilador con combinación de temperatura y presencia
+void verificarVentiladorCombinado() {
+  if (modoSeguroActivo) return;
+
+  float tempC2, humAire2;
+  bool tempValida = leerAmbiente(tempC2, humAire2);
+
+  if (tempValida && tempC2 >= UMBRAL_TEMP_ALTA_C && ultimaPresenciaValida &&
+      millis() - ultimaPresenciaMs <= PIR_RETENCION_MS) {
+    if (!estadoSalidas[3] || propietarioSalidas[3] == PROPIETARIO_AUTOMATICO) {
+      log("AUTO_COMBINADO", "Calor + presencia: ventilador automático");
+      OrdenActuador orden = {3, true, ORIGEN_AUTOMATICO, 1.0f, "VENT_COMBINADO"};
+      if (ejecutarOrdenActuador(orden).exito) {
+        emitirEventoLocal("EVENTO;VENT_COMBINADO;CALOR_PRESENCIA");
+      }
+    }
+  } else if (tempValida && tempC2 <= UMBRAL_TEMP_NORMAL_C && estadoSalidas[3] &&
+             propietarioSalidas[3] == PROPIETARIO_AUTOMATICO) {
+    log("AUTO_COMBINADO", "Temperatura normal sin presencia: ventilador off");
+    OrdenActuador orden = {3, false, ORIGEN_AUTOMATICO, 1.0f, "VENT_COMBINADO_OFF"};
+    if (ejecutarOrdenActuador(orden).exito) {
+      emitirEventoLocal("EVENTO;VENT_COMBINADO_OFF;TEMP_NORMAL_SIN_PRESENCIA");
+    }
+  }
+}
+
+// Nueva automatización: luces con combinación de luz ambiental, presencia y hora del día
+unsigned long ultimaVerificacionLucesCombinadas = 0;
+
+void verificarLucesCombinadas() {
+  if (modoSeguroActivo) return;
+  if (millis() - ultimaVerificacionLucesCombinadas < 500UL) return;
+  ultimaVerificacionLucesCombinadas = millis();
+
+  int ldrCrudo = 0, luzPct = 0;
+  bool luzValida = leerLuz(ldrCrudo, luzPct);
+  ultimaPresenciaValida = digitalRead(MAPA_CASA.pir) == HIGH;
+  if (ultimaPresenciaValida) ultimaPresenciaMs = millis();
+
+  if (!luzValida) {
+    const int luces[] = {1, 4};
+    bool huboCorte = false;
+    for (int indice : luces) {
+      if (estadoSalidas[indice] && propietarioSalidas[indice] == PROPIETARIO_AUTOMATICO) {
+        OrdenActuador corte = {indice, false, ORIGEN_AUTOMATICO, 1.0f, "LDR_INVALIDO_COMB"};
+        ejecutarOrdenActuador(corte);
+        huboCorte = true;
+      }
+    }
+    if (huboCorte) emitirEventoLocal("EVENTO;LUCES_BLOQUEADAS;LDR");
+    return;
+  }
+
+  // Luz del día: si hay suficiente luz natural, no encender aunque haya presencia
+  bool dia = luzPct >= UMBRAL_LUZ_CLARO_PCT;
+
+  // Luz sala con presencia y oscuridad
+  if (propietarioSalidas[1] != PROPIETARIO_MANUAL_ON &&
+      propietarioSalidas[1] != PROPIETARIO_MANUAL_OFF) {
+    if (!estadoSalidas[1] && luzPct <= UMBRAL_LUZ_OSCURO_PCT && ultimaPresenciaValida &&
+        !dia) {
+      OrdenActuador orden = {1, true, ORIGEN_AUTOMATICO, 1.0f, "LUZ_SALA_COMB"};
+      ejecutarOrdenActuador(orden);
+    } else if (estadoSalidas[1] && propietarioSalidas[1] == PROPIETARIO_AUTOMATICO &&
+               (luzPct >= UMBRAL_LUZ_CLARO_PCT || !ultimaPresenciaValida || dia)) {
+      OrdenActuador orden = {1, false, ORIGEN_AUTOMATICO, 1.0f, "LUZ_SALA_COMB_OFF"};
+      ejecutarOrdenActuador(orden);
+    }
+  }
+
+  // Luz cultivo con LDR solo (no necesita presencia)
+  if (propietarioSalidas[4] != PROPIETARIO_MANUAL_ON &&
+      propietarioSalidas[4] != PROPIETARIO_MANUAL_OFF) {
+    if (!estadoSalidas[4] && luzPct <= UMBRAL_LUZ_OSCURO_PCT) {
+      OrdenActuador orden = {4, true, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_COMB"};
+      ejecutarOrdenActuador(orden);
+    } else if (estadoSalidas[4] && propietarioSalidas[4] == PROPIETARIO_AUTOMATICO &&
+               luzPct >= UMBRAL_LUZ_CLARO_PCT) {
+      OrdenActuador orden = {4, false, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_COMB_OFF"};
+      ejecutarOrdenActuador(orden);
+    }
+  }
+}
+
+// SECCIÓN 10: RIEGO AUTOMÁTICO (no bloqueante)
+// ============================================================================
+unsigned long ultimaVerificacionRiego = 0;
   if (millis() - ultimaVerificacionVentilador < INTERVALO_RIEGO_MS) return;
   ultimaVerificacionVentilador = millis();
 
@@ -1880,6 +2128,107 @@ void setup() {
 }
 
 // ============================================================================
+// SECCIÓN 15: SECUENCIAS DE DEMOSTRACIÓN Y AUTOMACIONES RELATIVOS
+// ============================================================================
+
+// Secuencia de demostración: alterna todas las luces en un patrón.
+// No bloquea el sistema principal.
+enum EstadoDemo { DEMO_DETENIDO, DEMO_EN_CURSO };
+enumEstadoDemo estadoDemo = DEMO_DETENIDO;
+unsigned long ultimaDemoCambioMs = 0;
+const unsigned long INTERVALO_DEMO_MS = 2000; // 2 segundos entre cambios
+
+void iniciarSecuenciaDemo() {
+  if (estadoDemo == DEMO_DETENIDO) {
+    estadoDemo = DEMO_EN_CURSO;
+    ultimaDemoCambioMs = millis();
+    log("DEMO", "Secuencia de demostración iniciada");
+  }
+}
+
+void detenerSecuenciaDemo() {
+  estadoDemo = DEMO_DETENIDO;
+  log("DEMO", "Secuencia de demostración detenida");
+}
+
+void demoSecuenciaActualizar() {
+  if (estadoDemo != DEMO_EN_CURSO) return;
+  if (millis() - ultimaDemoCambioMs < INTERVALO_DEMO_MS) return;
+  ultimaDemoCambioMs = millis();
+
+  // Alterna todas las salidas que están instaladas en este perfil
+  for (int i = 0; i < TOTAL_SALIDAS; i++) {
+    if (SALIDA_FISICA_CASA[i]) {
+      bool nuevoEstado = !estadoSalidas[i];
+      digitalWrite(MAPA_CASA.salidas[i], nivelSalida(i, nuevoEstado));
+      if (nuevoEstado) {
+        estadoSalidas[i] = true;
+        log("DEMO", String(NOMBRES_SALIDAS[i]) + " encendido en demo");
+      } else {
+        estadoSalidas[i] = false;
+        log("DEMO", String(NOMBRES_SALIDAS[i]) + " apagado en demo");
+      }
+    }
+  }
+}
+
+// Automaciones relativas temporizadas:
+// - Si la bomba estuvo encendida manualmente por X tiempo, apágala automáticamente
+// - Si las luces estuvieron encendidas por X tiempo sin actividad, apágalas
+// - Alertas de tiempo para ventilador, etc.
+
+struct AutoTemporizado {
+  unsigned long inicioMs;
+  bool activo;
+  uint8_t indice;
+  bool estadoSolicitado;
+};
+
+std::atomic<AutoTemporizado> autoTempBomba{};
+std::atomic<AutoTemporizado> autoTempLuces[] = {{0, false, 0, false}, {0, false, 1, false}, {0, false, 4, false}};
+
+const unsigned long TIEMPO_MAXIMO_MANUAL_BOMBA_MS = 300000UL; // 5 minutos
+const unsigned long TIEMPO_MAXIMO_MANUAL_LUZ_MS = 600000UL;   // 10 minutos
+
+void verificarAutomacionesRelativas() {
+  // Verificar bomba: si lleva mucho tiempo encendida manualmente, apagarla
+  AutoTemporizado &tBomba = autoTempBomba.load();
+  if (tBomba.activo && estadoSalidas[tBomba.indice] && tBomba.estadoSolicitado) {
+    if (millis() - tBomba.inicioMs >= TIEMPO_MAXIMO_MANUAL_BOMBA_MS) {
+      log("AUTO_REL", "Bomba tiempo máximo excedido, apagando");
+      desactivarSalida(tBomba.indice, false);
+      tBomba.activo = false;
+    }
+  }
+
+  // Verificar luces: si llevan mucho tiempo encendidas manualmente, apágalas
+  for (int i = 0; i < 3; i++) {
+    AutoTemporizado &tLuz = autoTempLuces[i].load();
+    if (tLuz.activo && estadoSalidas[tLuz.indice] && tLuz.estadoSolicitado) {
+      if (millis() - tLuz.inicioMs >= TIEMPO_MAXIMO_MANUAL_LUZ_MS) {
+        log("AUTO_REL", "Luz " + String(tLuz.indice) + " tiempo máximo excedido, apagando");
+        desactivarSalida(tLuz.indice, false);
+        tLuz.activo = false;
+      }
+    }
+  }
+}
+
+// Función auxiliar: iniciar temporizador para una salida
+void iniciarTemporizadorSalida(uint8_t indice, bool estado) {
+  if (indice == 0) {
+    AutoTemporizado t = {millis(), true, indice, estado};
+    autoTempBomba.store(t);
+  } else if (indice == 1 || indice == 2 || indice == 4) {
+    // Selector simple - en un sistema real usaríamos un array más grande
+    AutoTemporizado t = {millis(), true, indice, estado};
+    // Guardamos en la posición correspondiente (0, 1, 2 para salidas 1,2,4)
+    int pos = (indice == 1) ? 0 : (indice == 2) ? 1 : 2;
+    autoTempLuces[pos].store(t);
+  }
+}
+
+// ============================================================================
 // SECCIÓN 14: LOOP PRINCIPAL (no bloqueante)
 // ============================================================================
 unsigned long ultimaActualizacionPantalla = 0;
@@ -1902,12 +2251,19 @@ void loop() {
   // intentos repetidos de encendido ni más presión sobre memoria/registros.
   if (!modoSeguroActivo) {
     verificarRiegoAutomatico();
+    verificarRiegoAutomaticoCombinado();
     verificarVentiladorAutomatico();
+    verificarVentiladorCombinado();
     verificarLucesAutomaticas();
+    verificarLucesCombinadas();
   }
 
   // Corte independiente: se mantiene aun si el supervisor está degradado.
   verificarLimiteBomba();
+
+  // NUEVO: Ejecutar secuencia de demostración relativa si está activa
+  demoSecuenciaActualizar();
+  verificarAutomacionesRelativas();
 
   // 4. Pantalla final: refresco temporizado; el saludo, la prioridad de
   // emergencia y la escritura diferencial viven en PantallaFinal.

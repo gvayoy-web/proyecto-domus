@@ -6,7 +6,11 @@ enum class EventoJarvis : uint8_t {
   SISTEMA_LISTO = 1, ORDEN_ACEPTADA, ORDEN_RECHAZADA, LUZ_ENCENDIDA,
   LUZ_APAGADA, RIEGO_INICIADO, RIEGO_DETENIDO, TIERRA_SECA,
   TIERRA_HUMEDA, AGUA_BAJA, TEMPERATURA_ALTA, PRESENCIA, EMERGENCIA,
-  ERROR_SENSOR
+  ERROR_SENSOR, LUZ_CULTIVO_ENCENDIDA, LUZ_CULTIVO_APAGADA,
+  VENTILADOR_ENCENDIDO, VENTILADOR_APAGADO, AIRE_SECO, AIRE_HUMEDO,
+  MODOS_ON, MODOS_OFF, PERSONALIDAD_CARLOS, PERSONALIDAD_KARLA,
+  CATEGORIA_RIEGO, CATEGORIA_LUZ, CATEGORIA_VENTILADOR,
+  CATEGORIA_AMBIENTE, CATEGORIA_SEGURIDAD, CATEGORIA_SALUD
 };
 
 // Política no bloqueante de Jarvis: cuatro variantes por carpeta, sin repetir
@@ -40,11 +44,18 @@ class JarvisAudio {
     return habilitado_ && transporte_.volumen(volumen_);
   }
 
-  bool reproducir(EventoJarvis evento, uint32_t ahoraMs,
-                  bool alertaAutomatica = false) {
+bool reproducir(EventoJarvis evento, uint32_t ahoraMs,
+                   bool alertaAutomatica = false) {
     const uint8_t eventoBase = static_cast<uint8_t>(evento);
-    if (!habilitado_ || silenciado_ || eventoBase < 1 || eventoBase > 14) return false;
-    const uint8_t carpeta = uint8_t(eventoBase + (voz_ == 2 ? 50U : 0U));
+    if (!habilitado_ || silenciado_ || eventoBase < 1) return false;
+    // Mapeo de eventos a carpetas: 1-14 en folders 01-14 (voz 1), 15-28 en folders 15-28 (voz 1),
+    // 29-42 en folders 29-42 (voz 2), 43-56 en folders 57-70 (voz 2), 57-70 en folders 71-84
+    const uint8_t carpetaBase = eventoBase <= 14 ? eventoBase :
+                                eventoBase <= 28 ? eventoBase - 14 :
+                                eventoBase <= 42 ? eventoBase + 14 :
+                                eventoBase <= 56 ? eventoBase + 27 :
+                                                   eventoBase + 56;
+    const uint8_t carpeta = voz_ == 2 ? carpetaBase + 50U : carpetaBase;
     const bool emergencia = evento == EventoJarvis::EMERGENCIA;
     if (!emergencia && transporte_.ocupado()) return false;
     if (alertaAutomatica && !emergencia &&

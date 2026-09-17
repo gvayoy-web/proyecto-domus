@@ -19,8 +19,11 @@
 //   caso la logica avanza igual y el resto del sistema no se detiene.
 // - Iconos CGRAM sencillos (gota, sol, termometro, nivel, voz) creados
 //   una sola vez en begin; ocupan un caracter cada uno.
+// - Requieres <atomic> para estadisticas globales.
+// #
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
+#include <atomic>
 
 // Estado resumido de una salida para la vista 3.
 enum EstadoSalidaFinal : uint8_t {
@@ -57,7 +60,7 @@ struct DatosPantallaFinal {
 
 class PantallaFinal {
  public:
-  static const uint8_t NUM_PANTALLAS = 5;
+  static const uint8_t NUM_PANTALLAS = 7;
   static const uint8_t P_EMERGENCIA = 4;
 
   PantallaFinal()
@@ -198,6 +201,26 @@ class PantallaFinal {
         }
         break;
       }
+      case 5: {  // Estadísticas y contador de eventos
+        // Acceso a estadísticas desde el .ino a través de puntero externo
+        extern std::atomic<EstadisticasDOMUS> estadisticas;
+        uint32_t enc = estadisticas.totalEncendidos.load();
+        uint32_t apag = estadisticas.totalApagados.load();
+        uint32_t riego = estadisticas.totalRiiegosAutomaticos.load();
+        uint32_t vent = estadisticas.totalVentAutomaticos.load();
+        uint32_t luz = estadisticas.totalCambiosLuz.load();
+        uint32_t emerg = estadisticas.totalEmergencias.load();
+        snprintf(a, sizeof(a), "E:%03u L:%03u", luz, emerg);
+        snprintf(b, sizeof(b), "R:%03u V:%03u", riego, vent);
+        break;
+      }
+      case 6: {  // Perfil y configuración actual
+        snprintf(a, sizeof(a), "PERFIL:%s", nombrePerfilCasa(PERFIL_CASA));
+        snprintf(b, sizeof(b), "BOM:%s A:%s", 
+          BOMBA_DIRECTA_S8050 ? "S8050" : "DRV",
+          IR_CASA_HABILITADO ? "IR ON" : "IR OFF");
+        break;
+      }
       default:
         snprintf(a, sizeof(a), "PROJECT DOMUS");
         snprintf(b, sizeof(b), "Iniciando...");
@@ -213,7 +236,7 @@ class PantallaFinal {
     char l0[17];
     char l1[17];
     uint8_t id;
-    if (!splashHecho_) {
+if (!splashHecho_) {
       if (millis() - inicioMs_ < SPLASH_MS) {
         id = ID_SPLASH;
         lineasSplash(l0, l1);
@@ -235,6 +258,9 @@ class PantallaFinal {
     } else if (d.escuchando) {
       id = ID_ESCUCHA;
       lineasEscucha(d.micOn, l0, l1);
+    } else if (indice_ == 6) {
+      id = 6;
+      formatear(6, d, l0, l1);
     } else {
       id = indice_;
       formatear(indice_, d, l0, l1);
