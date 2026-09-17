@@ -121,8 +121,11 @@ int main() {
       CHEQUEA(std::strlen(l0) == 16 && std::strlen(l1) == 16);
     }
     p.formatear(5, d, l0, l1);
-    CHEQUEA(std::strstr(l0, "E:007") != nullptr);
-    CHEQUEA(std::strstr(l1, "R:003") != nullptr);
+    CHEQUEA(std::strstr(l0, "ENC:012 APA:010") != nullptr);
+    CHEQUEA(std::strstr(l1, "R:03 V:02 E:01") != nullptr);
+    p.formatear(3, d, l0, l1);
+    CHEQUEA(std::strstr(l0, "B:0 S:0 C:0") != nullptr);
+    CHEQUEA(std::strlen(l0) == 16 && std::strlen(l1) == 16);
     p.formatear(6, d, l0, l1);
     CHEQUEA(std::strstr(l0, "PERFIL:") != nullptr);
     CHEQUEA(std::strstr(l1, "S8050") != nullptr);
@@ -219,6 +222,28 @@ int main() {
     CHEQUEA(std::strstr(p.linea(0), "Suelo") != nullptr);
     if (fallos == base) std::puts("TICK_OK");
   }
+  {
+    int base = fallos;
+    PantallaFinal p;
+    p.begin(nullptr);
+    DatosPantallaFinal d = datosBase();
+    g_ahora = 20000;
+    p.tick(d);
+    g_ahora = 23000;
+    p.mostrarMensaje("Sala ON", "Mando IR");
+    p.tick(d);
+    CHEQUEA(std::strstr(p.linea(0), "Sala ON") != nullptr);
+    CHEQUEA(std::strstr(p.linea(1), "Mando IR") != nullptr);
+    p.ocultarOverlays();
+    p.tick(d);
+    CHEQUEA(std::strstr(p.linea(0), "Sala ON") == nullptr);
+    g_ahora = 30000;
+    p.mostrarIR(7, 0x00FF, 0x0019);
+    p.ocultarOverlays();
+    p.tick(d);
+    CHEQUEA(std::strstr(p.linea(0), "P7 A00FF") == nullptr);
+    if (fallos == base) std::puts("AVISO_OK");
+  }
   return fallos == 0 ? 0 : 1;
 }
 """
@@ -239,8 +264,11 @@ class PantallaFinalTests(unittest.TestCase):
         self.assertIn("class PantallaFinal", self.header)
         self.assertIn("NUM_PANTALLAS = 7", self.header)
         self.assertIn("P_EMERGENCIA = 4", self.header)
-        for estado in ("\"ON\"", "\"OFF\"", "\"AUTO\"", "\"BLOQ\"", "\"ERR\""):
-            self.assertIn(estado, self.header)
+        # Vista 3 compacta de 1 letra con leyenda documentada.
+        self.assertIn("Leyenda vista 3", self.header)
+        self.assertIn("case SAL_ON: return '1'", self.header)
+        self.assertIn("mostrarMensaje", self.header)
+        self.assertIn("ocultarOverlays", self.header)
 
     def test_header_sin_pausas_y_borrado_acotado(self):
         self.assertNotIn("delay(", self.header)
@@ -309,7 +337,7 @@ class PantallaFinalTests(unittest.TestCase):
             result = run_host_process([str(binary)], timeout=10, allow_skip=True)
             self.assertEqual(result.returncode, 0, result.stdout)
             salida = result.stdout.decode()
-            for token in ("FMT_OK", "PRIO_OK", "ERR_OK", "TICK_OK"):
+            for token in ("FMT_OK", "PRIO_OK", "ERR_OK", "TICK_OK", "AVISO_OK"):
                 self.assertIn(token, salida)
 
 

@@ -82,12 +82,15 @@ class PantallaFinal {
         splashHecho_(false),
         inicioMs_(0),
         irVisibleHastaMs_(0),
+        avisoHastaMs_(0),
         irProtocolo_(0),
         irDireccion_(0),
         irCodigo_(0) {
     for (uint8_t f = 0; f < 2; ++f) {
       for (uint8_t c = 0; c < 17; ++c) sombra_[f][c] = 0;
     }
+    avisoL0_[0] = '\0';
+    avisoL1_[0] = '\0';
   }
 
   // Guarda el objeto LCD (puede ser nulo), crea los iconos, deja el
@@ -131,6 +134,23 @@ class PantallaFinal {
     irVisibleHastaMs_ = millis() + IR_VISIBLE_MS;
   }
 
+  // Aviso corto con texto libre (confirmación de tecla: "Sala ON",
+  // "Volumen 18"...). Emergencia y splash conservan prioridad.
+  void mostrarMensaje(const char* l0, const char* l1,
+                      unsigned long duracionMs = AVISO_VISIBLE_MS) {
+    snprintf(avisoL0_, sizeof(avisoL0_), "%-16.16s", l0 ? l0 : "");
+    snprintf(avisoL1_, sizeof(avisoL1_), "%-16.16s", l1 ? l1 : "");
+    avisoHastaMs_ = millis() + duracionMs;
+  }
+
+  // Cierra cualquier overlay (IR o aviso) para dejar ver la vista actual.
+  // Lo usa CH tras cambiar de página: si no, el overlay IR taparía 5 s
+  // la página recién elegida.
+  void ocultarOverlays() {
+    irVisibleHastaMs_ = 0;
+    avisoHastaMs_ = 0;
+  }
+
   // Vista que realmente se dibuja: la 4 se impone ante paro, modo
   // seguro o mensaje de error; si no, manda el indice manual.
   uint8_t efectiva(const DatosPantallaFinal& d) const {
@@ -168,9 +188,9 @@ class PantallaFinal {
         if (!d.nivelValido) {
           snprintf(b, sizeof(b), "Nivel ERR");
         } else if (d.nivelRaw < d.nivelMin) {
-          snprintf(b, sizeof(b), "Agua %d%% BAJA", d.nivelPct);
+          snprintf(b, sizeof(b), "\x04 Agua %d%% BAJA", d.nivelPct);
         } else {
-          snprintf(b, sizeof(b), "Agua %d%%", d.nivelPct);
+          snprintf(b, sizeof(b), "\x04 Agua %d%%", d.nivelPct);
         }
         break;
       case 2:  // Luz ambiental + presencia.
@@ -181,10 +201,12 @@ class PantallaFinal {
         }
         snprintf(b, sizeof(b), "Presencia %s", d.presencia ? "SI" : "NO");
         break;
-      case 3: {  // Estado de las 5 salidas.
-        snprintf(a, sizeof(a), "B:%s S:%s C:%s", etiq(d.salidas[0]),
+      case 3: {  // Estado de las 5 salidas, compacto de 1 letra:
+        // 1 = ON, 0 = OFF, A = AUTO, B = BLOQ, E = ERR.
+        // (Las palabras ON/OFF/AUTO no caben: 3x"BLOQ" = 20 > 16.)
+        snprintf(a, sizeof(a), "B:%c S:%c C:%c", etiq(d.salidas[0]),
                  etiq(d.salidas[1]), etiq(d.salidas[2]));
-        snprintf(b, sizeof(b), "V:%s I:%s", etiq(d.salidas[3]),
+        snprintf(b, sizeof(b), "V:%c I:%c", etiq(d.salidas[3]),
                  etiq(d.salidas[4]));
         break;
       }
@@ -213,13 +235,14 @@ class PantallaFinal {
         }
         break;
       }
-      case 5: {  // Estadisticas y contador de eventos.
-        snprintf(a, sizeof(a), "E:%03u L:%03u",
-                 (unsigned)(d.statCambiosLuz % 1000),
-                 (unsigned)(d.statEmergencias % 1000));
-        snprintf(b, sizeof(b), "R:%03u V:%03u",
-                 (unsigned)(d.statRiegos % 1000),
-                 (unsigned)(d.statVent % 1000));
+      case 5: {  // Estadisticas acumuladas (módulo 1000).
+        snprintf(a, sizeof(a), "ENC:%03u APA:%03u",
+                 (unsigned)(d.statEncendidos % 1000),
+                 (unsigned)(d.statApagados % 1000));
+        snprintf(b, sizeof(b), "R:%02u V:%02u E:%02u",
+                 (unsigned)(d.statRiegos % 100),
+                 (unsigned)(d.statVent % 100),
+                 (unsigned)(d.statEmergencias % 100));
         break;
       }
       case 6: {  // Perfil y configuracion actual.
@@ -258,6 +281,9 @@ if (!splashHecho_) {
     if (d.emergencia || d.modoSeguro) {
       id = P_EMERGENCIA;
       formatear(P_EMERGENCIA, d, l0, l1);
+    } else if (avisoVisible()) {
+      id = ID_AVISO;
+      lineasAviso(l0, l1);
     } else if (irVisible()) {
       id = ID_IR;
       lineasIR(l0, l1);
@@ -286,13 +312,25 @@ if (!splashHecho_) {
  private:
   static const uint8_t ID_ESCUCHA = 98;
   static const uint8_t ID_IR = 97;
+  static const uint8_t ID_AVISO = 96;
   static const uint8_t ID_SPLASH = 99;
   static const unsigned long SPLASH_MS = 2000;
   static const unsigned long IR_VISIBLE_MS = 5000;
+  static const unsigned long AVISO_VISIBLE_MS = 2500;
 
   bool irVisible() const {
     return irVisibleHastaMs_ != 0 &&
       (long)(irVisibleHastaMs_ - millis()) > 0;
+  }
+
+  bool avisoVisible() const {
+    return avisoHastaMs_ != 0 &&
+      (long)(avisoHastaMs_ - millis()) > 0;
+  }
+
+  void lineasAviso(char l0[17], char l1[17]) const {
+    snprintf(l0, 17, "%-16.16s", avisoL0_);
+    snprintf(l1, 17, "%-16.16s", avisoL1_);
   }
 
   void lineasIR(char l0[17], char l1[17]) const {
@@ -304,14 +342,15 @@ if (!splashHecho_) {
     snprintf(l1, 17, "%-16.16s", b);
   }
 
-  static const char* etiq(EstadoSalidaFinal e) {
+  // Leyenda vista 3: 1 = ON, 0 = OFF, A = AUTO, B = BLOQ, E = ERR.
+  static char etiq(EstadoSalidaFinal e) {
     switch (e) {
-      case SAL_ON: return "ON";
-      case SAL_AUTO: return "AUTO";
-      case SAL_BLOQ: return "BLOQ";
-      case SAL_ERR: return "ERR";
+      case SAL_ON: return '1';
+      case SAL_AUTO: return 'A';
+      case SAL_BLOQ: return 'B';
+      case SAL_ERR: return 'E';
       case SAL_OFF:
-      default: return "OFF";
+      default: return '0';
     }
   }
 
@@ -383,8 +422,11 @@ if (!splashHecho_) {
   bool splashHecho_;
   unsigned long inicioMs_;
   unsigned long irVisibleHastaMs_;
+  unsigned long avisoHastaMs_;
   uint8_t irProtocolo_;
   uint16_t irDireccion_;
   uint16_t irCodigo_;
+  char avisoL0_[17];
+  char avisoL1_[17];
   char sombra_[2][17];
 };

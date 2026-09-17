@@ -64,7 +64,7 @@ Firmware `casa_inteligente_v4.ino` completado con todas las características sol
 | `audio/jarvis_sd/MANIFEST.csv` (parcial, 112) | `MANIFEST.csv` con 168 filas, SHA-256 y evento por pista |
 | `firmware/domus_pantalla.h`: `NUM_PANTALLAS = 5` | `NUM_PANTALLAS = 7` (views 5 y 6 agregadas; stats por copia, sin `extern atomic`) |
 | Enum `EventoJarvis`: 14 eventos | 21 eventos, uno por botón (`carpetaPara`, voz 2 +50, variantes y grupos) |
-| Teclas 6-9 repetían el mismo reporte | 6/7/8/9 = consultas distintas; 6 doble = cambio de voz |
+| Teclas 6-9 repetían el mismo reporte | 6/7/8/9 = consultas distintas; 100+ = voz (un toque, sin dobles) |
 | `std::atomic<EstadisticasDOMUS>` (no compila: struct no trivial) | struct plano + contadores `inline`; pantalla recibe copia |
 | `registrarHistorial` escribía en `reg.linea` inexistente | escribe en `TrabajoSD.linea` con `snprintf`, sin bloquear |
 | `TipoRegistroHistorial::X + indice` (enum class, no compila) | historial directo sin aritmética de enums |
@@ -79,7 +79,46 @@ Firmware `casa_inteligente_v4.ino` completado con todas las características sol
 - 12/12 test_jarvis_audio.py ✓ (21 eventos, manifiesto 168, mapa 21 botones)
 - Nativos (candidato, safety, pantalla) recompilan tras stubs de voz/historial
 
+## Ronda v4.3: rescate + LCD + optimización (2026-09-17)
+
+### Rescate de compilación (el firmware no enlazaba)
+- `registrarLineaMicroSD()` declarada pero sin definir: definida (encola,
+  no-op sin SD, cero heap).
+- Sección 10 corrupta: `ultimaVerificacionRiego` duplicada, función
+  `verificarVentiladorAutomatico()` inexistente llamada por `loop()`,
+  `return` huérfano. Reconstruida como 10B.
+- `verificarRiegoAutomaticoCombinado()` usaba `tempC/humAire/nivelAgua`
+  sin declarar. `std::atomic<AutoTemporizado>` no compilaba: struct plano.
+
+### Sensores
+- ADC 8→4 muestras, 200→100 µs (la mitad de bloqueo; el test nativo usa fake).
+- DHT: suspensión con reintento cada 60 s (antes latch hasta reset) y
+  `DHT_FALLOS`/`DHT_SUSPENDIDO` visibles en `DIAGNOSTICO`.
+- `leerNivelAgua` intacto (el test nativo fija su semántica contador a contador).
+
+### LCD (7 vistas)
+- Vista 3 compacta 1 letra (`B:1 S:0 C:A` / `V:0 I:B`; leyenda 1=ON 0=OFF
+  A=AUTO B=BLOQ E=ERR). Vista 5 `ENC/APA/R/V/E`. Vista 6 perfil corto.
+- Icono de nivel en vista 1. Avisos por tecla 2.5 s (`mostrarMensaje`):
+  Sala/Cuarto/Cultivo/Vent/Riego ON-OFF-BLOQ, volumen, silencio, rearme,
+  voz, diagnóstico. CH ya no se auto-tapa (oculta overlays al paginar).
+- Consultas 6/7/8/9 saltan a su vista. Mute y voz visibles en vista 6
+  (`A:MUTE/V1/V2`). Humedad con rango propio.
+
+### Voz y lógica
+- Cortes `ORIGEN_SISTEMA` suenan como automáticos (v3/v4 con cooldown).
+- Tecla 5 = toggle (riego on/off; interlock, timeout y PARO intactos).
+- PLAY OFF = aviso LCD (no puede sonar tras enmudecer); microSD 01-21/51-71.
+- Reportes `ESTADO`/`DIAGNOSTICO` a `snprintf` (1 alloc en vez de ~25).
+- Dispatcher Serial por tabla (15 comandos); `procesarComandoTexto` por
+  referencia; conversores ADC unificados; secciones 10B/13B e índice.
+
+### Tests
+- **103 passed, 0 failed** (8 skipped = HIL sin placa). Harness de pantalla
+  con bloque AVISO_OK; stubs nativos intactos.
+
 ## Próximos pasos
-- Validación física con hardware ESP32-S3 (21 teclas, DFPlayer, parlante)
+- Validación física con hardware ESP32-S3 (21 teclas, DFPlayer + BUSY, parlante)
 - Copiar `audio/jarvis_sd` (01-21, 51-71) a la microSD FAT32
+- Compilación Arduino real (los nativos g++ ya pasan; falta el build ESP32)
 - Despliegue a producción

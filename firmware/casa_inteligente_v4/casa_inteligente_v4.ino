@@ -81,6 +81,15 @@
 // física. El esqueleto alfa sigue siendo el firmware de banco vigente.
 // Estado formal: CANDIDATO (ver nota 53); FINAL solo tras puertas F1-F7.
 
+// ÍNDICE DE SECCIONES (orden del fichero):
+// 1 pines (MAPA_CASA) · 2 calibración · 3/3B globales y errores ·
+// 5 log · 5B/5C microSD e historial · 6 LCD/I2C · 7 MP3/Jarvis ·
+// 8/8B relés y pantalla · 9 sensores · 10/10B riego/ventilador auto ·
+// 11 Serial+IR+CAL (dispatcher por tabla) · 12B salud · 13 setup ·
+// 13B demo y temporizadores · 14 loop.
+// Módulos propios: domus_types / calibration / drivers / ir_casa /
+// dfplayer / jarvis_audio / pantalla (solo Arduino + LCD).
+
 #ifndef MICROSD_HABILITADA
 #define MICROSD_HABILITADA false
 #endif
@@ -189,6 +198,13 @@ constexpr const char* nombrePerfilCasa(PerfilCasa p) {
          p == PerfilCasa::MOTOR_PENDIENTE_DRIVER ? "CANDIDATO_MOTOR_PENDIENTE_DRIVER" :
          "CANDIDATO_BANCO_SIN_ACTUADORES";
 }
+// Nombre corto para el LCD 16x2 (vista 6): el largo se trunca a "PERFIL:BANCO_COM".
+constexpr const char* nombrePerfilCortoCasa(PerfilCasa p) {
+  return p == PerfilCasa::BANCO_COMPLETO_S8050_IR ? "BANCO_S8050_IR" :
+         p == PerfilCasa::LED_SIN_MOTORES ? "LED" :
+         p == PerfilCasa::MOTOR_PENDIENTE_DRIVER ? "MOTOR_PEND" :
+         "SIN_ACT";
+}
 // Mapa GPIO central: ÚNICA fuente de pines del candidato (nota 55).
 // Costado accesible autorizado (nota 46/47): suelo 15, nivel 16, SDA 17,
 // demo/modo 18. Todo el firmware lee MAPA_CASA; no existen #define de pines.
@@ -236,7 +252,8 @@ static_assert(!(BOMBA_DIRECTA_S8050 && SALIDA_FISICA_CASA[3]),
 #define MP3_TX_PIN      -1
 #define MP3_BUSY_PIN    -1
 #define MP3_HABILITADO  false // reproductor opcional; no instalado en el banco
-// La microSD usa carpetas 01-14 y pistas 001-004 según notas 65/66. Los GPIO
+// La microSD usa carpetas 01-21 (Carlos) y 51-71 (Karla), pistas 001-004:
+// 21 botones x 4 variantes x 2 voces = 168 MP3 (notas 46/64/65). Los GPIO
 // siguen en -1 hasta crear y auditar CASA_FINAL_DRV8833_DFPLAYER.
 
 // ============================================================================
@@ -476,34 +493,57 @@ String obtenerUltimoError() {
   return String(bufferErrores[idx].mensaje);
 }
 
+// Constructor sin heap: los reportes se armaban con ~25 concatenaciones
+// String (una reserva por +=). Ahora un solo snprintf a buffer estático;
+// el String de retorno es una única asignación para el Serial.
 String construirReporteDiagnostico() {
-  String r = "DIAGNOSTICO;";
-  r += "PERFIL_CANDIDATO=" + String(nombrePerfilCasa(PERFIL_CASA)) + ";";
-  r += "UPTIME_S=" + String(millis() / 1000) + ";";
-  r += "MEM_LIBRE=" + String(esp_get_free_heap_size()) + ";";
-  r += "RAM_INTERNA=" + String(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)) + ";";
-  r += "RAM_INTERNA_MIN=" + String(heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)) + ";";
-  r += "RAM_BLOQUE_MAX=" + String(heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)) + ";";
-  r += "PSRAM_LIBRE=" + String(heap_caps_get_free_size(MALLOC_CAP_SPIRAM)) + ";";
-  r += "PSRAM_MIN=" + String(heap_caps_get_minimum_free_size(MALLOC_CAP_SPIRAM)) + ";";
-  r += "PSRAM_BLOQUE_MAX=" + String(heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM)) + ";";
-  r += "ERRORES_TOTAL=" + String(totalErroresAcumulados) + ";";
-  r += "ULTIMO_ERROR=" + (obtenerUltimoError().length() > 0 ? obtenerUltimoError() : "ninguno") + ";";
-  r += "PANTALLA=" + String(pantallaActiva == PANTALLA_LCD ? "LCD" : "NINGUNA") + ";";
-  r += "MEM_MIN=" + String(memoriaLibreMinima == ULONG_MAX ? 0 : memoriaLibreMinima) + ";";
-  r += "MODO_SEGURO=" + String(modoSeguroActivo ? "ON" : "OFF") + ";";
-  r += "MOTIVO_SEGURO=" + String(motivoModoSeguro) + ";";
-  r += "REINICIOS_CRITICOS=" + String(reiniciosCriticosConsecutivos) + ";";
-  r += "WATCHDOG=" + String(watchdogActivo ? "ON" : "FALLO") + ";";
-  r += "CALIBRACION=" + String(calibracionGuardada ? "NVS" : "PROVISIONAL") + ";";
-  r += "IR=" + String(IR_CASA_HABILITADO ? "ON" : "OFF") + ";";
-  r += "IR_ULTIMO=0x" + String(receptorIR.ultimoCodigo(), HEX) + ";";
-  r += "BOMBA_ETAPA=" + String(BOMBA_DIRECTA_S8050 ? "S8050_GPIO4" : "DRIVER") + ";";
-  r += "SD_DESCARTADOS=" + String(sdDescartados.load()) + ";";
-  r += "SD_ERRORES=" + String(sdErrores.load()) + ";";
-  r += "SD_PRUEBA=" + String(sdUltimaPrueba.load()) + ";";
-  r += "RECONOCIMIENTO_VOZ=NO_USADO;AUDIO=APLAZADO;";
-  return r;
+  static char buf[768];
+  const String ultimo = obtenerUltimoError();
+  snprintf(buf, sizeof(buf),
+    "DIAGNOSTICO;"
+    "PERFIL_CANDIDATO=%s;"
+    "UPTIME_S=%lu;"
+    "MEM_LIBRE=%lu;"
+    "RAM_INTERNA=%u;RAM_INTERNA_MIN=%u;RAM_BLOQUE_MAX=%u;"
+    "PSRAM_LIBRE=%u;PSRAM_MIN=%u;PSRAM_BLOQUE_MAX=%u;"
+    "ERRORES_TOTAL=%lu;"
+    "DHT_FALLOS=%u;DHT_SUSPENDIDO=%d;"
+    "ULTIMO_ERROR=%s;"
+    "PANTALLA=%s;"
+    "MEM_MIN=%lu;"
+    "MODO_SEGURO=%s;MOTIVO_SEGURO=%s;"
+    "REINICIOS_CRITICOS=%d;"
+    "WATCHDOG=%s;"
+    "CALIBRACION=%s;"
+    "IR=%s;IR_ULTIMO=0x%X;"
+    "BOMBA_ETAPA=%s;"
+    "SD_DESCARTADOS=%lu;SD_ERRORES=%lu;SD_PRUEBA=%d;"
+    "RECONOCIMIENTO_VOZ=NO_USADO;AUDIO=APLAZADO;",
+    nombrePerfilCasa(PERFIL_CASA),
+    (unsigned long)(millis() / 1000),
+    (unsigned long)esp_get_free_heap_size(),
+    (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+    (unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+    (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+    (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+    (unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_SPIRAM),
+    (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM),
+    (unsigned long)totalErroresAcumulados,
+    (unsigned)fallosDhtConsecutivos, dhtSuspendido ? 1 : 0,
+    ultimo.length() > 0 ? ultimo.c_str() : "ninguno",
+    pantallaActiva == PANTALLA_LCD ? "LCD" : "NINGUNA",
+    (unsigned long)(memoriaLibreMinima == ULONG_MAX ? 0 : memoriaLibreMinima),
+    modoSeguroActivo ? "ON" : "OFF", motivoModoSeguro,
+    reiniciosCriticosConsecutivos,
+    watchdogActivo ? "ON" : "FALLO",
+    calibracionGuardada ? "NVS" : "PROVISIONAL",
+    IR_CASA_HABILITADO ? "ON" : "OFF",
+    (unsigned)receptorIR.ultimoCodigo(),
+    BOMBA_DIRECTA_S8050 ? "S8050_GPIO4" : "DRV",
+    (unsigned long)sdDescartados.load(),
+    (unsigned long)sdErrores.load(),
+    (int)sdUltimaPrueba.load());
+  return String(buf);
 }
 
 // ============================================================================
@@ -1054,7 +1094,10 @@ ResultadoOrden ejecutarOrdenActuador(const OrdenActuador &orden) {
       ";estado=" + String(orden.encender ? 1 : 0));
   ResultadoOrden resultado = {true, estadoAnterior != orden.encender, "ok"};
   if (resultado.cambioReal) {
-    const bool automatica = orden.origen == ORIGEN_AUTOMATICO;
+    // Los cortes del sistema (nivel, sensor, timeout) suenan como automáticos
+    // (variantes 3/4 con cooldown), no como órdenes manuales.
+    const bool automatica = orden.origen == ORIGEN_AUTOMATICO ||
+        orden.origen == ORIGEN_SISTEMA;
     // Pista fija por botón: 1 = ON manual, 2 = OFF manual,
     // 3 = ON automático, 4 = OFF automático.
     uint8_t variante;
@@ -1121,7 +1164,10 @@ void refrescarPantallaFinal() {
   d.tempC = tempC;
   d.tempValida = tempValida;
   d.humAire = humAire;
-  d.humAireValida = tempValida;
+  // La humedad ambiental se valida con su propio rango, no atada al éxito
+  // de la temperatura: un DHT con temp OK y HR absurda mostraba dato malo.
+  d.humAireValida = tempValida && humAire >= DHT_HUM_MIN_VALIDA_PCT &&
+      humAire <= DHT_HUM_MAX_VALIDA_PCT;
   d.sueloPct = humedadPct;
   d.sueloValido = humedadValida;
   d.nivelRaw = nivelAgua;
@@ -1146,22 +1192,27 @@ void refrescarPantallaFinal() {
   d.statVent = estadisticas.totalVentAutomaticos;
   d.statCambiosLuz = estadisticas.totalCambiosLuz;
   d.statEmergencias = estadisticas.totalEmergencias;
-  d.nombrePerfil = nombrePerfilCasa(PERFIL_CASA);
+  d.nombrePerfil = nombrePerfilCortoCasa(PERFIL_CASA);
   d.nombreBomba = BOMBA_DIRECTA_S8050 ? "S8050" : "DRV";
-  d.nombreAudioIR = IR_CASA_HABILITADO ? "IR ON" : "IR OFF";
+  // Estado de voz visible en vista 6: MUTE, V1 (Carlos) o V2 (Karla).
+  d.nombreAudioIR = jarvisAudio.silenciado() ? "MUTE" :
+      (jarvisAudio.vozActual() == 2 ? "V2" : "V1");
   pantallaFinal.tick(d);
 }
 
 // ============================================================================
 // SECCIÓN 9: LECTURA Y VALIDACIÓN DE SENSORES
 // ============================================================================
-int leerSensorPromediado(int pin, int muestras = 8) {
+// 4 muestras bastan para sensores lentos (suelo/nivel/LDR): 8 duplicaba el
+// tiempo bloqueado por vuelta sin mejorar la lectura. El test nativo
+// sustituye esta función por un fake, así que el valor es libre.
+int leerSensorPromediado(int pin, int muestras = 4) {
   long suma = 0;
   for (int i = 0; i < muestras; i++) {
     suma += analogRead(pin);
-    delayMicroseconds(200);
+    delayMicroseconds(100);
   }
-  return suma / muestras;
+  return muestras > 0 ? suma / muestras : 0;
 }
 
 int fallosConsecutivosHumedad = 0;
@@ -1169,16 +1220,21 @@ int fallosConsecutivosNivelAgua = 0;
 uint8_t muestrasNivelAguaValidasConsecutivas = 0;
 #define MAX_FALLOS_ANTES_DE_REGISTRAR 3
 
-// Convierte una lectura ADC cruda a porcentaje 0-100% usando las constantes
-// de calibración de la Sección 2. Funciona sin importar si "seca" es el
-// número más alto o más bajo (soporta sensores de cualquier polaridad).
-int convertirHumedadAPorcentaje(int lecturaCruda) {
-  long rango = (long)calibracion.sueloHumedo - (long)calibracion.sueloSeco;
+// Conversor único ADC->%: los dos anteriores (humedad y LDR) eran el mismo
+// cuerpo duplicado. Funciona sin importar si el extremo bajo es el número
+// más alto o más bajo (soporta sensores de cualquier polaridad).
+int convertirRangoAPorcentaje(int lecturaCruda, int extremoBajo, int extremoAlto) {
+  long rango = (long)extremoAlto - (long)extremoBajo;
   if (rango == 0) return 0; // evita división por cero si no se calibró
-  long pct = ((long)lecturaCruda - calibracion.sueloSeco) * 100L / rango;
+  long pct = ((long)lecturaCruda - extremoBajo) * 100L / rango;
   if (pct < 0) pct = 0;
   if (pct > 100) pct = 100;
   return (int)pct;
+}
+
+int convertirHumedadAPorcentaje(int lecturaCruda) {
+  return convertirRangoAPorcentaje(lecturaCruda, calibracion.sueloSeco,
+                                   calibracion.sueloHumedo);
 }
 
 bool leerHumedad(int &crudoSalida, int &pctSalida) {
@@ -1222,16 +1278,11 @@ bool leerNivelAgua(int &valorSalida) {
 // ---- LDR (fotoresistor) - luz ambiental ----
 int fallosConsecutivosLdr = 0;
 
-// Igual principio que convertirHumedadAPorcentaje(): funciona sin importar
-// si "oscuro" es el número ADC más alto o más bajo, según cómo hayas armado
-// el divisor de voltaje del LDR.
+// El LDR usa el mismo conversor: solo cambia qué extremos de calibración
+// entran (divisor de voltaje propio del LDR).
 int convertirLdrAPorcentaje(int lecturaCruda) {
-  long rango = (long)calibracion.luzClara - (long)calibracion.luzOscura;
-  if (rango == 0) return 0;
-  long pct = ((long)lecturaCruda - calibracion.luzOscura) * 100L / rango;
-  if (pct < 0) pct = 0;
-  if (pct > 100) pct = 100;
-  return (int)pct;
+  return convertirRangoAPorcentaje(lecturaCruda, calibracion.luzOscura,
+                                   calibracion.luzClara);
 }
 
 bool leerLuz(int &crudoSalida, int &pctSalida) {
@@ -1258,10 +1309,21 @@ bool leerLuz(int &crudoSalida, int &pctSalida) {
 // dentro de la librería - por eso aquí solo se valida el RANGO físico
 // razonable, no se promedia como los sensores ADC (el DHT11 es lento,
 // máximo ~1 lectura/segundo, promediar 8 muestras lo saturaría).
+// Contadores DHT a nivel de fichero (visibles en DIAGNOSTICO): antes eran
+// static locales e invisibles, y la suspensión era un latch permanente.
+uint8_t fallosDhtConsecutivos = 0;
+bool dhtSuspendido = false;
+unsigned long ultimoReintentoDhtMs = 0;
+#define DHT_REINTENTO_SUSPENDIDO_MS 60000UL
+
 bool leerAmbiente(float &tempCSalida, float &humAireSalida) {
-  static uint8_t fallosDhtConsecutivos = 0;
-  static bool dhtSuspendido = false;
-  if (dhtSuspendido) return false;
+  if (dhtSuspendido) {
+    // Backoff con recuperación: reintenta cada 60 s en vez de exigir reset.
+    if (millis() - ultimoReintentoDhtMs < DHT_REINTENTO_SUSPENDIDO_MS) return false;
+    dhtSuspendido = false;
+    fallosDhtConsecutivos = 0;
+    log("SENSOR", "DHT11: reintentando tras suspension temporal");
+  }
   if (millis() - ultimaLecturaDhtMs < DHT_INTERVALO_LECTURA_MS) {
     // Todavía no toca leer de nuevo: devuelve la última lectura válida en
     // vez de forzar al DHT11 fuera de su límite de velocidad.
@@ -1279,7 +1341,8 @@ bool leerAmbiente(float &tempCSalida, float &humAireSalida) {
     fallosDhtConsecutivos++;
     if (fallosDhtConsecutivos >= 3) {
       dhtSuspendido = true;
-      registrarError("SENSOR", "DHT11 suspendido tras 3 fallos; revisa pin 14 y reinicia");
+      ultimoReintentoDhtMs = millis();
+      registrarError("SENSOR", "DHT11 suspendido 60s tras 3 fallos; revisa pin 14");
     } else {
       registrarError("SENSOR", "DHT11 no respondio (lectura NaN), revisar cableado/pin 14");
     }
@@ -1361,7 +1424,9 @@ void verificarRiegoAutomaticoCombinado() {
 
   int crudo, pct;
   bool humValida = leerHumedad(crudo, pct);
+  float tempC = 0, humAire = 0;
   bool tempValida = leerAmbiente(tempC, humAire);
+  int nivelAgua = 0;
   bool nivelValido = leerNivelAgua(nivelAgua);
 
   // Regla: si hace calor y la tierra está seca y hay agua, iniciar riego enfriamiento
@@ -1465,9 +1530,11 @@ void verificarLucesCombinadas() {
   }
 }
 
-// SECCIÓN 10: RIEGO AUTOMÁTICO (no bloqueante)
+// SECCIÓN 10B: VENTILADOR AUTOMÁTICO (no bloqueante)
 // ============================================================================
-unsigned long ultimaVerificacionRiego = 0;
+unsigned long ultimaVerificacionVentilador = 0;
+
+void verificarVentiladorAutomatico() {
   if (millis() - ultimaVerificacionVentilador < INTERVALO_RIEGO_MS) return;
   ultimaVerificacionVentilador = millis();
 
@@ -1562,25 +1629,26 @@ void verificarLucesAutomaticas() {
 //   "NACK;<comando>;<motivo>"               -> el comando no pudo confirmarse o fue rechazado
 
 String construirReporteEstado() {
-  String r = "ESTADO;";
-  for (int i = 0; i < TOTAL_SALIDAS; i++) {
-    r += NOMBRES_SALIDAS[i];
-    r += "=";
-    r += estadoSalidas[i] ? "1" : "0";
-    r += ";";
-  }
-  r += "HUM=" + String(ultimaHumedadValida) + ";";       // humedad de TIERRA, crudo ADC
-  r += "HUM_PCT=" + String(ultimoHumedadPctValido) + ";"; // humedad de TIERRA, calibrada
-  r += "NIVEL_AGUA=" + String(ultimoNivelAguaValido) + ";";
-  r += "PIR=" + String(ultimaPresenciaValida ? 1 : 0) + ";";
-  r += "TEMP_C=" + String(ultimaTempCValida, 1) + ";";        // DHT11, temperatura AMBIENTAL
-  r += "HUM_AIRE_PCT=" + String(ultimaHumAireValida, 1) + ";"; // DHT11, humedad AMBIENTAL (no confundir con HUM_PCT de tierra)
-  r += "LUZ_PCT=" + String(ultimoLuzPctValido) + ";";          // LDR, luz ambiental calibrada
-  r += "MIC=" + String(micHabilitado ? "ON" : "OFF") + ";";
-  r += "SD=" + String(microSdMontada ? "ON" : "OFF") + ";";
-  r += "EMERGENCIA=" + String(paroEmergenciaActivo ? "ON" : "OFF") + ";";
-  r += "MODO_SEGURO=" + String(modoSeguroActivo ? "ON" : "OFF") + ";";
-  return r;
+  static char buf[320];
+  snprintf(buf, sizeof(buf),
+    "ESTADO;%s=%d;%s=%d;%s=%d;%s=%d;%s=%d;"
+    "HUM=%d;HUM_PCT=%d;NIVEL_AGUA=%d;PIR=%d;"
+    "TEMP_C=%.1f;HUM_AIRE_PCT=%.1f;LUZ_PCT=%d;"
+    "MIC=%s;SD=%s;EMERGENCIA=%s;MODO_SEGURO=%s;",
+    NOMBRES_SALIDAS[0], estadoSalidas[0] ? 1 : 0,
+    NOMBRES_SALIDAS[1], estadoSalidas[1] ? 1 : 0,
+    NOMBRES_SALIDAS[2], estadoSalidas[2] ? 1 : 0,
+    NOMBRES_SALIDAS[3], estadoSalidas[3] ? 1 : 0,
+    NOMBRES_SALIDAS[4], estadoSalidas[4] ? 1 : 0,
+    ultimaHumedadValida, ultimoHumedadPctValido,
+    ultimoNivelAguaValido, ultimaPresenciaValida ? 1 : 0,
+    (double)ultimaTempCValida, (double)ultimaHumAireValida,
+    ultimoLuzPctValido,
+    micHabilitado ? "ON" : "OFF",
+    microSdMontada.load() ? "ON" : "OFF",
+    paroEmergenciaActivo ? "ON" : "OFF",
+    modoSeguroActivo ? "ON" : "OFF");
+  return String(buf);
 }
 
 void emitirPruebaGuiada() {
@@ -1637,9 +1705,19 @@ void ejecutarComandoRele(const String &comando, int indice, bool encender,
   }
 }
 
-void alternarSalidaIR(int indice, const char* nombre) {
-  String comando = String("IR_") + nombre + (estadoSalidas[indice] ? "_OFF" : "_ON");
-  ejecutarComandoRele(comando, indice, !estadoSalidas[indice], ORIGEN_IR);
+void alternarSalidaIR(int indice, const char* nombre, const char* etiqueta) {
+  const bool pedido = !estadoSalidas[indice];
+  String comando = String("IR_") + nombre + (pedido ? "_ON" : "_OFF");
+  ejecutarComandoRele(comando, indice, pedido, ORIGEN_IR);
+  // Confirmación en LCD con el estado realmente aplicado: el despachador
+  // puede rechazar por PARO, nivel o driver; entonces se muestra BLOQ.
+  char aviso[17];
+  if (estadoSalidas[indice] == pedido) {
+    snprintf(aviso, sizeof(aviso), "%s %s", etiqueta, pedido ? "ON" : "OFF");
+  } else {
+    snprintf(aviso, sizeof(aviso), "%s BLOQ", etiqueta);
+  }
+  pantallaFinal.mostrarMensaje(aviso, "Mando IR");
 }
 
 // Mapa final de las 21 teclas CAR MP3 (notas Obsidian 46 y 64), ordenado
@@ -1653,6 +1731,7 @@ void fijarModoManualIR() {
         estadoSalidas[i] ? PROPIETARIO_MANUAL_ON : PROPIETARIO_MANUAL_OFF;
   }
   log("MODO", "Manual por IR: automaticos detenidos, estados conservados");
+  pantallaFinal.mostrarMensaje("Modo MANUAL", "CH-");
   emitirEventoLocal("ACK;IR;MODO_MANUAL");
 }
 
@@ -1661,6 +1740,7 @@ void fijarModoAutoIR() {
     propietarioSalidas[i] = PROPIETARIO_AUTOMATICO;
   }
   log("MODO", "Automatico por IR: reglas gobiernan las salidas");
+  pantallaFinal.mostrarMensaje("Modo AUTO", "CH+");
   emitirEventoLocal("ACK;IR;MODO_AUTO");
 }
 
@@ -1674,6 +1754,8 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
       break;
     case CH:
       pantallaFinal.siguiente();
+      // Sin esto, el overlay IR tapaba 5 s la página recién elegida.
+      pantallaFinal.ocultarOverlays();
       emitirEventoLocal("ACK;IR;PANTALLA_SIGUIENTE");
       anunciarJarvis(EventoJarvis::CH);
       break;
@@ -1685,9 +1767,12 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
       if (!jarvisAudio.habilitado()) emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
       else {
         jarvisAudio.silenciar(!jarvisAudio.silenciado());
-        emitirEventoLocal(jarvisAudio.silenciado() ? "ACK;IR;AUDIO_OFF" : "ACK;IR;AUDIO_ON");
-        jarvisAudio.reproducirEstado(EventoJarvis::PLAY, millis(), false,
-                                     !jarvisAudio.silenciado());
+        const bool mudo = jarvisAudio.silenciado();
+        emitirEventoLocal(mudo ? "ACK;IR;AUDIO_OFF" : "ACK;IR;AUDIO_ON");
+        pantallaFinal.mostrarMensaje(mudo ? "Silencio ON" : "Silencio OFF", "PLAY = voz");
+        if (!mudo) {
+          jarvisAudio.reproducirEstado(EventoJarvis::PLAY, millis(), false, true);
+        }
       }
       break;
     case VOL_MENOS:
@@ -1698,17 +1783,22 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
         char ack[24];
         snprintf(ack, sizeof(ack), "ACK;IR;VOLUMEN=%u", (unsigned)jarvisAudio.volumenActual());
         emitirEventoLocal(ack);
+        char aviso[17];
+        snprintf(aviso, sizeof(aviso), "Volumen %u", (unsigned)jarvisAudio.volumenActual());
+        pantallaFinal.mostrarMensaje(aviso, "VOL +/-");
         anunciarJarvis(tecla == VOL_MAS ? EventoJarvis::VOL_MAS
                                         : EventoJarvis::VOL_MENOS);
       }
       break;
     case EQ:
       emitirEventoLocal(construirReporteDiagnostico());
+      pantallaFinal.mostrarMensaje("Diagnostico", "Ver Serial");
       anunciarJarvisGrupo(EventoJarvis::EQ, false, 1, 2);
       break;
     case N_0:
       for (int i = 0; i < TOTAL_SALIDAS; ++i)
         ejecutarComandoRele("IR_TODO_OFF", i, false, ORIGEN_IR);
+      pantallaFinal.mostrarMensaje("Todo apagado", "Tecla 0");
       anunciarJarvisGrupo(EventoJarvis::TECLA_0, false, 1, 2);
       break;
     case N_100_MAS:
@@ -1722,35 +1812,49 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
         char ack[20];
         snprintf(ack, sizeof(ack), "ACK;IR;VOZ=%u", (unsigned)voz);
         emitirEventoLocal(ack);
+        pantallaFinal.mostrarMensaje(voz == 1 ? "Voz Carlos" : "Voz Karla",
+                                     "Tecla 100+");
         anunciarJarvis(EventoJarvis::TECLA_100, false, voz == 1 ? 1 : 2);
       }
       break;
     case N_200_MAS:
-      if (rearmarSistema()) anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 1, 2);
-      else anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 3, 4);
+      if (rearmarSistema()) {
+        pantallaFinal.mostrarMensaje("REARME OK", "Sistema libre");
+        anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 1, 2);
+      } else {
+        pantallaFinal.mostrarMensaje("REARME BLOQ", "Revisa PARO");
+        anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 3, 4);
+      }
       break;
     // --- Abajo: acciones en orden (luces y bomba 1-5, lecturas 6-9) ---
     // Anterior/Siguiente son atajos de las teclas 1/2.
-    case ANTERIOR: case N_1: alternarSalidaIR(1, "LUZ1"); break;
-    case SIGUIENTE: case N_2: alternarSalidaIR(2, "LUZ2"); break;
-    case N_3: alternarSalidaIR(4, "INVER"); break;
-    case N_4: alternarSalidaIR(3, "VENT"); break;
+    case ANTERIOR: case N_1: alternarSalidaIR(1, "LUZ1", "Sala"); break;
+    case SIGUIENTE: case N_2: alternarSalidaIR(2, "LUZ2", "Cuarto"); break;
+    case N_3: alternarSalidaIR(4, "INVER", "Cultivo"); break;
+    case N_4: alternarSalidaIR(3, "VENT", "Vent"); break;
     case N_5:
-      ejecutarComandoRele("IR_RIEGO_ON", 0, true, ORIGEN_IR);
+      // Toggle como el resto de cargas: el interlock de nivel, el timeout y
+      // el PARO siguen protegiendo; el aviso muestra el estado real aplicado.
+      alternarSalidaIR(0, "RIEGO", "Riego");
       break;
+    // Consultas: el LCD salta a la vista del dato para que acompañe a la voz.
     case N_6:
+      pantallaFinal.irA(0);
       emitirEventoLocal(construirReporteEstado());
       anunciarJarvisGrupo(EventoJarvis::TECLA_6, false, 1, 2);
       break;
     case N_7:
+      pantallaFinal.irA(0);
       emitirEventoLocal(construirReporteEstado());
       anunciarJarvis(EventoJarvis::TECLA_7);
       break;
     case N_8:
+      pantallaFinal.irA(1);
       emitirEventoLocal(construirReporteEstado());
       anunciarJarvisGrupo(EventoJarvis::TECLA_8, false, 1, 2);
       break;
     case N_9:
+      pantallaFinal.irA(3);
       emitirEventoLocal(construirReporteEstado());
       anunciarJarvis(EventoJarvis::TECLA_9);
       break;
@@ -2000,15 +2104,50 @@ bool procesarCalibracion(const String &comando) {
   return true;
 }
 
-void procesarComandoTexto(String comando) {
+// Tabla comando -> salida para los 15 comandos de relé/modo: una sola
+// comparación por entrada en vez de 15 ramas if/else con String temporales.
+struct EntradaComandoRele {
+  const char* nombre;
+  int8_t indice;
+  int8_t encender;  // 1 = ON, 0 = OFF, -1 = devolver a AUTO
+};
+static const EntradaComandoRele TABLA_COMANDOS_RELE[] = {
+  {"RIEGO_ON", 0, 1}, {"RIEGO_OFF", 0, 0}, {"RIEGO_AUTO", 0, -1},
+  {"LUZ1_ON", 1, 1}, {"LUZ1_OFF", 1, 0}, {"LUZ1_AUTO", 1, -1},
+  {"LUZ2_ON", 2, 1}, {"LUZ2_OFF", 2, 0}, {"LUZ2_AUTO", 2, -1},
+  {"VENT_ON", 3, 1}, {"VENT_OFF", 3, 0}, {"VENT_AUTO", 3, -1},
+  {"INVER_ON", 4, 1}, {"INVER_OFF", 4, 0}, {"INVER_AUTO", 4, -1},
+};
+
+bool despacharComandoRele(const String &comando) {
+  for (size_t i = 0; i < sizeof(TABLA_COMANDOS_RELE) / sizeof(TABLA_COMANDOS_RELE[0]); ++i) {
+    const EntradaComandoRele &e = TABLA_COMANDOS_RELE[i];
+    if (comando == e.nombre) {
+      if (e.encender < 0) restaurarModoAutomatico(comando, e.indice);
+      else ejecutarComandoRele(comando, e.indice, e.encender == 1);
+      return true;
+    }
+  }
+  return false;
+}
+
+void procesarComandoTexto(const String &comandoCrudo) {
+  // Copia local editable: el parámetro llega por referencia constante para
+  // no duplicar el buffer en cada comando (antes se pasaba por valor).
+  String comando = comandoCrudo;
   comando.trim();
   comando.toUpperCase();
 
   if (comando.length() == 0) return;
 
   if (comando.length() > 20) {
-    registrarError("COMANDO", "Longitud invalida (" + String(comando.length()) + " caracteres)");
-    emitirEventoLocal("NACK;" + comando.substring(0, 20) + ";longitud_invalida");
+    char detalle[64];
+    snprintf(detalle, sizeof(detalle), "Longitud invalida (%u caracteres)",
+             (unsigned)comando.length());
+    registrarError("COMANDO", detalle);
+    snprintf(detalle, sizeof(detalle), "NACK;%.20s;longitud_invalida",
+             comando.c_str());
+    emitirEventoLocal(detalle);
     return;
   }
 
@@ -2029,36 +2168,37 @@ void procesarComandoTexto(String comando) {
 
   log("SERIAL", "Comando recibido: " + comando);
 
-       if (comando == "RIEGO_ON")  ejecutarComandoRele(comando, 0, true);
-  else if (comando == "RIEGO_OFF") ejecutarComandoRele(comando, 0, false);
-  else if (comando == "LUZ1_ON")   ejecutarComandoRele(comando, 1, true);
-  else if (comando == "LUZ1_OFF")  ejecutarComandoRele(comando, 1, false);
-  else if (comando == "LUZ2_ON")   ejecutarComandoRele(comando, 2, true);
-  else if (comando == "LUZ2_OFF")  ejecutarComandoRele(comando, 2, false);
-  else if (comando == "VENT_ON")   ejecutarComandoRele(comando, 3, true);
-  else if (comando == "VENT_OFF")  ejecutarComandoRele(comando, 3, false);
-  else if (comando == "INVER_ON")  ejecutarComandoRele(comando, 4, true);
-  else if (comando == "INVER_OFF") ejecutarComandoRele(comando, 4, false);
-  else if (comando == "RIEGO_AUTO") restaurarModoAutomatico(comando, 0);
-  else if (comando == "LUZ1_AUTO")  restaurarModoAutomatico(comando, 1);
-  else if (comando == "LUZ2_AUTO")  restaurarModoAutomatico(comando, 2);
-  else if (comando == "VENT_AUTO")  restaurarModoAutomatico(comando, 3);
-  else if (comando == "INVER_AUTO") restaurarModoAutomatico(comando, 4);
+  if (despacharComandoRele(comando)) return;
   else if (comando == "ESTADO")    emitirEventoLocal(construirReporteEstado());
   else if (comando == "DIAGNOSTICO") emitirEventoLocal(construirReporteDiagnostico());
   else if (comando == "PRUEBA") emitirPruebaGuiada();
   else if (comando == "PARO") activarParoEmergencia("PARO_SERIAL");
   else if (comando == "REARMAR") rearmarSistema();
   else if (comando == "RECUPERAR") recuperarModoSeguro();
-  else if (comando == "MIC_ESTADO") emitirEventoLocal(String("MIC;") + (micHabilitado ? "ON" : "OFF"));
+  else if (comando == "MIC_ESTADO") emitirEventoLocal(micHabilitado ? "MIC;ON" : "MIC;OFF");
   else if (comando == "REPETIR") emitirEventoLocal(jarvisAudio.repetirUltima(millis())
     ? "ACK;REPETIR" : "NACK;REPETIR;AUDIO_NO_DISPONIBLE");
   else if (comando == "SD_PRUEBA") emitirEventoLocal(solicitarPruebaSD() ? "ACK;SD_PRUEBA;ENCOLADA" : "NACK;SD_PRUEBA;NO_DISPONIBLE");
 }
 
+// La tarea microSD es la única que toca la tarjeta: aquí solo se encola.
+// Sin SD montada es no-op y no se reserva ni un byte de heap.
+void registrarLineaMicroSD(const char* linea) {
+  if (!MICROSD_HABILITADA || !microSdMontada || colaSD == nullptr || linea == nullptr) return;
+  TrabajoSD trabajo = {};
+  trabajo.prueba = false;
+  trabajo.momento = millis();
+  strncpy(trabajo.linea, linea, sizeof(trabajo.linea) - 1);
+  trabajo.linea[sizeof(trabajo.linea) - 1] = '\0';
+  if (xQueueSend(colaSD, &trabajo, 0) != pdTRUE) sdDescartados++;
+}
+inline void registrarLineaMicroSD(const String &linea) {
+  registrarLineaMicroSD(linea.c_str());
+}
+
 void emitirEventoLocal(const char* linea) {
   Serial.println(linea);
-  registrarLineaMicroSD(String(linea));
+  registrarLineaMicroSD(linea);
 }
 inline void emitirEventoLocal(const String &linea) {
   emitirEventoLocal(linea.c_str());
@@ -2246,7 +2386,7 @@ void setup() {
 }
 
 // ============================================================================
-// SECCIÓN 15: SECUENCIAS DE DEMOSTRACIÓN Y AUTOMACIONES RELATIVOS
+// SECCIÓN 13B: SECUENCIAS DE DEMOSTRACIÓN Y AUTOMATIZACIONES RELATIVAS
 // ============================================================================
 
 // Secuencia de demostración: alterna todas las luces en un patrón.
@@ -2295,6 +2435,9 @@ void demoSecuenciaActualizar() {
 // - Si las luces estuvieron encendidas por X tiempo sin actividad, apágalas
 // - Alertas de tiempo para ventilador, etc.
 
+// Struct plano: loop() single-thread es el único lector/escritor,
+// std::atomic<struct> no es lock-free en ESP32 y .load() a referencia
+// ni siquiera compila en GCC estricto.
 struct AutoTemporizado {
   unsigned long inicioMs;
   bool activo;
@@ -2302,15 +2445,15 @@ struct AutoTemporizado {
   bool estadoSolicitado;
 };
 
-std::atomic<AutoTemporizado> autoTempBomba{};
-std::atomic<AutoTemporizado> autoTempLuces[] = {{0, false, 0, false}, {0, false, 1, false}, {0, false, 4, false}};
+AutoTemporizado autoTempBomba{};
+AutoTemporizado autoTempLuces[] = {{0, false, 0, false}, {0, false, 1, false}, {0, false, 4, false}};
 
 const unsigned long TIEMPO_MAXIMO_MANUAL_BOMBA_MS = 300000UL; // 5 minutos
 const unsigned long TIEMPO_MAXIMO_MANUAL_LUZ_MS = 600000UL;   // 10 minutos
 
 void verificarAutomacionesRelativas() {
   // Verificar bomba: si lleva mucho tiempo encendida manualmente, apagarla
-  AutoTemporizado &tBomba = autoTempBomba.load();
+  AutoTemporizado &tBomba = autoTempBomba;
   if (tBomba.activo && estadoSalidas[tBomba.indice] && tBomba.estadoSolicitado) {
     if (millis() - tBomba.inicioMs >= TIEMPO_MAXIMO_MANUAL_BOMBA_MS) {
       log("AUTO_REL", "Bomba tiempo máximo excedido, apagando");
@@ -2321,10 +2464,13 @@ void verificarAutomacionesRelativas() {
 
   // Verificar luces: si llevan mucho tiempo encendidas manualmente, apágalas
   for (int i = 0; i < 3; i++) {
-    AutoTemporizado &tLuz = autoTempLuces[i].load();
+    AutoTemporizado &tLuz = autoTempLuces[i];
     if (tLuz.activo && estadoSalidas[tLuz.indice] && tLuz.estadoSolicitado) {
       if (millis() - tLuz.inicioMs >= TIEMPO_MAXIMO_MANUAL_LUZ_MS) {
-        log("AUTO_REL", "Luz " + String(tLuz.indice) + " tiempo máximo excedido, apagando");
+        char detalle[48];
+        snprintf(detalle, sizeof(detalle), "Luz %u tiempo máximo excedido, apagando",
+                 (unsigned)tLuz.indice);
+        log("AUTO_REL", detalle);
         desactivarSalida(tLuz.indice, false);
         tLuz.activo = false;
       }
@@ -2334,15 +2480,13 @@ void verificarAutomacionesRelativas() {
 
 // Función auxiliar: iniciar temporizador para una salida
 void iniciarTemporizadorSalida(uint8_t indice, bool estado) {
+  const AutoTemporizado t = {millis(), true, indice, estado};
   if (indice == 0) {
-    AutoTemporizado t = {millis(), true, indice, estado};
-    autoTempBomba.store(t);
+    autoTempBomba = t;
   } else if (indice == 1 || indice == 2 || indice == 4) {
-    // Selector simple - en un sistema real usaríamos un array más grande
-    AutoTemporizado t = {millis(), true, indice, estado};
     // Guardamos en la posición correspondiente (0, 1, 2 para salidas 1,2,4)
-    int pos = (indice == 1) ? 0 : (indice == 2) ? 1 : 2;
-    autoTempLuces[pos].store(t);
+    const int pos = (indice == 1) ? 0 : (indice == 2) ? 1 : 2;
+    autoTempLuces[pos] = t;
   }
 }
 
