@@ -8,11 +8,20 @@ Firmware `casa_inteligente_v4.ino` completado con todas las características sol
 
 ## Nuevas características implementadas
 
-### 1. Expansión de audio Jarvis
-- **28 categorías** `EventoJarvis` (antes limitadas)
-- **Voces duales:** Carlos (folders 01-14) y Karla (folders 01-14) = 56 tracks cada una = 112 MP3 totales
-- `audio/jarvis_sd/MANIFEST.csv` con 112 entries (biblioteca,carpeta,archivo)
-- Antiguo: `audio/jarvis_sd/` con 64 subfolders desorganizados
+### 1. Expansión de audio Jarvis (v4.1: 28 eventos, 224 pistas)
+- **28 eventos** `EventoJarvis` 1:1 con las 21 teclas CAR MP3 (nota 46) + sensores.
+  Cada tecla tiene su carpeta propia: modos (CH-/CH+), diagnóstico (EQ),
+  todo apagado (0), sonido (PLAY), rearme (200+), cultivo (3), ventilador (4),
+  riego (5) y consultas 6/7/8/9 (temp, humedad, suelo, estado).
+- **Voces duales:** Carlos SD 01-28 + Karla SD 51-78 = 112 tracks por voz,
+  **224 MP3 totales**, 4 variantes por evento, generadas con
+  `tools/generate_jarvis_audio.py` (edge-tts es-HN Carlos/KarlaNeural).
+- `audio/jarvis_sd/MANIFEST.csv` con 224 filas (voz, carpeta, pista, evento,
+  frase, bytes, SHA-256). Bibliotecas editables `audio/Carlos/01-28` y
+  `audio/Karla/01-28`.
+- Tecla 6: una pulsación consulta temperatura; doble pulsación (<2 s) alterna
+  Carlos/Karla (resuelve el conflicto notas 46 vs 67: 6-9 ya no repiten reporte).
+- Nota 67 vigente para PLAY (silencio) y 100+ (repetir última pista).
 
 ### 2. Automaciones combinadas y relativas
 - `verificarAutomacionesCombinadas()`: 
@@ -40,19 +49,24 @@ Firmware `casa_inteligente_v4.ino` completado con todas las características sol
 
 | Antiguo | Nuevo / Estado |
 |---|---|
-| `audio/jarvis_sd/01-64/` subfolders desorganizados | `audio/Carlos/01-14/` + `audio/Karla/01-14/` (reorganizado) |
-| `audio/jarvis_sd/MANIFEST.csv` (parcial) | `audio/jarvis_sd/MANIFEST.csv` actualizada con 112 entries completas |
-| `firmware/domus_pantalla.h`: `NUM_PANTALLAS = 5` | `NUM_PANTALLAS = 7` (views 5 y 6 agregadas) |
-| Enum `EventoJarvis`: categorías limitadas | 28 categorías incluyendo luZ_APAGADA, RIEGO_INICIADO, EMERGENCIA, etc. |
+| `audio/jarvis_sd/01-64/` subfolders desorganizados | `audio/Carlos/01-28/` + `audio/Karla/01-28/` (SD 01-28 y 51-78) |
+| `audio/jarvis_sd/MANIFEST.csv` (parcial, 112) | `MANIFEST.csv` con 224 filas, SHA-256 y evento por pista |
+| `firmware/domus_pantalla.h`: `NUM_PANTALLAS = 5` | `NUM_PANTALLAS = 7` (views 5 y 6 agregadas; stats por copia, sin `extern atomic`) |
+| Enum `EventoJarvis`: 14 eventos | 28 eventos 1:1 con las 21 teclas + sensores (`carpetaPara`, voz 2 +50) |
+| Teclas 6-9 repetían el mismo reporte | 6/7/8/9 = consultas distintas; 6 doble = cambio de voz |
+| `std::atomic<EstadisticasDOMUS>` (no compila: struct no trivial) | struct plano + contadores `inline`; pantalla recibe copia |
+| `registrarHistorial` escribía en `reg.linea` inexistente | escribe en `TrabajoSD.linea` con `snprintf`, sin bloquear |
+| `TipoRegistroHistorial::X + indice` (enum class, no compila) | `historialLuz(encender, indice)` |
+| `String` concatenado en rutas calientes (Serial/IR/audio) | sobrecargas `const char*` en `log`/`emitirEventoLocal` + `snprintf` |
 | Sin automaciones combinadas | `verificarAutomacionesCombinadas()`, `verificarAutomacionesRelativas()` |
-| Sin historial/estadísticas | `EstadisticasDOMUS`, `registrarHistorial()`, `emitirEventoHistorial()` |
 | Sin demo sequences | `iniciarSecuenciaDemo()`, `detenerSecuenciaDemo()` |
 
 ## Tests
-- **104/109 tests passing** (5 esperados por nuevas características: NUM_PANTALLAS 5→7, nuevos enum/funciones)
+- **102 passed, 0 failed** (8 skipped = HIL sin placa física)
 - 26/26 test_firmware_contract.py ✓
 - 3/3 test_hil_producto_contract.py ✓
-- 11/11 test_jarvis_audio.py ✓
+- 12/12 test_jarvis_audio.py ✓ (28 eventos, manifiesto 224, mapa 21 teclas)
+- Nativos (candidato, safety, pantalla) recompilan tras stubs de voz/historial
 
 ## Próximos pasos
 - Actualizar asserts en tests que esperan valores antiguos (NUM_PANTALLAS, enum values)

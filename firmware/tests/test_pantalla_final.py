@@ -102,6 +102,10 @@ static DatosPantallaFinal datosBase() {
   for (int i = 0; i < 5; ++i) d.salidas[i] = SAL_OFF;
   d.emergencia = false; d.modoSeguro = false; d.error = "";
   d.escuchando = false; d.micOn = true;
+  d.statEncendidos = 12; d.statApagados = 10; d.statRiegos = 3;
+  d.statVent = 2; d.statCambiosLuz = 7; d.statEmergencias = 1;
+  d.nombrePerfil = "BANCO_COMPLETO_S8050_IR";
+  d.nombreBomba = "S8050"; d.nombreAudioIR = "IR ON";
   return d;
 }
 
@@ -112,10 +116,16 @@ int main() {
     p.begin(nullptr);
     DatosPantallaFinal d = datosBase();
     char l0[17], l1[17];
-    for (uint8_t v = 0; v < 5; ++v) {
+    for (uint8_t v = 0; v < 7; ++v) {
       p.formatear(v, d, l0, l1);
       CHEQUEA(std::strlen(l0) == 16 && std::strlen(l1) == 16);
     }
+    p.formatear(5, d, l0, l1);
+    CHEQUEA(std::strstr(l0, "E:007") != nullptr);
+    CHEQUEA(std::strstr(l1, "R:003") != nullptr);
+    p.formatear(6, d, l0, l1);
+    CHEQUEA(std::strstr(l0, "PERFIL:") != nullptr);
+    CHEQUEA(std::strstr(l1, "S8050") != nullptr);
     p.formatear(2, d, l0, l1);
     CHEQUEA(l1[12] == ' ' && l1[15] == ' ');
     char largo[41];
@@ -227,7 +237,7 @@ class PantallaFinalTests(unittest.TestCase):
         self.assertIn("createChar", self.header)
         self.assertIn("PROJECT DOMUS", self.header)
         self.assertIn("class PantallaFinal", self.header)
-        self.assertIn("NUM_PANTALLAS = 5", self.header)
+        self.assertIn("NUM_PANTALLAS = 7", self.header)
         self.assertIn("P_EMERGENCIA = 4", self.header)
         for estado in ("\"ON\"", "\"OFF\"", "\"AUTO\"", "\"BLOQ\"", "\"ERR\""):
             self.assertIn(estado, self.header)

@@ -1,10 +1,52 @@
 // Hardware fakes only. Production functions are inserted by the Python runner.
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>
 #include "domus_types.h"
 #include "domus_calibration.h"
+// Stubs de voz/historial: el despachador real anuncia cada cambio por Jarvis
+// y lo registra en microSD; en host esas salidas se neutralizan pero los
+// símbolos deben existir para enlazar las funciones extraídas del .ino.
+enum class EventoJarvis : uint8_t {
+  SISTEMA_LISTO = 1, ORDEN_ACEPTADA, ORDEN_RECHAZADA, LUZ_ENCENDIDA,
+  LUZ_APAGADA, RIEGO_INICIADO, RIEGO_DETENIDO, TIERRA_SECA,
+  TIERRA_HUMEDA, AGUA_BAJA, TEMPERATURA_ALTA, PRESENCIA, EMERGENCIA,
+  ERROR_SENSOR, MODO_MANUAL, MODO_AUTO, DIAGNOSTICO, TODO_APAGADO,
+  SONIDO_ACTIVADO, SISTEMA_REARMADO, LUZ_CULTIVO_ENCENDIDA,
+  LUZ_CULTIVO_APAGADA, VENTILADOR_ENCENDIDO, VENTILADOR_APAGADO,
+  CONSULTA_TEMP, CONSULTA_HUMEDAD, CONSULTA_SUELO, ESTADO_COMPLETO
+};
+inline bool anunciarJarvis(EventoJarvis, bool = false) { return false; }
+enum class TipoRegistroHistorial : uint8_t {
+  RIEGO_AUTO, RIEGO_MANUAL, LUZ_ENCENDIDA, LUZ_APAGADA,
+  VENT_ENCENDIDO, VENT_APAGADO, PARO_EMERGENCIA, MODO_SEGURO,
+  SENSOR_TEMP, SENSOR_HUMEDAD, SENSOR_LDR, SENSOR_PIR,
+  SENSOR_NIVEL, CONFIGURACION, DIAGNOSTICO, DEMO_SECUENCIA
+};
+struct EstadisticasDOMUS {
+  uint32_t totalEncendidos = 0, totalApagados = 0;
+  uint32_t totalRiiegosAutomaticos = 0, totalVentAutomaticos = 0;
+  uint32_t totalCambiosLuz = 0, totalEmergencias = 0, totalErroresSensores = 0;
+  unsigned long tiempoEncendidoBomba = 0, tiempoEncendidoVentilador = 0;
+};
+EstadisticasDOMUS estadisticas;
+inline void incrementarTotalEncendidos() { estadisticas.totalEncendidos++; }
+inline void incrementarTotalApagados() { estadisticas.totalApagados++; }
+inline void incrementarTotalRiiegosAutomaticos() { estadisticas.totalRiiegosAutomaticos++; }
+inline void incrementarTotalVentAutomaticos() { estadisticas.totalVentAutomaticos++; }
+inline void incrementarTotalCambiosLuz() { estadisticas.totalCambiosLuz++; }
+inline void incrementarTotalEmergencias() { estadisticas.totalEmergencias++; }
+inline void incrementarTotalErroresSensores() { estadisticas.totalErroresSensores++; }
+inline TipoRegistroHistorial historialLuz(bool encender, int indice) {
+  if (indice == 4)
+    return encender ? TipoRegistroHistorial::VENT_ENCENDIDO
+                    : TipoRegistroHistorial::VENT_APAGADO;
+  return encender ? TipoRegistroHistorial::LUZ_ENCENDIDA
+                  : TipoRegistroHistorial::LUZ_APAGADA;
+}
+inline void registrarHistorial(TipoRegistroHistorial, uint8_t, bool, float = 0) {}
 struct String : std::string {
   using std::string::string;
   String(const std::string &s):std::string(s) {}

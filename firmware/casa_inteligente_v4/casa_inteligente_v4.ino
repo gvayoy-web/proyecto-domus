@@ -403,9 +403,6 @@ int8_t teclaIrPendiente = -1;
 // Estado de las cinco cargas físicas del diseño vigente.
 bool estadoSalidas[TOTAL_SALIDAS] = {false, false, false, false, false};
 
-// Nueva: estadísticas globales (acumuladas, no por salida)
-extern std::atomic<EstadisticasDOMUS> estadisticas;
-
 // Toda fuente de control pasa por el mismo contrato. Esto evita que controles
 // físicos, Serial, automatización y voz mantienen estados incompatibles.
 enum PropietarioActuador {
@@ -448,8 +445,8 @@ RegistroError bufferErrores[MAX_ERRORES_GUARDADOS];
 int indiceErrorActual = 0;
 unsigned long totalErroresAcumulados = 0; // contador histórico, no se resetea al sobreescribir
 
-void log(const String &etiqueta, const String &mensaje);
-void emitirEventoLocal(const String &linea);
+void log(const char* etiqueta, const char* mensaje);
+void emitirEventoLocal(const char* linea);
 bool leerNivelAgua(int &valorSalida);
 bool probarMicroSD();
 void registrarLineaMicroSD(const String &linea);
@@ -512,13 +509,22 @@ String construirReporteDiagnostico() {
 // ============================================================================
 // SECCIÓN 5: UTILIDAD DE LOG CON TIMESTAMP
 // ============================================================================
-void log(const String &etiqueta, const String &mensaje) {
+void log(const char* etiqueta, const char* mensaje) {
   Serial.print("[");
   Serial.print(millis());
   Serial.print("ms][");
   Serial.print(etiqueta);
   Serial.print("] ");
   Serial.println(mensaje);
+}
+inline void log(const String &etiqueta, const String &mensaje) {
+  log(etiqueta.c_str(), mensaje.c_str());
+}
+inline void log(const char* etiqueta, const String &mensaje) {
+  log(etiqueta, mensaje.c_str());
+}
+inline void log(const String &etiqueta, const char* mensaje) {
+  log(etiqueta.c_str(), mensaje);
 }
 
 // ============================================================================
@@ -547,7 +553,8 @@ RegistroHistorial bufferHistorial[MAX_REGISTROS_HISTORIAL];
 
 void registrarHistorial(TipoRegistroHistorial tipo, uint8_t indice, bool valor, float datoAdicional = 0) {
   if (!microSdMontada || colaSD == nullptr) return;
-  uint16_t idx = indiceHistorial.fetch_add(1) % MAX_REGISTROS_HISTORIAL;
+  const uint16_t idx = (uint16_t)(indiceHistorial.load() % MAX_REGISTROS_HISTORIAL);
+  indiceHistorial.store((uint16_t)(idx + 1));
   RegistroHistorial &reg = bufferHistorial[idx];
   reg.tipo = tipo;
   reg.indice = indice;
@@ -557,58 +564,47 @@ void registrarHistorial(TipoRegistroHistorial tipo, uint8_t indice, bool valor, 
 
   TrabajoSD trabajo = {};
   trabajo.prueba = false;
-  trabajo.momento = millis();
-  snprintf(reg.linea, sizeof(reg.linea), "%u;%d;%d;%f;%lu",
-           static_cast<uint8_t>(tipo), indice, valor, datoAdicional, millis());
-  linea.toCharArray(trabajo.linea, sizeof(trabajo.linea));
-  // Usamos la cola existente para logging SD
+  trabajo.momento = reg.momento;
+  snprintf(trabajo.linea, sizeof(trabajo.linea), "%u;%u;%d;%.2f;%lu",
+           (unsigned)tipo, (unsigned)indice, valor ? 1 : 0,
+           (double)datoAdicional, (unsigned long)reg.momento);
+  // Usamos la cola existente para logging SD (sin bloquear el control).
   if (xQueueSend(colaSD, &trabajo, 0) != pdTRUE) {
-    sdRegistrosHistorial++;
+    sdDescartados++;
   }
-  indiceHistorial.store(idx);
 }
 
-// Registros de estadísticas acumuladas
+// Registros de estadísticas acumuladas. Struct plano (trivially copyable):
+// el lazo principal es el único escritor, la SD y el LCD solo leen copias.
 struct EstadisticasDOMUS {
-  uint32_t totalEncendidos{0};
-  uint32_t totalApagados{0};
-  uint32_t totalRiiegosAutomaticos{0};
-  uint32_t totalVentAutomaticos{0};
-  uint32_t totalCambiosLuz{0};
-  uint32_t totalEmergencias{0};
-  uint32_t totalErroresSensores{0};
-  unsigned long tiempoEncendidoBomba{0};
-  unsigned long tiempoEncendidoVentilador{0};
+  uint32_t totalEncendidos = 0;
+  uint32_t totalApagados = 0;
+  uint32_t totalRiiegosAutomaticos = 0;
+  uint32_t totalVentAutomaticos = 0;
+  uint32_t totalCambiosLuz = 0;
+  uint32_t totalEmergencias = 0;
+  uint32_t totalErroresSensores = 0;
+  unsigned long tiempoEncendidoBomba = 0;
+  unsigned long tiempoEncendidoVentilador = 0;
 };
 
-std::atomic<EstadisticasDOMUS> estadisticas;
+EstadisticasDOMUS estadisticas;
 
-void estadisticarEncendido(int indice) {
-  estadisticas.encender(indice); // placeholder - usaremos operadores
-}
+inline void incrementarTotalEncendidos() { estadisticas.totalEncendidos++; }
+inline void incrementarTotalApagados() { estadisticas.totalApagados++; }
+inline void incrementarTotalRiiegosAutomaticos() { estadisticas.totalRiiegosAutomaticos++; }
+inline void incrementarTotalVentAutomaticos() { estadisticas.totalVentAutomaticos++; }
+inline void incrementarTotalCambiosLuz() { estadisticas.totalCambiosLuz++; }
+inline void incrementarTotalEmergencias() { estadisticas.totalEmergencias++; }
+inline void incrementarTotalErroresSensores() { estadisticas.totalErroresSensores++; }
 
-// Operadores para el struct atómico (Arduino no tiene ++ atómico para structs completos,
-// así que usamos campos individuales)
-void incrementarTotalEncendidos() {
-  estadisticas.totalEncendidos++;
-}
-void incrementarTotalApagados() {
-  estadisticas.totalApagados++;
-}
-void incrementarTotalRiiegosAutomaticos() {
-  estadisticas.totalRiiegosAutomaticos++;
-}
-void incrementarTotalVentAutomaticos() {
-  estadisticas.totalVentAutomaticos++;
-}
-void incrementarTotalCambiosLuz() {
-  estadisticas.totalCambiosLuz++;
-}
-void incrementarTotalEmergencias() {
-  estadisticas.totalEmergencias++;
-}
-void incrementarTotalErroresSensores() {
-  estadisticas.totalErroresSensores++;
+// Historial por salida de luz: evita aritmética sobre enum class
+// (TipoRegistroHistorial::LUZ_ENCENDIDA + indice no compila).
+inline TipoRegistroHistorial historialLuz(bool encender, int indice) {
+  if (indice == 4) return encender ? TipoRegistroHistorial::VENT_ENCENDIDO
+                                   : TipoRegistroHistorial::VENT_APAGADO;
+  return encender ? TipoRegistroHistorial::LUZ_ENCENDIDA
+                  : TipoRegistroHistorial::LUZ_APAGADA;
 }
 void sumarTiempoEncendidoBomba(unsigned long ms) {
   estadisticas.tiempoEncendidoBomba += ms;
@@ -621,15 +617,18 @@ void sumarTiempoEncendidoVentilador(unsigned long ms) {
 // Función para emitir eventos de historial por Serial
 // ============================================================================
 void emitirEventoHistorial() {
-  if (bufferHistorial[indiceHistorial.load()].momento > 0) {
-    int idx = (indiceHistorial.load() - 1 + MAX_REGISTROS_HISTORIAL) % MAX_REGISTROS_HISTORIAL;
-    String linea = String(bufferHistorial[idx].tipo) + ";" +
-                   String(bufferHistorial[idx].indice) + ";" +
-                   String(bufferHistorial[idx].valor ? 1 : 0) + ";" +
-                   String(bufferHistorial[idx].datoAdicional) + ";" +
-                   String(bufferHistorial[idx].momento);
-    emitirEventoLocal("HISTORIAL;" + linea);
-  }
+  const uint16_t cur = indiceHistorial.load();
+  if (cur == 0) return;
+  const int idx = (cur - 1 + MAX_REGISTROS_HISTORIAL) % MAX_REGISTROS_HISTORIAL;
+  if (bufferHistorial[idx].momento == 0) return;
+  char linea[96];
+  snprintf(linea, sizeof(linea), "HISTORIAL;%u;%u;%d;%.2f;%lu",
+           (unsigned)bufferHistorial[idx].tipo,
+           (unsigned)bufferHistorial[idx].indice,
+           bufferHistorial[idx].valor ? 1 : 0,
+           (double)bufferHistorial[idx].datoAdicional,
+           (unsigned long)bufferHistorial[idx].momento);
+  emitirEventoLocal(linea);
 }
 
 // ============================================================================
@@ -648,7 +647,7 @@ void registrarApagadoBomba() {
 
 void registrarCambioLuz(int indice) {
   incrementarTotalCambiosLuz();
-  registrarHistorial(TipoRegistroHistorial::LUZ_ENCENDIDA + indice, indice, true);
+  registrarHistorial(historialLuz(true, indice), (uint8_t)indice, true);
 }
 
 void registrarEmergenciaActivada() {
@@ -840,7 +839,10 @@ bool anunciarJarvis(EventoJarvis evento, bool alertaAutomatica = false) {
   if (!MP3_HABILITADO) return false;
   const bool reproducida = jarvisAudio.reproducir(evento, millis(), alertaAutomatica);
   if (reproducida) {
-    log("MP3", "Carpeta " + String(static_cast<uint8_t>(evento)) + "; variante 1-4");
+    char detalle[32];
+    snprintf(detalle, sizeof(detalle), "Carpeta %u; variante 1-4",
+             (unsigned)JarvisAudio::carpetaPara(evento, jarvisAudio.vozActual()));
+    log("MP3", detalle);
   }
   return reproducida;
 }
@@ -896,9 +898,11 @@ fallosVerificacionSalida[indice] = 0;
   estadoSalidas[indice] = true;
   log("SALIDA", String(NOMBRES_SALIDAS[indice]) + " -> ENCENDIDO (nivel GPIO verificado)");
   incrementarTotalEncendidos();
-  registrarHistorial(TipoRegistroHistorial::LUZ_ENCENDIDA + indice, indice, true);
+  registrarHistorial(historialLuz(true, indice), (uint8_t)indice, true);
   if (anunciarPorVoz && MP3_HABILITADO) {
     if (indice == 0) anunciarJarvis(EventoJarvis::RIEGO_INICIADO);
+    else if (indice == 4) anunciarJarvis(EventoJarvis::LUZ_CULTIVO_ENCENDIDA);
+    else if (indice == 3) anunciarJarvis(EventoJarvis::VENTILADOR_ENCENDIDO);
     else anunciarJarvis(EventoJarvis::LUZ_ENCENDIDA);
   }
   return true;
@@ -923,9 +927,11 @@ fallosVerificacionSalida[indice] = 0;
   estadoSalidas[indice] = false;
   log("SALIDA", String(NOMBRES_SALIDAS[indice]) + " -> APAGADO (nivel GPIO verificado)");
   incrementarTotalApagados();
-  registrarHistorial(TipoRegistroHistorial::LUZ_APAGADA + indice, indice, false);
+  registrarHistorial(historialLuz(false, indice), (uint8_t)indice, false);
   if (anunciarPorVoz && MP3_HABILITADO) {
     if (indice == 0) anunciarJarvis(EventoJarvis::RIEGO_DETENIDO);
+    else if (indice == 4) anunciarJarvis(EventoJarvis::LUZ_CULTIVO_APAGADA);
+    else if (indice == 3) anunciarJarvis(EventoJarvis::VENTILADOR_APAGADO);
     else anunciarJarvis(EventoJarvis::LUZ_APAGADA);
   }
   return true;
@@ -1040,9 +1046,15 @@ ResultadoOrden ejecutarOrdenActuador(const OrdenActuador &orden) {
     if (orden.indiceRele == 0) {
       anunciarJarvis(orden.encender ? EventoJarvis::RIEGO_INICIADO
                                     : EventoJarvis::RIEGO_DETENIDO, automatica);
-    } else if (orden.indiceRele == 1 || orden.indiceRele == 2 || orden.indiceRele == 4) {
+    } else if (orden.indiceRele == 1 || orden.indiceRele == 2) {
       anunciarJarvis(orden.encender ? EventoJarvis::LUZ_ENCENDIDA
                                     : EventoJarvis::LUZ_APAGADA, automatica);
+    } else if (orden.indiceRele == 4) {
+      anunciarJarvis(orden.encender ? EventoJarvis::LUZ_CULTIVO_ENCENDIDA
+                                    : EventoJarvis::LUZ_CULTIVO_APAGADA, automatica);
+    } else if (orden.indiceRele == 3) {
+      anunciarJarvis(orden.encender ? EventoJarvis::VENTILADOR_ENCENDIDO
+                                    : EventoJarvis::VENTILADOR_APAGADO, automatica);
     }
   }
   if (orden.origen == ORIGEN_IR) {
@@ -1123,6 +1135,15 @@ void refrescarPantallaFinal() {
   d.error = textoErrorPantalla;
   d.escuchando = false;
   d.micOn = micHabilitado;
+  d.statEncendidos = estadisticas.totalEncendidos;
+  d.statApagados = estadisticas.totalApagados;
+  d.statRiegos = estadisticas.totalRiiegosAutomaticos;
+  d.statVent = estadisticas.totalVentAutomaticos;
+  d.statCambiosLuz = estadisticas.totalCambiosLuz;
+  d.statEmergencias = estadisticas.totalEmergencias;
+  d.nombrePerfil = nombrePerfilCasa(PERFIL_CASA);
+  d.nombreBomba = BOMBA_DIRECTA_S8050 ? "S8050" : "DRV";
+  d.nombreAudioIR = IR_CASA_HABILITADO ? "IR ON" : "IR OFF";
   pantallaFinal.tick(d);
 }
 
@@ -1616,47 +1637,98 @@ void alternarSalidaIR(int indice, const char* nombre) {
   ejecutarComandoRele(comando, indice, !estadoSalidas[indice], ORIGEN_IR);
 }
 
+// Mapa final de las 21 teclas CAR MP3 (nota Obsidian 46): cada tecla tiene su
+// respuesta Jarvis propia tras el ACK/NACK real del despachador. CH y VOL
+// confirman solo en pantalla/LCD; el resto anuncia su carpeta dedicada.
 void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
   using namespace IRCasa;
   switch (tecla) {
-    case CH_MENOS: pantallaFinal.anterior(); emitirEventoLocal("ACK;IR;PANTALLA_ANTERIOR"); break;
-    case CH: pantallaFinal.siguiente(); emitirEventoLocal("ACK;IR;PANTALLA_SIGUIENTE"); break;
-    case CH_MAS: emitirEventoLocal(construirReporteEstado()); break;
+    case CH_MENOS:
+      pantallaFinal.anterior();
+      emitirEventoLocal("ACK;IR;PANTALLA_ANTERIOR");
+      anunciarJarvis(EventoJarvis::MODO_MANUAL);
+      break;
+    case CH:
+      pantallaFinal.siguiente();
+      emitirEventoLocal("ACK;IR;PANTALLA_SIGUIENTE");
+      break;
+    case CH_MAS:
+      emitirEventoLocal(construirReporteEstado());
+      anunciarJarvis(EventoJarvis::ESTADO_COMPLETO);
+      break;
     case ANTERIOR: case N_1: alternarSalidaIR(1, "LUZ1"); break;
     case SIGUIENTE: case N_2: alternarSalidaIR(2, "LUZ2"); break;
     case N_3: alternarSalidaIR(4, "INVER"); break;
     case N_4: alternarSalidaIR(3, "VENT"); break;
-    case N_5: ejecutarComandoRele("IR_RIEGO_ON", 0, true, ORIGEN_IR); break;
+    case N_5:
+      ejecutarComandoRele("IR_RIEGO_ON", 0, true, ORIGEN_IR);
+      break;
     case N_0:
       for (int i = 0; i < TOTAL_SALIDAS; ++i)
         ejecutarComandoRele("IR_TODO_OFF", i, false, ORIGEN_IR);
+      anunciarJarvis(EventoJarvis::TODO_APAGADO);
       break;
-    case N_200_MAS: rearmarSistema(); break;
-    case EQ: emitirEventoLocal(construirReporteDiagnostico()); break;
-    case N_6:
-      if (!jarvisAudio.habilitado()) emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
-      else {
+    case N_200_MAS:
+      if (rearmarSistema()) anunciarJarvis(EventoJarvis::SISTEMA_REARMADO);
+      else anunciarJarvis(EventoJarvis::ORDEN_RECHAZADA);
+      break;
+    case EQ:
+      emitirEventoLocal(construirReporteDiagnostico());
+      anunciarJarvis(EventoJarvis::DIAGNOSTICO);
+      break;
+    case N_6: {
+      // Nota 67: la tecla 6 (0x005A) alternaba voces porque 6-9 repetían el
+      // mismo reporte. Con el catálogo de 28 carpetas cada consulta ya tiene
+      // voz propia, así que una pulsación consulta temperatura y una doble
+      // pulsación (<2 s) alterna Carlos/Karla.
+      static unsigned long ultimaN6Ms = 0;
+      const unsigned long ahora = millis();
+      if (ahora - ultimaN6Ms < 2000 && jarvisAudio.habilitado()) {
         jarvisAudio.cambiarVoz();
-        emitirEventoLocal("ACK;IR;VOZ=" + String(jarvisAudio.vozActual()));
+        ultimaN6Ms = 0;
+        char ack[20];
+        snprintf(ack, sizeof(ack), "ACK;IR;VOZ=%u", (unsigned)jarvisAudio.vozActual());
+        emitirEventoLocal(ack);
         anunciarJarvis(EventoJarvis::SISTEMA_LISTO);
+      } else {
+        ultimaN6Ms = ahora;
+        emitirEventoLocal(construirReporteEstado());
+        anunciarJarvis(EventoJarvis::CONSULTA_TEMP);
       }
       break;
-    case N_7: case N_8: case N_9:
-      emitirEventoLocal(construirReporteEstado()); break;
+    }
+    case N_7:
+      emitirEventoLocal(construirReporteEstado());
+      anunciarJarvis(EventoJarvis::CONSULTA_HUMEDAD);
+      break;
+    case N_8:
+      emitirEventoLocal(construirReporteEstado());
+      anunciarJarvis(EventoJarvis::CONSULTA_SUELO);
+      break;
+    case N_9:
+      emitirEventoLocal(construirReporteEstado());
+      anunciarJarvis(EventoJarvis::ESTADO_COMPLETO);
+      break;
     case PLAY:
       if (!jarvisAudio.habilitado()) emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
       else {
         jarvisAudio.silenciar(!jarvisAudio.silenciado());
-        emitirEventoLocal(String("ACK;IR;AUDIO_") + (jarvisAudio.silenciado() ? "OFF" : "ON"));
+        emitirEventoLocal(jarvisAudio.silenciado() ? "ACK;IR;AUDIO_OFF" : "ACK;IR;AUDIO_ON");
+        if (!jarvisAudio.silenciado()) anunciarJarvis(EventoJarvis::SONIDO_ACTIVADO);
       }
       break;
     case VOL_MENOS:
     case VOL_MAS:
       if (!jarvisAudio.ajustarVolumen(tecla == VOL_MAS ? 1 : -1))
         emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
-      else emitirEventoLocal("ACK;IR;VOLUMEN=" + String(jarvisAudio.volumenActual()));
+      else {
+        char ack[24];
+        snprintf(ack, sizeof(ack), "ACK;IR;VOLUMEN=%u", (unsigned)jarvisAudio.volumenActual());
+        emitirEventoLocal(ack);
+      }
       break;
     case N_100_MAS:
+      // Nota 67 (vigente): 100+ repite la última pista cuando hay audio.
       emitirEventoLocal(jarvisAudio.repetirUltima(millis())
         ? "ACK;IR;REPETIR" : "NACK;IR;AUDIO_NO_DISPONIBLE");
       break;
@@ -1941,9 +2013,12 @@ void procesarComandoTexto(String comando) {
   else if (comando == "SD_PRUEBA") emitirEventoLocal(solicitarPruebaSD() ? "ACK;SD_PRUEBA;ENCOLADA" : "NACK;SD_PRUEBA;NO_DISPONIBLE");
 }
 
-void emitirEventoLocal(const String &linea) {
+void emitirEventoLocal(const char* linea) {
   Serial.println(linea);
-  registrarLineaMicroSD(linea);
+  registrarLineaMicroSD(String(linea));
+}
+inline void emitirEventoLocal(const String &linea) {
+  emitirEventoLocal(linea.c_str());
 }
 
 void revisarComandosSerial() {

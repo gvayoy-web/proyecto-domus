@@ -1,7 +1,7 @@
 #pragma once
 // PROJECT DOMUS - Pantalla final LCD1602 I2C (16x2).
 // Interfaz de producto: saludo breve no bloqueante con PROJECT DOMUS,
-// cinco pantallas fijas de 16x2, campos de ancho fijo con relleno y
+// siete pantallas fijas de 16x2, campos de ancho fijo con relleno y
 // truncado, escritura diferencial con memoria sombra y rotacion manual
 // sin pausas bloqueantes. Solo depende de Arduino.h y LiquidCrystal_I2C.h.
 //
@@ -19,11 +19,12 @@
 //   caso la logica avanza igual y el resto del sistema no se detiene.
 // - Iconos CGRAM sencillos (gota, sol, termometro, nivel, voz) creados
 //   una sola vez en begin; ocupan un caracter cada uno.
-// - Requieres <atomic> para estadisticas globales.
+// - Las vistas 5 (estadisticas) y 6 (perfil) leen campos de
+//   DatosPantallaFinal: el .ino copia los contadores y el perfil antes de
+//   llamar a tick(). Esta clase nunca accede a globales del .ino.
 // #
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
-#include <atomic>
 
 // Estado resumido de una salida para la vista 3.
 enum EstadoSalidaFinal : uint8_t {
@@ -56,6 +57,17 @@ struct DatosPantallaFinal {
   const char* error;   // nullptr o "" significa sin error visible
   bool escuchando;     // ventana de voz activa: mensaje estatico breve
   bool micOn;
+  // Copia de contadores para la vista 5 (los mantiene el .ino).
+  uint32_t statEncendidos;
+  uint32_t statApagados;
+  uint32_t statRiegos;
+  uint32_t statVent;
+  uint32_t statCambiosLuz;
+  uint32_t statEmergencias;
+  // Perfil para la vista 6 (cadenas cortas en RAM del .ino).
+  const char* nombrePerfil;
+  const char* nombreBomba;
+  const char* nombreAudioIR;
 };
 
 class PantallaFinal {
@@ -201,24 +213,21 @@ class PantallaFinal {
         }
         break;
       }
-      case 5: {  // Estadísticas y contador de eventos
-        // Acceso a estadísticas desde el .ino a través de puntero externo
-        extern std::atomic<EstadisticasDOMUS> estadisticas;
-        uint32_t enc = estadisticas.totalEncendidos.load();
-        uint32_t apag = estadisticas.totalApagados.load();
-        uint32_t riego = estadisticas.totalRiiegosAutomaticos.load();
-        uint32_t vent = estadisticas.totalVentAutomaticos.load();
-        uint32_t luz = estadisticas.totalCambiosLuz.load();
-        uint32_t emerg = estadisticas.totalEmergencias.load();
-        snprintf(a, sizeof(a), "E:%03u L:%03u", luz, emerg);
-        snprintf(b, sizeof(b), "R:%03u V:%03u", riego, vent);
+      case 5: {  // Estadisticas y contador de eventos.
+        snprintf(a, sizeof(a), "E:%03u L:%03u",
+                 (unsigned)(d.statCambiosLuz % 1000),
+                 (unsigned)(d.statEmergencias % 1000));
+        snprintf(b, sizeof(b), "R:%03u V:%03u",
+                 (unsigned)(d.statRiegos % 1000),
+                 (unsigned)(d.statVent % 1000));
         break;
       }
-      case 6: {  // Perfil y configuración actual
-        snprintf(a, sizeof(a), "PERFIL:%s", nombrePerfilCasa(PERFIL_CASA));
-        snprintf(b, sizeof(b), "BOM:%s A:%s", 
-          BOMBA_DIRECTA_S8050 ? "S8050" : "DRV",
-          IR_CASA_HABILITADO ? "IR ON" : "IR OFF");
+      case 6: {  // Perfil y configuracion actual.
+        snprintf(a, sizeof(a), "PERFIL:%s",
+                 d.nombrePerfil != nullptr ? d.nombrePerfil : "?");
+        snprintf(b, sizeof(b), "BOM:%s A:%s",
+                 d.nombreBomba != nullptr ? d.nombreBomba : "?",
+                 d.nombreAudioIR != nullptr ? d.nombreAudioIR : "?");
         break;
       }
       default:

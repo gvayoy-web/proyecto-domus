@@ -15,12 +15,23 @@ class JarvisAudioContractTests(unittest.TestCase):
         self.transport = (ROOT / "firmware/casa_inteligente_v4/domus_dfplayer.h").read_text(encoding="utf-8")
         self.firmware = (ROOT / "firmware/casa_inteligente_v4/casa_inteligente_v4.ino").read_text(encoding="utf-8")
 
-    def test_catalogo_tiene_14_carpetas_y_cuatro_variantes(self):
-        """Test that the audio header has at least 14 event values and random selection logic."""
-        # Count EventoJarvis enum values by looking for the mapping to folders
-        # The enum must have at least 14 values (original + new ones)
-        self.assertIn("SISTEMA_LISTO", self.audio_header)
-        self.assertIn("EMERGENCIA", self.audio_header)
+    def test_catalogo_tiene_28_eventos_y_cuatro_variantes(self):
+        """Cada una de las 21 teclas (nota 46) tiene evento propio: 28 carpetas."""
+        # Sensores y base original
+        for evento in ("SISTEMA_LISTO", "EMERGENCIA", "RIEGO_INICIADO",
+                       "AGUA_BAJA", "ERROR_SENSOR"):
+            self.assertIn(evento, self.audio_header)
+        # Una voz por tecla: modos, diagnostico, apagado general, sonido,
+        # rearme, cultivo, ventilador y las cuatro consultas 6-9.
+        for evento in ("MODO_MANUAL", "MODO_AUTO", "DIAGNOSTICO",
+                       "TODO_APAGADO", "SONIDO_ACTIVADO", "SISTEMA_REARMADO",
+                       "LUZ_CULTIVO_ENCENDIDA", "LUZ_CULTIVO_APAGADA",
+                       "VENTILADOR_ENCENDIDO", "VENTILADOR_APAGADO",
+                       "CONSULTA_TEMP", "CONSULTA_HUMEDAD", "CONSULTA_SUELO",
+                       "ESTADO_COMPLETO"):
+            self.assertIn(evento, self.audio_header)
+        self.assertIn("NUM_EVENTOS = 28", self.audio_header)
+        self.assertIn("carpetaPara", self.audio_header)
         # Verify random selection logic exists
         self.assertIn("esp_random() % 4U", self.audio_header)
         self.assertIn("pista == ultimaPista_", self.audio_header)
@@ -44,39 +55,70 @@ class JarvisAudioContractTests(unittest.TestCase):
         self.assertIn("#define MP3_BUSY_PIN    -1", self.firmware)
         self.assertIn("#define MP3_HABILITADO  false", self.firmware)
 
-    def test_manifest_tiene_112_mp3_unicos(self):
-        """Test that the MANIFEST.csv has exactly 112 rows with correct distribution."""
+    def test_manifest_tiene_224_mp3_unicos(self):
+        """MANIFEST.csv: 28 eventos x 4 pistas x 2 voces = 224 filas."""
         manifest = ROOT / "audio/jarvis_sd/MANIFEST.csv"
         self.assertTrue(manifest.exists(), "El manifest no existe aún")
         with manifest.open(encoding="utf-8-sig", newline="") as stream:
             rows = list(csv.DictReader(stream))
-        self.assertEqual(len(rows), 112, f"Expected 112 rows, got {len(rows)}")
-        # Check folder distribution: 14 folders for Carlos (01-14) + 14 folders for Karla (01-14)
-        carpetas = {row["carpeta"] for row in rows}
-        carpetas_esperadas = {f"{i:02d}" for i in range(1, 15)} | {f"{i:02d}" for i in range(1, 15)}
-        self.assertEqual(carpetas, carpetas_esperadas, "Las carpetas deben ser 01-14 para ambas bibliotecas")
-        # Check that each biblioteca has 14 folders with 4 tracks each = 56 files
-        carlos_rows = [r for r in rows if r["biblioteca"] == "Carlos"]
-        karla_rows = [r for r in rows if r["biblioteca"] == "Karla"]
-        self.assertEqual(len(carlos_rows), 56, f"Expected 56 Carlos rows, got {len(carlos_rows)}")
-        self.assertEqual(len(karla_rows), 56, f"Expected 56 Karla rows, got {len(karla_rows)}")
-        # Verify each biblioteca has folders 01-14
-        carlos_carpetas = {r["carpeta"] for r in carlos_rows}
-        karla_carpetas = {r["carpeta"] for r in karla_rows}
-        self.assertEqual(carlos_carpetas, karla_carpetas, "Ambas bibliotecas deben tener las mismas carpetas")
-        self.assertEqual(carlos_carpetas, {f"{i:02d}" for i in range(1, 15)})
-        # Verify each track file exists
+        self.assertEqual(len(rows), 224, f"Expected 224 rows, got {len(rows)}")
+        # 28 eventos distintos, 4 pistas por (voz, carpeta SD).
+        self.assertEqual(len({r["evento"] for r in rows}), 28)
+        por_voz_carpeta: dict[tuple[str, str], int] = {}
         for row in rows:
-            path = AUDIO_DIR / row["biblioteca"] / row["carpeta"] / row["archivo"]
-            self.assertTrue(path.is_file(), f"Archivo no encontrado: {path}")
-            self.assertGreater(path.stat().st_size, 1000, f"Archivo demasiado pequeño: {path}")
+            por_voz_carpeta[(row["voz"], row["carpeta"])] = \
+                por_voz_carpeta.get((row["voz"], row["carpeta"]), 0) + 1
+        self.assertEqual(len(por_voz_carpeta), 56)
+        for clave, total in por_voz_carpeta.items():
+            self.assertEqual(total, 4, f"{clave} debe tener 4 pistas")
+        # Voz 1 (Carlos): SD 01-28; voz 2 (Karla): SD 51-78.
+        carlos = {r["carpeta"] for r in rows if r["voz"] == "1"}
+        karla = {r["carpeta"] for r in rows if r["voz"] == "2"}
+        self.assertEqual(len([r for r in rows if r["voz"] == "1"]), 112)
+        self.assertEqual(len([r for r in rows if r["voz"] == "2"]), 112)
+        self.assertEqual(carlos, {f"{i:02d}" for i in range(1, 29)})
+        self.assertEqual(karla, {f"{i:02d}" for i in range(51, 79)})
+        for row in rows:
+            self.assertTrue(row["biblioteca"].startswith(
+                "Carlos/" if row["voz"] == "1" else "Karla/"))
+            for ruta in (AUDIO_DIR / row["biblioteca"],
+                         ROOT / "audio/jarvis_sd" / row["archivo"]):
+                self.assertTrue(ruta.is_file(), f"Archivo no encontrado: {ruta}")
+                self.assertGreater(ruta.stat().st_size, 1000,
+                                   f"Archivo demasiado pequeño: {ruta}")
 
-    def test_tecla_6_cambia_entre_dos_voces(self):
-        """Test that key 6 changes between two voices."""
+    def test_doble_pulsacion_6_cambia_entre_dos_voces(self):
+        """Una pulsación del 6 consulta temperatura; doble (<2 s) cambia de voz."""
         self.assertIn("case N_6:", self.firmware)
         self.assertIn("jarvisAudio.cambiarVoz();", self.firmware)
-        # The voice change logic uses folder offset 50 for voice 2
-        self.assertIn("carpetaBase + 50U", self.audio_header)
+        self.assertIn("CONSULTA_TEMP", self.firmware)
+        # La voz 2 usa las carpetas 51-78 (desplazamiento +50 sobre 01-28)
+        self.assertIn("DESPLAZAMIENTO_VOZ_2 = 50", self.audio_header)
+        self.assertIn("+ DESPLAZAMIENTO_VOZ_2", self.audio_header)
+
+    def test_mapa_21_teclas_con_voz_propia(self):
+        """Cada tecla termina en su carpeta dedicada (nota 46).
+
+        Las teclas de menú hablan en ejecutarTeclaIRCasa; las de carga
+        (sala, cultivo, ventilador, riego) hablan vía el despachador
+        (ejecutarOrdenActuador/solicitar/desactivarSalida).
+        """
+        teclas = self.firmware.split("void ejecutarTeclaIRCasa", 1)[1].split(
+            "\n}\n", 1)[0]
+        for evento in ("MODO_MANUAL", "ESTADO_COMPLETO", "TODO_APAGADO",
+                       "SISTEMA_REARMADO", "DIAGNOSTICO", "SONIDO_ACTIVADO",
+                       "CONSULTA_TEMP", "CONSULTA_HUMEDAD", "CONSULTA_SUELO"):
+            self.assertIn(evento, teclas, f"Tecla sin voz propia: {evento}")
+        despacho = self.firmware.split(
+            "ResultadoOrden ejecutarOrdenActuador", 1)[1].split(
+            "\n}\n", 1)[0]
+        for evento in ("RIEGO_INICIADO", "RIEGO_DETENIDO",
+                       "LUZ_CULTIVO_ENCENDIDA", "LUZ_CULTIVO_APAGADA",
+                       "VENTILADOR_ENCENDIDO", "VENTILADOR_APAGADO"):
+            self.assertIn(evento, despacho + self.firmware.split(
+                "bool solicitarSalida", 1)[1].split(
+                "bool desactivarSalida", 1)[0],
+                f"Carga sin voz propia: {evento}")
 
     def test_tecla_cambia_volumen(self):
         """Test that volume up/down keys work."""
