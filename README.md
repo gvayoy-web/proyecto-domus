@@ -1,6 +1,17 @@
 # PROJECT DOMUS
 
-Casa inteligente local para una maqueta con ESP32-S3 N16R8. El firmware reúne sensores, LCD1602, luces, riego y control IR. El estado del software y los límites de las pruebas están en la [auditoría vigente](obsidian/proyect%20domus/63%20-%20Auditoria%20total%20de%20Obsidian%20y%20estado%20real.md).
+Casa inteligente local para una maqueta con ESP32-S3 N16R8. firmware `casa_inteligente_v4.ino` completado con todas las características solicitadas en las notas Obsidian 00-67.
+
+**Perfil actual:** `BANCO_COMPLETO_S8050_IR` (bomba S8050, 3 luces, ventilador bloqueado).
+
+El firmware ahora incluye:
+- Automaciones combinadas (calor+tierra_seca+agua, temp+presencia, luz+presencia+zonas_día)
+- Historial/estadísticas atómicas con logging a microSD
+- LCD views 5 (estadísticas) y 6 (perfil/configuración), `NUM_PANTALLAS = 7`
+- Expansión de audio: 112 tracks en voices Carlos y Karla, `MANIFEST.csv`
+- Secuencias de demo no bloqueantes y automaciones relativas con auto-off
+
+El estado del software y los límites de las pruebas están en la [auditoría vigente](obsidian/proyect%20domus/63%20-%20Auditoria%20total%20de%20Obsidian%20y%20estado%20real.md).
 
 ## Empezar
 
