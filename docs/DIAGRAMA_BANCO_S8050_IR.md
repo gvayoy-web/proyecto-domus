@@ -1,5 +1,7 @@
 # Diagrama de conexiones — Banco actual (`BANCO_COMPLETO_S8050_IR`)
 
+> Versión web interactiva (diagramas Hoy/Futuro): `visualizaciones/banco_hoy_futuro.html` — ábrela en el navegador.
+
 Perfil 3 del firmware `casa_inteligente_v4.ino` (única fuente: `MAPA_CASA`).
 Placa: **ESP32-S3**. Si un cable no coincide con esta tabla, manda la tabla:
 el firmware no admite pines fuera de ella.

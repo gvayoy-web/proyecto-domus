@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROJECT DOMUS — Diagramas de conexión (Hoy / Futuro)</title>
+<style>
+  :root { --bg:#0f1420; --card:#182034; --ink:#e8ecf4; --muted:#9aa7c2;
+          --red:#e5484d; --blk:#222; --sigY:#f5c518; --sigB:#3e9bff; --sigG:#46c46a; --sigO:#ff8c42; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font-family:"Segoe UI",Arial,sans-serif; margin:0; padding:24px; }
+  h1 { margin:0 0 4px; font-size:26px; }
+  p.sub { color:var(--muted); margin:0 0 16px; }
+  .tabs { display:flex; gap:8px; margin:16px 0; flex-wrap:wrap; }
+  .tab { background:var(--card); color:var(--ink); border:2px solid #2b3a5a;
+         border-radius:10px; padding:10px 18px; font-size:16px; cursor:pointer; }
+  .tab.active { border-color:var(--sigY); background:#232f52; font-weight:bold; }
+  .panel { display:none; background:var(--card); border-radius:14px; padding:18px; }
+  .panel.active { display:block; }
+  svg { width:100%; height:auto; background:#0b1020; border-radius:10px; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; margin:12px 0; color:var(--muted); font-size:14px; }
+  .sw { display:inline-block; width:26px; height:6px; border-radius:3px; vertical-align:middle; margin-right:6px; }
+  table { border-collapse:collapse; width:100%; margin-top:14px; font-size:14px; }
+  th, td { border:1px solid #2b3a5a; padding:7px 10px; text-align:left; }
+  th { background:#232f52; }
+  tr.hl td { background:#2a3a2a; }
+  .badge { display:inline-block; font-size:11px; font-weight:bold; border-radius:6px; padding:2px 7px; margin-left:6px; }
+  .ok { background:#1d4d2b; color:#7dffa8; } .no { background:#5a2323; color:#ffb3b3; }
+  .warn { background:#5a4a1a; color:#ffe27d; }
+  .wire { stroke-width:3; fill:none; opacity:.92; }
+  g.comp { cursor:pointer; }
+  g.comp.dim, .wire.dim { opacity:.12; }
+  .pinlbl { font-size:11px; fill:var(--muted); font-family:monospace; }
+  .t { font-size:13px; fill:var(--ink); font-weight:bold; }
+  .ts { font-size:11px; fill:var(--muted); }
+  .note { background:#231a2e; border-left:4px solid #b48cff; padding:10px 14px; border-radius:0 10px 10px 0; margin:14px 0; font-size:14px; }
+  .check li { margin:6px 0; }
+  footer { color:var(--muted); font-size:12px; margin-top:18px; }
+</style>
+</head>
+<body>
+<h1>PROJECT DOMUS — Diagramas de conexión</h1>
+<p class="sub">Perfil 3 del firmware (<b>BANCO_COMPLETO_S8050_IR</b>). Fuente única de pines: <b>MAPA_CASA</b>. Banda roja = positivo · azul/negra = GND común · amarilla/azul/verde = señales. Pasa el mouse sobre un módulo para resaltar sus cables.</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('hoy')">① HOY — banco real (COM9)</button>
+  <button class="tab" onclick="show('futuro')">② FUTURO — casa final (faltan piezas)</button>
+</div>
+
+<!-- ==================== HOY ==================== -->
+<div class="panel active" id="hoy">
+<h2>Hoy: lo que tienes conectado <span class="badge ok">CON LO QUE HAY</span></h2>
+<div class="legend">
+  <span><i class="sw" style="background:var(--red)"></i>3V3 / 5V-USB / OUT+</span>
+  <span><i class="sw" style="background:#888"></i>GND común</span>
+  <span><i class="sw" style="background:var(--sigY)"></i>Señal digital</span>
+  <span><i class="sw" style="background:var(--sigB)"></i>Analógica / I2C</span>
+  <span style="border:2px dashed #888;border-radius:6px;padding:1px 8px;">= en mano, sin cablear</span>
+</div>
+
+<svg viewBox="0 0 1000 640" id="svgHoy">
+  <!-- rails -->
+  <rect x="300" y="20" width="640" height="14" rx="7" fill="#e5484d"/>
+  <text x="310" y="31" font-size="11" fill="#fff" font-weight="bold">RAIL 3V3 (del ESP32)</text>
+  <rect x="300" y="40" width="640" height="14" rx="7" fill="#555"/>
+  <text x="310" y="51" font-size="11" fill="#fff" font-weight="bold">RAIL GND COMÚN</text>
+  <rect x="300" y="60" width="200" height="14" rx="7" fill="#c43d7a"/>
+  <text x="310" y="71" font-size="11" fill="#fff" font-weight="bold">VU = 5V del USB (solo PIR)</text>
+
+  <!-- ESP32 -->
+  <g class="comp" data-w="w3v3 wgnd wusb">
+    <rect x="30" y="120" width="170" height="400" rx="12" fill="#1f6feb"/>
+    <text x="115" y="150" text-anchor="middle" class="t" fill="#fff">ESP32-S3</text>
+    <text x="115" y="168" text-anchor="middle" class="ts" fill="#cfe0ff">COM9 · USB-PC</text>
+    <text x="115" y="500" text-anchor="middle" class="ts" fill="#cfe0ff">N16R8 · perfil 3</text>
+  </g>
+  <line x1="200" y1="200" x2="300" y2="27" class="wire" data-w="w3v3" stroke="#e5484d"><title>3V3 del ESP32 al rail</title></line>
+  <line x1="200" y1="230" x2="300" y2="47" class="wire" data-w="wgnd" stroke="#888"><title>GND del ESP32 al rail común</title></line>
+  <line x1="90" y1="120" x2="90" y2="80" class="wire" data-w="wusb" stroke="#888"/>
+  <text x="100" y="95" class="ts">USB a la PC (COM9)</text>
+
+  <!-- pines ESP lado derecho del módulo -->
+  <g font-size="11" font-family="monospace" fill="#cfe0ff">
+    <text x="205" y="270">3</text><text x="205" y="300">4</text><text x="205" y="330">5</text>
+    <text x="205" y="360">6</text><text x="205" y="390">8</text><text x="205" y="420">9</text>
+    <text x="205" y="450">12</text><text x="205" y="480">13/17</text>
+    <text x="40" y="270">15</text><text x="40" y="300">16</text><text x="40" y="330">14</text>
+    <text x="40" y="360">10</text><text x="40" y="390">11</text><text x="40" y="420">18</text>
+    <text x="40" y="450">7✕</text>
+  </g>
+
+  <!-- LDR -->
+  <g class="comp" data-w="wldr">
+    <rect x="330" y="110" width="150" height="90" rx="10" fill="#2a3a2a" stroke="#46c46a"/>
+    <text x="405" y="132" text-anchor="middle" class="t">LDR + 10k</text>
+    <text x="405" y="150" text-anchor="middle" class="ts">divisor de luz</text>
+    <text x="405" y="185" text-anchor="middle" class="ts">3V3–LDR–•–10k–GND</text>
+  </g>
+  <line x1="405" y1="110" x2="405" y2="27" class="wire" data-w="wldr" stroke="#e5484d"><title>LDR a 3V3</title></line>
+  <line x1="440" y1="200" x2="440" y2="47" class="wire" data-w="wldr" stroke="#888"><title>10k a GND</title></line>
+  <line x1="370" y1="185" x2="225" y2="270" class="wire" data-w="wldr" stroke="#3e9bff"><title>Punto medio → GPIO3</title></line>
+
+  <!-- DHT11 -->
+  <g class="comp" data-w="wdht">
+    <rect x="520" y="110" width="150" height="90" rx="10" fill="#2a3a5a" stroke="#3e9bff"/>
+    <text x="595" y="132" text-anchor="middle" class="t">DHT11</text>
+    <text x="595" y="150" text-anchor="middle" class="ts">1:VCC 2:DATA 4:GND</text>
+    <text x="595" y="185" text-anchor="middle" class="ts">10k entre p1 y p2</text>
+  </g>
+  <line x1="560" y1="110" x2="560" y2="27" class="wire" data-w="wdht" stroke="#e5484d"><title>DHT VCC a 3V3</title></line>
+  <line x1="630" y1="200" x2="630" y2="47" class="wire" data-w="wdht" stroke="#888"><title>DHT GND</title></line>
+  <line x1="595" y1="200" x2="60" y2="330" class="wire" data-w="wdht" stroke="#f5c518"><title>DHT DATA → GPIO14</title></line>
+
+  <!-- Suelo + Nivel -->
+  <g class="comp" data-w="wsoil">
+    <rect x="710" y="110" width="110" height="90" rx="10" fill="#3a2f1a" stroke="#c9a227"/>
+    <text x="765" y="132" text-anchor="middle" class="t">SUELO</text>
+    <text x="765" y="150" text-anchor="middle" class="ts">AO → GPIO15</text>
+    <text x="765" y="185" text-anchor="middle" class="ts">VCC 3V3 · GND</text>
+  </g>
+  <line x1="765" y1="200" x2="60" y2="270" class="wire" data-w="wsoil" stroke="#3e9bff"><title>Suelo AO → GPIO15</title></line>
+  <g class="comp" data-w="wlev">
+    <rect x="840" y="110" width="110" height="90" rx="10" fill="#3a2f1a" stroke="#c9a227"/>
+    <text x="895" y="132" text-anchor="middle" class="t">NIVEL</text>
+    <text x="895" y="150" text-anchor="middle" class="ts">S → GPIO16</text>
+    <text x="895" y="185" text-anchor="middle" class="ts">VCC 3V3 · GND</text>
+  </g>
+  <line x1="895" y1="200" x2="60" y2="300" class="wire" data-w="wlev" stroke="#3e9bff"><title>Nivel S → GPIO16</title></line>
+  <line x1="740" y1="200" x2="740" y2="47" class="wire" data-w="wsoil" stroke="#888"/>
+  <line x1="920" y1="200" x2="920" y2="47" class="wire" data-w="wlev" stroke="#888"/>
+
+  <!-- PIR -->
+  <g class="comp" data-w="wpir">
+    <rect x="330" y="250" width="150" height="80" rx="10" fill="#3a2a3a" stroke="#b48cff"/>
+    <text x="405" y="272" text-anchor="middle" class="t">PIR</text>
+    <text x="405" y="290" text-anchor="middle" class="ts">VCC→VU(5V) OUT→G9</text>
+    <text x="405" y="308" text-anchor="middle" class="ts">GND común</text>
+  </g>
+  <line x1="360" y1="250" x2="360" y2="67" class="wire" data-w="wpir" stroke="#c43d7a"><title>PIR VCC a 5V del USB</title></line>
+  <line x1="405" y1="330" x2="225" y2="420" class="wire" data-w="wpir" stroke="#f5c518"><title>PIR OUT → GPIO9</title></line>
+  <line x1="450" y1="330" x2="450" y2="47" class="wire" data-w="wpir" stroke="#888"/>
+
+  <!-- IR -->
+  <g class="comp" data-w="wir">
+    <rect x="520" y="250" width="150" height="80" rx="10" fill="#3a2a3a" stroke="#b48cff"/>
+    <text x="595" y="272" text-anchor="middle" class="t">HX1838 IR</text>
+    <text x="595" y="290" text-anchor="middle" class="ts">VCC 3V3 · OUT→G12</text>
+    <text x="595" y="308" text-anchor="middle" class="ts">aprender 21 teclas</text>
+  </g>
+  <line x1="560" y1="250" x2="560" y2="27" class="wire" data-w="wir" stroke="#e5484d"/>
+  <line x1="595" y1="330" x2="225" y2="450" class="wire" data-w="wir" stroke="#f5c518"><title>IR OUT → GPIO12</title></line>
+  <line x1="630" y1="330" x2="630" y2="47" class="wire" data-w="wir" stroke="#888"/>
+
+  <!-- LCD -->
+  <g class="comp" data-w="wlcd">
+    <rect x="710" y="250" width="240" height="80" rx="10" fill="#123a2a" stroke="#46c46a"/>
+    <text x="830" y="272" text-anchor="middle" class="t">LCD1602 + I2C (0x27)</text>
+    <text x="830" y="290" text-anchor="middle" class="ts">VCC 3V3 · SDA→G17 · SCL→G13</text>
+    <text x="830" y="308" text-anchor="middle" class="ts">conectar apagado · 50 kHz</text>
+  </g>
+  <line x1="760" y1="250" x2="760" y2="27" class="wire" data-w="wlcd" stroke="#e5484d"/>
+  <line x1="900" y1="330" x2="900" y2="47" class="wire" data-w="wlcd" stroke="#888"/>
+  <line x1="800" y1="330" x2="225" y2="480" class="wire" data-w="wlcd" stroke="#3e9bff"><title>SDA/SCL → G17/G13</title></line>
+
+  <!-- LEDs -->
+  <g class="comp" data-w="wled">
+    <rect x="330" y="380" width="150" height="90" rx="10" fill="#3a2a1a" stroke="#f5c518"/>
+    <text x="405" y="402" text-anchor="middle" class="t">3 LED + 220Ω</text>
+    <text x="405" y="420" text-anchor="middle" class="ts">G5 sala · G6 cuarto</text>
+    <text x="405" y="438" text-anchor="middle" class="ts">G8 cultivo →R→LED→GND</text>
+  </g>
+  <line x1="370" y1="380" x2="225" y2="330" class="wire" data-w="wled" stroke="#f5c518"/>
+  <line x1="405" y1="380" x2="225" y2="360" class="wire" data-w="wled" stroke="#f5c518"/>
+  <line x1="440" y1="380" x2="225" y2="390" class="wire" data-w="wled" stroke="#f5c518"/>
+  <line x1="405" y1="470" x2="405" y2="47" class="wire" data-w="wled" stroke="#888"><title>Cátodos a GND</title></line>
+
+  <!-- Botones -->
+  <g class="comp" data-w="wbtn">
+    <rect x="520" y="380" width="150" height="90" rx="10" fill="#2a2a2a" stroke="#9aa7c2"/>
+    <text x="595" y="402" text-anchor="middle" class="t">3 botones → GND</text>
+    <text x="595" y="420" text-anchor="middle" class="ts">G10 PARO · G11 MUTE</text>
+    <text x="595" y="438" text-anchor="middle" class="ts">G18 MODO · pull-up int.</text>
+  </g>
+  <line x1="560" y1="470" x2="225" y2="360" class="wire" data-w="wbtn" stroke="#f5c518"/>
+  <line x1="595" y1="470" x2="225" y2="390" class="wire" data-w="wbtn" stroke="#f5c518"/>
+  <line x1="630" y1="470" x2="225" y2="420" class="wire" data-w="wbtn" stroke="#f5c518"/>
+  <line x1="660" y1="470" x2="660" y2="47" class="wire" data-w="wbtn" stroke="#888"/>
+
+  <!-- G7 bloqueado + motor aparte -->
+  <g class="comp" data-w="wmot">
+    <rect x="710" y="380" width="110" height="90" rx="10" fill="#222" stroke="#e5484d" stroke-dasharray="6 4"/>
+    <text x="765" y="402" text-anchor="middle" class="t">MOTOR</text>
+    <text x="765" y="420" text-anchor="middle" class="ts">en mano,</text>
+    <text x="765" y="438" text-anchor="middle" class="ts">SIN etapa (G7✕)</text>
+  </g>
+
+  <!-- S8050 + TP4056 + bomba -->
+  <g class="comp" data-w="wpump">
+    <rect x="330" y="510" width="340" height="110" rx="10" fill="#3a1a1a" stroke="#e5484d"/>
+    <text x="500" y="532" text-anchor="middle" class="t">BOMBA con S8050 + TP4056 + 1N4007</text>
+    <text x="500" y="550" text-anchor="middle" class="ts">G4 →1k→ base · emisor→GND · 10k base→GND</text>
+    <text x="500" y="568" text-anchor="middle" class="ts">OUT+ → bomba(+) · bomba(−) → colector · OUT− → GND</text>
+    <text x="500" y="586" text-anchor="middle" class="ts">1N4007 en paralelo, RAYA a OUT+ · probar sumergida</text>
+  </g>
+  <line x1="360" y1="510" x2="225" y2="300" class="wire" data-w="wpump" stroke="#f5c518"><title>GPIO4 → base vía 1k</title></line>
+  <line x1="620" y1="620" x2="620" y2="47" class="wire" data-w="wpump" stroke="#888"><title>OUT− y emisor a GND común</title></line>
+
+  <!-- DFPlayer en mano -->
+  <g class="comp" data-w="wdfp" opacity="0.85">
+    <rect x="710" y="510" width="240" height="110" rx="10" fill="#222" stroke="#9aa7c2" stroke-dasharray="8 5"/>
+    <text x="830" y="532" text-anchor="middle" class="t">DFPlayer Mini ⏳</text>
+    <text x="830" y="550" text-anchor="middle" class="ts">EN MANO · RX/TX/BUSY = −1</text>
+    <text x="830" y="568" text-anchor="middle" class="ts">su microSD está en D:\ :</text>
+    <text x="830" y="586" text-anchor="middle" class="ts">copiar carpetas 01–21 y 51–71</text>
+  </g>
+</svg>
+
+<div class="note"><b>Hoy sí funciona sin comprar nada:</b> sensores + LCD + IR + 3 LED + botones + bomba (con diodo). <b>Todavía no:</b> ventilador (G7 bloqueado, motor guardado), audio (DFPlayer sin cablear, RX/TX/BUSY en −1), ni relevo de 5 V (no hay fuente de 5 V/2 A: el PIR toma 5 V del propio USB y la bomba del TP4056).</div>
+
+<h3>Tabla rápida — HOY</h3>
+<table>
+<tr><th>GPIO</th><th>Va a</th><th>Detalle</th></tr>
+<tr><td>3</td><td>LDR (divisor 10k)</td><td>3V3 → LDR → GPIO3 → 10k → GND</td></tr>
+<tr><td>4</td><td>Base S8050 (vía 1k)</td><td>Emisor→GND, colector→bomba(−), 10k base→GND</td></tr>
+<tr><td>5 / 6 / 8</td><td>LED sala / cuarto / cultivo</td><td>GPIO → 220Ω → ánodo, cátodo → GND</td></tr>
+<tr><td>7</td><td class="hl">NADA (bloqueado)</td><td>Ventilador pendiente de etapa</td></tr>
+<tr><td>9</td><td>PIR OUT</td><td>VCC→VU 5V USB, GND común</td></tr>
+<tr><td>10 / 11 / 18</td><td>PARO / MUTE / MODO</td><td>Botón → GND (pull-up interno)</td></tr>
+<tr><td>12</td><td>HX1838 OUT</td><td>VCC 3V3 · aprender 21 teclas</td></tr>
+<tr><td>13 / 17</td><td>LCD SCL / SDA</td><td>0x27, VCC 3V3, conectar apagado</td></tr>
+<tr><td>14</td><td>DHT11 DATA</td><td>10k entre VCC y DATA; pata 3 libre</td></tr>
+<tr><td>15 / 16</td><td>Suelo AO / Nivel S</td><td>VCC 3V3, GND común</td></tr>
+</table>
+</div>
+
+<!-- ==================== FUTURO ==================== -->
+<div class="panel" id="futuro">
+<h2>Futuro: casa final <span class="badge no">FALTAN PIEZAS</span></h2>
+<div class="legend">
+  <span><i class="sw" style="background:var(--red)"></i>Bus 5 V con fusible</span>
+  <span><i class="sw" style="background:#888"></i>GND común</span>
+  <span style="border:2px solid #e5484d;border-radius:6px;padding:1px 8px;">rojo = FALTA comprarlo</span>
+</div>
+
+<svg viewBox="0 0 1000 560" id="svgFut">
+  <rect x="120" y="20" width="760" height="16" rx="8" fill="#e5484d"/>
+  <text x="130" y="32" font-size="12" fill="#fff" font-weight="bold">BUS 5 V ← fuente 5 V/3 A + fusible en serie</text>
+  <rect x="120" y="42" width="760" height="16" rx="8" fill="#555"/>
+  <text x="130" y="54" font-size="12" fill="#fff" font-weight="bold">GND COMÚN (todas las ramas)</text>
+
+  <g class="comp" data-w="fpsu">
+    <rect x="30" y="110" width="180" height="90" rx="10" fill="#222" stroke="#e5484d" stroke-width="3"/>
+    <text x="120" y="135" text-anchor="middle" class="t">Fuente 5 V/3 A</text>
+    <text x="120" y="153" text-anchor="middle" class="ts">+ fusible + capacitores</text>
+    <text x="120" y="171" text-anchor="middle" class="ts">barril: medir antes</text>
+  </g>
+  <line x1="120" y1="110" x2="300" y2="28" class="wire" data-w="fpsu" stroke="#e5484d"/>
+  <line x1="150" y1="200" x2="500" y2="50" class="wire" data-w="fpsu" stroke="#888"/>
+
+  <g class="comp" data-w="fesp">
+    <rect x="270" y="110" width="150" height="90" rx="10" fill="#1f6feb"/>
+    <text x="345" y="135" text-anchor="middle" class="t" fill="#fff">ESP32-S3</text>
+    <text x="345" y="153" text-anchor="middle" class="ts" fill="#cfe0ff">misma MAPA_CASA</text>
+    <text x="345" y="171" text-anchor="middle" class="ts" fill="#cfe0ff">sensores = hoy</text>
+  </g>
+  <line x1="345" y1="110" x2="500" y2="28" class="wire" data-w="fesp" stroke="#e5484d"><title>ESP32 alimentado del bus 5 V (una sola ruta +)</title></line>
+
+  <g class="comp" data-w="fdrv">
+    <rect x="470" y="110" width="200" height="130" rx="10" fill="#222" stroke="#e5484d" stroke-width="3"/>
+    <text x="570" y="135" text-anchor="middle" class="t">DRV8833 (dual)</text>
+    <text x="570" y="153" text-anchor="middle" class="ts">VM/GND al bus 5 V</text>
+    <text x="570" y="171" text-anchor="middle" class="ts">AIN1/AIN2/BIN1/BIN2:</text>
+    <text x="570" y="189" text-anchor="middle" class="ts">GPIO por auditar (¡no 17/18!)</text>
+    <text x="570" y="207" text-anchor="middle" class="ts">canal A = bomba</text>
+    <text x="570" y="225" text-anchor="middle" class="ts">canal B = ventilador</text>
+  </g>
+  <line x1="550" y1="110" x2="640" y2="28" class="wire" data-w="fdrv" stroke="#e5484d"/>
+  <line x1="600" y1="240" x2="600" y2="50" class="wire" data-w="fdrv" stroke="#888"/>
+
+  <g class="comp" data-w="fmot">
+    <rect x="720" y="110" width="230" height="130" rx="10" fill="#2a2a2a" stroke="#46c46a"/>
+    <text x="835" y="135" text-anchor="middle" class="t">Bomba + ventilador</text>
+    <text x="835" y="153" text-anchor="middle" class="ts">a salidas del DRV8833</text>
+    <text x="835" y="171" text-anchor="middle" class="ts">1N4007 en cada motor</text>
+    <text x="835" y="189" text-anchor="middle" class="ts">S8050 + TP4056 → banco</text>
+    <text x="835" y="207" text-anchor="middle" class="ts">(quedan como herramienta)</text>
+  </g>
+
+  <g class="comp" data-w="fdfp">
+    <rect x="270" y="300" width="220" height="130" rx="10" fill="#222" stroke="#e5484d" stroke-width="3"/>
+    <text x="380" y="325" text-anchor="middle" class="t">DFPlayer Mini</text>
+    <text x="380" y="343" text-anchor="middle" class="ts">VCC/GND al bus 5 V</text>
+    <text x="380" y="361" text-anchor="middle" class="ts">ESP32-TX →1k→ RX · TX → RX</text>
+    <text x="380" y="379" text-anchor="middle" class="ts">BUSY → GPIO libre + parlante</text>
+    <text x="380" y="397" text-anchor="middle" class="ts">SD con 01–21 y 51–71</text>
+  </g>
+  <line x1="380" y1="300" x2="420" y2="28" class="wire" data-w="fdfp" stroke="#e5484d"/>
+  <line x1="440" y1="430" x2="700" y2="50" class="wire" data-w="fdfp" stroke="#888"/>
+
+  <g class="comp" data-w="fspk">
+    <rect x="540" y="300" width="200" height="130" rx="10" fill="#222" stroke="#e5484d" stroke-width="3"/>
+    <text x="640" y="325" text-anchor="middle" class="t">Parlante 4–8 Ω</text>
+    <text x="640" y="343" text-anchor="middle" class="ts">entre SPK1 y SPK2</text>
+    <text x="640" y="361" text-anchor="middle" class="ts">NO bocinas de 1–2 Ω</text>
+    <text x="640" y="379" text-anchor="middle" class="ts">MAX98306 opcional después</text>
+  </g>
+
+  <g class="comp" data-w="fled">
+    <rect x="790" y="300" width="160" height="130" rx="10" fill="#2a2a2a" stroke="#46c46a"/>
+    <text x="870" y="325" text-anchor="middle" class="t">3 LED + botones</text>
+    <text x="870" y="343" text-anchor="middle" class="ts">igual que hoy</text>
+    <text x="870" y="361" text-anchor="middle" class="ts">G5/G6/G8 · G10/11/18</text>
+    <text x="870" y="379" text-anchor="middle" class="ts">LCD + sensores igual</text>
+  </g>
+</svg>
+
+<div class="note"><b>Puertas antes de cablear el futuro</b> (nota 66): fotografiar DRV8833/DFPlayer por ambos lados → medir fuente sin ESP32 → auditar GPIO libres (RX/TX/BUSY, y AIN1/AIN2/BIN1/BIN2; GPIO17/18 prohibidos) → probar DRV sin carga → probar DFPlayer con <b>01/001.mp3</b> a volumen bajo → integrar una luz → HIL completo → soldar baquelita. El perfil <b>CASA_FINAL_DRV8833_DFPLAYER</b> se crea solo entonces.</div>
+
+<h3>Lista de compra mínima</h3>
+<table>
+<tr><th>Pieza</th><th>Estado</th><th>Para qué</th></tr>
+<tr><td>Fuente cerrada 5 V/3 A + portafusible</td><td><span class="badge no">FALTA</span></td><td>Bus de potencia de la maqueta</td></tr>
+<tr><td>DRV8833 doble puente H</td><td><span class="badge no">FALTA</span></td><td>Bomba (canal A) + ventilador (canal B)</td></tr>
+<tr><td>Parlante 4–8 Ω, baja potencia</td><td><span class="badge no">FALTA</span></td><td>Probar DFPlayer directo, volumen bajo</td></tr>
+<tr><td>DFPlayer Mini</td><td><span class="badge ok">YA TIENES</span></td><td>Voz Jarvis (UART + BUSY por auditar)</td></tr>
+<tr><td>MicroSD (la de D:\)</td><td><span class="badge ok">YA TIENES</span></td><td>FAT32 solo con 01–21 y 51–71</td></tr>
+<tr><td>1N4007 ×2</td><td><span class="badge ok">YA TIENES</span></td><td>Flyback de bomba y ventilador</td></tr>
+<tr><td>Capacitores barra + DRV + audio</td><td><span class="badge warn">MEDIR ETIQUETA</span></td><td>Los de 10 µF que tienes pueden no bastar</td></tr>
+</table>
+</div>
+
+<h3>Checklist antes de energizar (ambos diagramas)</h3>
+<ul class="check">
+  <li>☐ Todos los GND unidos en un punto común.</li>
+  <li>☐ Nada en GPIO7 (bloqueado por firmware).</li>
+  <li>☐ Diodo 1N4007 puesto, raya al positivo.</li>
+  <li>☐ Botones a GND, nunca a voltaje.</li>
+  <li>☐ LCD y DHT conectados con la placa apagada.</li>
+  <li>☐ Bomba sumergida antes de <b>RIEGO_ON</b>.</li>
+</ul>
+
+<footer>PROJECT DOMUS · generado desde MAPA_CASA (perfil 3) e inventario Obsidian 01/39/66/67 · visualizaciones/banco_hoy_futuro.html</footer>
+
+<script>
+function show(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+document.querySelectorAll('g.comp').forEach(g=>{
+  g.addEventListener('mouseenter',()=>{
+    const w=g.dataset.w, svg=g.closest('svg');
+    svg.querySelectorAll('.wire').forEach(l=>{
+      l.classList.toggle('dim', l.dataset.w!==w);
+    });
+    svg.querySelectorAll('g.comp').forEach(c=>{
+      c.classList.toggle('dim', c!==g);
+    });
+  });
+  g.addEventListener('mouseleave',()=>{
+    const svg=g.closest('svg');
+    svg.querySelectorAll('.dim').forEach(e=>e.classList.remove('dim'));
+  });
+});
+</script>
+</body>
+</html>
