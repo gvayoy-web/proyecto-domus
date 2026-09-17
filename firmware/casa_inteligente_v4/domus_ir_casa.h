@@ -21,14 +21,14 @@ enum Tecla : uint8_t {
   VOL_MAS = 7,    // 0x15 subir volumen
   EQ = 8,         // 0x09 diagnóstico
   N_0 = 9,        // 0x16 todo apagado
-  N_100_MAS = 10,  // 0x19 repetir pista
+  N_100_MAS = 10,  // 0x19 alterna voz (un toque)
   N_200_MAS = 11,  // 0x0D rearme
   N_1 = 12,       // 0x0C luz de sala
   N_2 = 13,       // 0x18 luz de cuarto
   N_3 = 14,       // 0x5E luz de cultivo
   N_4 = 15,       // 0x08 ventilador
   N_5 = 16,       // 0x1C riego
-  N_6 = 17,       // 0x5A consulta temp (doble = cambio de voz)
+  N_6 = 17,       // 0x5A consulta temperatura
   N_7 = 18,       // 0x42 consulta humedad
   N_8 = 19,       // 0x52 consulta suelo + depósito
   N_9 = 20,       // 0x4A estado completo

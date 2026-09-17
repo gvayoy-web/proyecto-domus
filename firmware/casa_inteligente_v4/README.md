@@ -41,10 +41,14 @@ con `IR_BORRAR`. Hasta aprender una posición, su código no puede ejecutar una
 acción. El firmware rechaza asignar el mismo código a dos teclas y `IR_LISTA`
 muestra `APRENDIDAS=n/21`.
 
-Acciones principales: 1/Anterior sala, 2/Siguiente cuarto, 3 cultivo, 4
-ventilador (responde bloqueado), 5 riego, 0 todo apagado, 200+ rearme, CH/CH-
-cambian la pantalla y EQ muestra diagnóstico. La tecla 6 (`0x005A`) alterna
-las voces 1 y 2; 7, 8 y 9 conservan el reporte de estado redundante.
+Mapa por botón (un toque, sin combinaciones): arriba configuración, abajo
+acciones en orden. CH- fija modo manual, CH+ modo automático, CH cambia de
+página; PLAY silencia, VOL ajusta volumen, EQ diagnostica, 0 apaga todo,
+100+ alterna la voz Carlos/Karla, 200+ rearma. Abajo: 1/Anterior sala,
+2/Siguiente cuarto, 3 cultivo, 4 ventilador (responde bloqueado sin driver),
+5 alterna riego, 6/7/8/9 consultas (temp, humedad, suelo+depósito, estado).
+Mientras Jarvis habla o 1.5 s tras cada orden, el mando responde
+`NACK;IR;OCUPADO` (la tecla 0 y el aprendizaje no se bloquean).
 
 La vista 0 del LCD muestra temperatura y humedad del aire. La vista 1 muestra
 humedad de suelo y agua en porcentaje. El porcentaje de agua usa provisionalmente
@@ -92,8 +96,11 @@ reproduce archivos por sí solo. La fuente definida es DFPlayer Mini con microSD
 y cuatro pistas por evento; sigue deshabilitada hasta asignar UART libre y
 validar alimentación, tarjeta y parlante. Ver la nota Obsidian 65.
 
-Las 112 pistas generadas (56 por voz) y su manifiesto reproducible están en
-`audio/jarvis_sd/`. La voz 1 usa carpetas 01-14 y la voz 2 usa 51-64.
+Las 168 pistas generadas (84 por voz: 21 botones x 4 variantes) y su
+manifiesto reproducible están en `audio/jarvis_sd/`. La voz 1 (Carlos) usa
+carpetas 01-21 y la voz 2 (Karla) usa 51-71. Cada botón del mando tiene su
+carpeta; las variantes llevan significado (1 = ON manual, 2 = OFF manual,
+3 = ON automático, 4 = OFF automático). Ver `tools/generate_jarvis_audio.py`.
 El firmware ya contiene `JarvisAudio` y `DFPlayerTransport`, pero mantiene
 RX/TX/BUSY en `-1` y `MP3_HABILITADO=false`: la nota 66 exige identificar los
 GPIO libres y el módulo físico antes de crear el perfil final.

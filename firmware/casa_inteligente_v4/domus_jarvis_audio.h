@@ -18,7 +18,8 @@
 // - Tecla 9 (estado): las 4 = estado general; la 3 = "Sistemas en línea"
 //   (arranque y confirmación de cambio de voz).
 // - Tecla 200+: 1-2 = rearme logrado; 3-4 = sigue bloqueado.
-// - Tecla 100+: 1-2 = "repitiendo"; 3-4 = "nada que repetir".
+// - Tecla 100+: 1/3 = voz Carlos, 2/4 = voz Karla (un toque alterna;
+//   repetir quedó solo en Serial). Tecla 200+: 1-2 = rearme, 3-4 = bloqueado.
 // - Resto (CH-, CH, CH+, Play, VOL-, VOL+, 6, 7): 4 variantes del mismo
 //   significado; Play usa paridad ON {1,3} / OFF {2,4}.
 enum class EventoJarvis : uint8_t {
@@ -32,14 +33,14 @@ enum class EventoJarvis : uint8_t {
   VOL_MAS = 8,     // VOL+ 0x15: subir volumen
   EQ = 9,          // EQ 0x09: diagnóstico
   TECLA_0 = 10,    // 0 0x16: todo apagado (+ PARO físico)
-  TECLA_100 = 11,  // 100+ 0x19: repetir última pista
+  TECLA_100 = 11,  // 100+ 0x19: alterna voz Carlos/Karla (un toque)
   TECLA_200 = 12,  // 200+ 0x0D: rearme seguro
   TECLA_1 = 13,    // 1 0x0C: luz de sala
   TECLA_2 = 14,    // 2 0x18: luz de cuarto
   TECLA_3 = 15,    // 3 0x5E: luz de cultivo
   TECLA_4 = 16,    // 4 0x08: ventilador
   TECLA_5 = 17,    // 5 0x1C: riego
-  TECLA_6 = 18,    // 6 0x5A: consulta temperatura (doble = cambio de voz)
+  TECLA_6 = 18,    // 6 0x5A: consulta temperatura
   TECLA_7 = 19,    // 7 0x42: consulta humedad
   TECLA_8 = 20,    // 8 0x52: consulta suelo + depósito
   TECLA_9 = 21     // 9 0x4A: estado completo (+ arranque)

@@ -86,7 +86,7 @@
 // 5 log · 5B/5C microSD e historial · 6 LCD/I2C · 7 MP3/Jarvis ·
 // 8/8B relés y pantalla · 9 sensores · 10/10B riego/ventilador auto ·
 // 11 Serial+IR+CAL (dispatcher por tabla) · 12B salud · 13 setup ·
-// 13B demo y temporizadores · 14 loop.
+// 13B demo y temporizadores · 13C telemetría SENSORES; · 14 loop.
 // Módulos propios: domus_types / calibration / drivers / ir_casa /
 // dfplayer / jarvis_audio / pantalla (solo Arduino + LCD).
 
@@ -2491,6 +2491,31 @@ void iniciarTemporizadorSalida(uint8_t indice, bool estado) {
 }
 
 // ============================================================================
+// SECCIÓN 13C: TELEMETRÍA DE SENSORES (stream SENSORES; para HIL)
+// ============================================================================
+// El HIL (test_07) espera una línea SENSORES; cada pocos segundos. Solo
+// usa últimos valores válidos: no muestrea hardware, no bloquea, no toca
+// la SD (es stream, no bitácora) y funciona también en modo seguro.
+#define INTERVALO_TELEMETRIA_SENSORES_MS 2000UL
+unsigned long ultimaTelemetriaSensoresMs = 0;
+
+void emitirTelemetriaSensores() {
+  if (millis() - ultimaTelemetriaSensoresMs < INTERVALO_TELEMETRIA_SENSORES_MS) return;
+  ultimaTelemetriaSensoresMs = millis();
+  char linea[160];
+  snprintf(linea, sizeof(linea),
+    "SENSORES;TEMP_C=%.1f;HUM_AIRE=%.1f;HUM_PCT=%d;NIVEL=%d;LUZ_PCT=%d;"
+    "PIR=%d;SALIDAS=%d%d%d%d%d;",
+    (double)ultimaTempCValida, (double)ultimaHumAireValida,
+    ultimoHumedadPctValido, ultimoNivelAguaValido, ultimoLuzPctValido,
+    ultimaPresenciaValida ? 1 : 0,
+    estadoSalidas[0] ? 1 : 0, estadoSalidas[1] ? 1 : 0,
+    estadoSalidas[2] ? 1 : 0, estadoSalidas[3] ? 1 : 0,
+    estadoSalidas[4] ? 1 : 0);
+  Serial.println(linea);
+}
+
+// ============================================================================
 // SECCIÓN 14: LOOP PRINCIPAL (no bloqueante)
 // ============================================================================
 unsigned long ultimaActualizacionPantalla = 0;
@@ -2533,4 +2558,7 @@ void loop() {
     refrescarPantallaFinal();
     ultimaActualizacionPantalla = millis();
   }
+
+  // 5. Telemetría en vivo para el HIL y el monitor (siempre, aun en seguro).
+  emitirTelemetriaSensores();
 }
