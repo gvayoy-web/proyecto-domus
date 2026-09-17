@@ -62,6 +62,8 @@ class JarvisAudio {
 
   bool habilitado() const { return habilitado_; }
   bool silenciado() const { return silenciado_; }
+  // true mientras el DFPlayer reproduce (solo si el perfil conectó BUSY).
+  bool ocupado() const { return transporte_.ocupado(); }
   uint8_t volumenActual() const { return volumen_; }
   uint8_t vozActual() const { return voz_; }
   void silenciar(bool valor) { silenciado_ = valor; if (valor) transporte_.detener(); }

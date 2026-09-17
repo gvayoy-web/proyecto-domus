@@ -39,10 +39,10 @@
 1,es-HN-CarlosNeural,10,002,tecla_0,Cargas detenidas.,Carlos/10/002.mp3,10/002.mp3,12672,97f12c36de5becc491ea323bf89a06f7d4e97355b9d53356a7eb9b58647f0da0
 1,es-HN-CarlosNeural,10,003,tecla_0,Emergencia activada.,Carlos/10/003.mp3,10/003.mp3,13536,d1873cd36f16bf46c2888542570bcd784a390026c6e2c4c24ae44093fb72506c
 1,es-HN-CarlosNeural,10,004,tecla_0,"Paro de emergencia, todo detenido.",Carlos/10/004.mp3,10/004.mp3,19008,4cb9028ad7884b81302a973b83c987c08c329514868fba3372ad788216b37690
-1,es-HN-CarlosNeural,11,001,tecla_100,Repitiendo última frase.,Carlos/11/001.mp3,11/001.mp3,14976,a4b0e125cf11e22fb0b48fbb704b63439b6622907e3a0a77324a56f230f8deec
-1,es-HN-CarlosNeural,11,002,tecla_100,De nuevo.,Carlos/11/002.mp3,11/002.mp3,11232,d0366b17755d0d0eb9cf139d2091710dec8f25a339377f5d57eec8be2c331c4d
-1,es-HN-CarlosNeural,11,003,tecla_100,Nada que repetir.,Carlos/11/003.mp3,11/003.mp3,12528,c4a1e8be0a8ac1775733de6b5f71bbbcbeb8ef7d97baa1c8cbfbcea79d287700
-1,es-HN-CarlosNeural,11,004,tecla_100,Sin pista anterior.,Carlos/11/004.mp3,11/004.mp3,13392,679338645b1a140281bb9bfb54f5bccc5d8610f81093b61f7ecd1be3561bbb06
+1,es-HN-CarlosNeural,11,001,tecla_100_voz,Voz Carlos activada.,Carlos/11/001.mp3,11/001.mp3,13680,1ad01412daeac54996e6fa91210346876e75a63864a67e4abe8b42aa31aa4151
+1,es-HN-CarlosNeural,11,002,tecla_100_voz,Voz Karla activada.,Carlos/11/002.mp3,11/002.mp3,13104,fff13bedfe2a058fa2e426dd38d5a70b35cc3bd778a7c1ae527e91a9b47ab6d4
+1,es-HN-CarlosNeural,11,003,tecla_100_voz,Hablo como Carlos.,Carlos/11/003.mp3,11/003.mp3,12816,41a656075f8451a6b8e5b62aafae68fc3add65681a5f8dcd097085dba107da10
+1,es-HN-CarlosNeural,11,004,tecla_100_voz,Hablo como Karla.,Carlos/11/004.mp3,11/004.mp3,12096,94faf72f2755fa578f7a21d49dc53ff1a9f4a1581a2af23ea4f326a8f0722806
 1,es-HN-CarlosNeural,12,001,tecla_200,Sistema rearmado.,Carlos/12/001.mp3,12/001.mp3,12816,0e591d0bc57a26cef1a42eec5192f3591a5658a0110793bfc399556cf12e9b2a
 1,es-HN-CarlosNeural,12,002,tecla_200,"Bloqueo liberado, todo listo.",Carlos/12/002.mp3,12/002.mp3,17568,df930a144c84672ae09590b7b42f6e25ffa5fc9c135d157579c38507c4e98156
 1,es-HN-CarlosNeural,12,003,tecla_200,Sigue bloqueado.,Carlos/12/003.mp3,12/003.mp3,11952,48f3c4442c5b8c94a16bb3fcbe03ed36d8ef23c109880831a5223047498032d9
@@ -123,10 +123,10 @@
 2,es-HN-KarlaNeural,60,002,tecla_0,Cargas detenidas.,Karla/10/002.mp3,60/002.mp3,13824,ea69217b6c9a24aaf3a1f38c3129e8f5fb8231d85d9df7e36b8a2492f4c0a69d
 2,es-HN-KarlaNeural,60,003,tecla_0,Emergencia activada.,Karla/10/003.mp3,60/003.mp3,14400,dbc11570a8108041f61b71aab0aced32ef8dafcf5e20449640752b69abe7b206
 2,es-HN-KarlaNeural,60,004,tecla_0,"Paro de emergencia, todo detenido.",Karla/10/004.mp3,60/004.mp3,20304,2290e80d0afc7cc7f227376ce628264b370a187d0967f4be4a5babd95a8f68fd
-2,es-HN-KarlaNeural,61,001,tecla_100,Repitiendo última frase.,Karla/11/001.mp3,61/001.mp3,16272,b28fd16e4f6e2a0fc11f2404d4b614cad5e7e496fb2777a58d92f4dd252981eb
-2,es-HN-KarlaNeural,61,002,tecla_100,De nuevo.,Karla/11/002.mp3,61/002.mp3,11232,929bb1618a17cd6213ef7b53c4de82f607770efe8bbb7a23e8e09e7114503f09
-2,es-HN-KarlaNeural,61,003,tecla_100,Nada que repetir.,Karla/11/003.mp3,61/003.mp3,13536,248cf1aa74fb603b4053be86e340f10f5b1bcebd0a3a0f2c5e17dde29f1a95f0
-2,es-HN-KarlaNeural,61,004,tecla_100,Sin pista anterior.,Karla/11/004.mp3,61/004.mp3,13968,1859299d3816c3302cde8a860467d543cebeb392a16b8c6fd5735e87596a94a8
+2,es-HN-KarlaNeural,61,001,tecla_100_voz,Voz Carlos activada.,Karla/11/001.mp3,61/001.mp3,14832,00527f4e90abfa03e9821db726a4ca158bf76ad42c635e2f07397e1eb1b9e29d
+2,es-HN-KarlaNeural,61,002,tecla_100_voz,Voz Karla activada.,Karla/11/002.mp3,61/002.mp3,14400,b0c5f3d0650a5abd80b39b26961604d522c52019425703d42eba1f4b8b26b663
+2,es-HN-KarlaNeural,61,003,tecla_100_voz,Hablo como Carlos.,Karla/11/003.mp3,61/003.mp3,13536,35cb4131f70678b01e90e46beddcc51a5c188e19ddf76c99447af372dae9c3b8
+2,es-HN-KarlaNeural,61,004,tecla_100_voz,Hablo como Karla.,Karla/11/004.mp3,61/004.mp3,12528,6f04532cfa77009732fd61508737f51f835aecbff3251d7f167ac504239c5989
 2,es-HN-KarlaNeural,62,001,tecla_200,Sistema rearmado.,Karla/12/001.mp3,62/001.mp3,13824,14aef0db4648307052b35c290fe0976648f788058022bf0b5e4968d5b6718efd
 2,es-HN-KarlaNeural,62,002,tecla_200,"Bloqueo liberado, todo listo.",Karla/12/002.mp3,62/002.mp3,19008,4b9f782851b7232b90e7711e78476bee819da660132e043d89e2b232e7150cc5
 2,es-HN-KarlaNeural,62,003,tecla_200,Sigue bloqueado.,Karla/12/003.mp3,62/003.mp3,12384,fe91d3ac0c7e60d184c07d6b5d2cfa37745faabdd425ff1fccd82f0c30a37299

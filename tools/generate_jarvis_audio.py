@@ -7,7 +7,7 @@ conmutadores 1 = ON manual, 2 = OFF manual, 3 = ON automático,
 diagnóstico, 3-4 fallo de sensor; tecla 8: 1-2 consulta, 3 tierra seca
 (reservada), 4 depósito bajo; tecla 9: estado (3 = "Sistemas en línea":
 arranque y cambio de voz); 200+: 1-2 rearme logrado, 3-4 sigue bloqueado;
-100+: 1-2 repitiendo, 3-4 nada que repetir.
+100+: 1/3 voz Carlos, 2/4 voz Karla (un toque alterna; repetir: Serial).
 
 Requiere ``edge-tts`` y acceso de red. La voz 1 (Carlos) usa carpetas 01-21
 y la voz 2 (Karla) usa 51-71; ambas llevan pistas 001-004, tal como espera
@@ -37,7 +37,7 @@ CATALOGO = {
     8: ("vol_mas", ("Volumen más alto.", "Subiendo el volumen.", "Volumen al máximo.", "Se escucha fuerte.")),
     9: ("eq_diagnostico", ("Diagnóstico completado.", "Revisión del sistema terminada.", "Sensor sin respuesta.", "Revisa las conexiones del sensor.")),
     10: ("tecla_0", ("Todo apagado.", "Cargas detenidas.", "Emergencia activada.", "Paro de emergencia, todo detenido.")),
-    11: ("tecla_100", ("Repitiendo última frase.", "De nuevo.", "Nada que repetir.", "Sin pista anterior.")),
+    11: ("tecla_100_voz", ("Voz Carlos activada.", "Voz Karla activada.", "Hablo como Carlos.", "Hablo como Karla.")),
     12: ("tecla_200", ("Sistema rearmado.", "Bloqueo liberado, todo listo.", "Sigue bloqueado.", "No puedo rearmar todavía.")),
     13: ("tecla_1_sala", ("Luz de sala encendida.", "Luz de sala apagada.", "Sala iluminada en automático.", "Sala apagada en automático.")),
     14: ("tecla_2_cuarto", ("Luz de cuarto encendida.", "Luz de cuarto apagada.", "Cuarto iluminado en automático.", "Cuarto apagado en automático.")),

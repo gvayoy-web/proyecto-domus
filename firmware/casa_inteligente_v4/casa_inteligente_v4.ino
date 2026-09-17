@@ -1642,10 +1642,11 @@ void alternarSalidaIR(int indice, const char* nombre) {
   ejecutarComandoRele(comando, indice, !estadoSalidas[indice], ORIGEN_IR);
 }
 
-// Mapa final de las 21 teclas CAR MP3 (notas Obsidian 46 y 64): cada botón
-// tiene su carpeta de voz propia (01-21 Carlos, 51-71 Karla) y anuncia tras
-// el ACK/NACK real del despachador. CH- = modo manual, CH+ = modo
-// automático, CH = página del LCD; el resto conserva el mapa vigente.
+// Mapa final de las 21 teclas CAR MP3 (notas Obsidian 46 y 64), ordenado
+// como el mando físico: arriba configuración (una función por botón, un
+// toque), abajo acciones en orden (luces y bomba 1-5, lecturas 6-9).
+// Cada botón tiene su carpeta de voz propia (01-21 Carlos, 51-71 Karla)
+// y anuncia tras el ACK/NACK real del despachador.
 void fijarModoManualIR() {
   for (int i = 0; i < TOTAL_SALIDAS; ++i) {
     propietarioSalidas[i] =
@@ -1666,6 +1667,7 @@ void fijarModoAutoIR() {
 void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
   using namespace IRCasa;
   switch (tecla) {
+    // --- Arriba: configuración (no accionan cargas) ---
     case CH_MENOS:
       fijarModoManualIR();
       anunciarJarvis(EventoJarvis::CH_MENOS);
@@ -1678,57 +1680,6 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
     case CH_MAS:
       fijarModoAutoIR();
       anunciarJarvis(EventoJarvis::CH_MAS);
-      break;
-    case ANTERIOR: case N_1: alternarSalidaIR(1, "LUZ1"); break;
-    case SIGUIENTE: case N_2: alternarSalidaIR(2, "LUZ2"); break;
-    case N_3: alternarSalidaIR(4, "INVER"); break;
-    case N_4: alternarSalidaIR(3, "VENT"); break;
-    case N_5:
-      ejecutarComandoRele("IR_RIEGO_ON", 0, true, ORIGEN_IR);
-      break;
-    case N_0:
-      for (int i = 0; i < TOTAL_SALIDAS; ++i)
-        ejecutarComandoRele("IR_TODO_OFF", i, false, ORIGEN_IR);
-      anunciarJarvisGrupo(EventoJarvis::TECLA_0, false, 1, 2);
-      break;
-    case N_200_MAS:
-      if (rearmarSistema()) anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 1, 2);
-      else anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 3, 4);
-      break;
-    case EQ:
-      emitirEventoLocal(construirReporteDiagnostico());
-      anunciarJarvisGrupo(EventoJarvis::EQ, false, 1, 2);
-      break;
-    case N_6: {
-      // Nota 67: la tecla 6 (0x005A) también alterna voces. Una pulsación
-      // consulta temperatura; doble pulsación (<2 s) cambia Carlos/Karla.
-      static unsigned long ultimaN6Ms = 0;
-      const unsigned long ahora = millis();
-      if (ahora - ultimaN6Ms < 2000 && jarvisAudio.habilitado()) {
-        jarvisAudio.cambiarVoz();
-        ultimaN6Ms = 0;
-        char ack[20];
-        snprintf(ack, sizeof(ack), "ACK;IR;VOZ=%u", (unsigned)jarvisAudio.vozActual());
-        emitirEventoLocal(ack);
-        anunciarJarvis(EventoJarvis::TECLA_9, false, 3);
-      } else {
-        ultimaN6Ms = ahora;
-        emitirEventoLocal(construirReporteEstado());
-        anunciarJarvisGrupo(EventoJarvis::TECLA_6, false, 1, 2);
-      }
-      break;
-    }
-    case N_7:
-      emitirEventoLocal(construirReporteEstado());
-      anunciarJarvis(EventoJarvis::TECLA_7);
-      break;
-    case N_8:
-      emitirEventoLocal(construirReporteEstado());
-      anunciarJarvisGrupo(EventoJarvis::TECLA_8, false, 1, 2);
-      break;
-    case N_9:
-      emitirEventoLocal(construirReporteEstado());
-      anunciarJarvis(EventoJarvis::TECLA_9);
       break;
     case PLAY:
       if (!jarvisAudio.habilitado()) emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
@@ -1751,14 +1702,57 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
                                         : EventoJarvis::VOL_MENOS);
       }
       break;
+    case EQ:
+      emitirEventoLocal(construirReporteDiagnostico());
+      anunciarJarvisGrupo(EventoJarvis::EQ, false, 1, 2);
+      break;
+    case N_0:
+      for (int i = 0; i < TOTAL_SALIDAS; ++i)
+        ejecutarComandoRele("IR_TODO_OFF", i, false, ORIGEN_IR);
+      anunciarJarvisGrupo(EventoJarvis::TECLA_0, false, 1, 2);
+      break;
     case N_100_MAS:
-      // Nota 67 (vigente): 100+ repite la última pista cuando hay audio.
-      if (jarvisAudio.repetirUltima(millis())) {
-        emitirEventoLocal("ACK;IR;REPETIR");
+      // Un toque alterna la voz (Carlos por defecto). El anuncio suena ya
+      // en la voz nueva como confirmación.
+      if (!jarvisAudio.habilitado()) {
+        emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
       } else {
-        emitirEventoLocal("NACK;IR;AUDIO_NO_DISPONIBLE");
-        anunciarJarvisGrupo(EventoJarvis::TECLA_100, false, 3, 4);
+        jarvisAudio.cambiarVoz();
+        const uint8_t voz = jarvisAudio.vozActual();
+        char ack[20];
+        snprintf(ack, sizeof(ack), "ACK;IR;VOZ=%u", (unsigned)voz);
+        emitirEventoLocal(ack);
+        anunciarJarvis(EventoJarvis::TECLA_100, false, voz == 1 ? 1 : 2);
       }
+      break;
+    case N_200_MAS:
+      if (rearmarSistema()) anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 1, 2);
+      else anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 3, 4);
+      break;
+    // --- Abajo: acciones en orden (luces y bomba 1-5, lecturas 6-9) ---
+    // Anterior/Siguiente son atajos de las teclas 1/2.
+    case ANTERIOR: case N_1: alternarSalidaIR(1, "LUZ1"); break;
+    case SIGUIENTE: case N_2: alternarSalidaIR(2, "LUZ2"); break;
+    case N_3: alternarSalidaIR(4, "INVER"); break;
+    case N_4: alternarSalidaIR(3, "VENT"); break;
+    case N_5:
+      ejecutarComandoRele("IR_RIEGO_ON", 0, true, ORIGEN_IR);
+      break;
+    case N_6:
+      emitirEventoLocal(construirReporteEstado());
+      anunciarJarvisGrupo(EventoJarvis::TECLA_6, false, 1, 2);
+      break;
+    case N_7:
+      emitirEventoLocal(construirReporteEstado());
+      anunciarJarvis(EventoJarvis::TECLA_7);
+      break;
+    case N_8:
+      emitirEventoLocal(construirReporteEstado());
+      anunciarJarvisGrupo(EventoJarvis::TECLA_8, false, 1, 2);
+      break;
+    case N_9:
+      emitirEventoLocal(construirReporteEstado());
+      anunciarJarvis(EventoJarvis::TECLA_9);
       break;
     default: break;
   }
@@ -1806,6 +1800,20 @@ bool procesarComandoIR(const String &comando) {
   return true;
 }
 
+// Puerta ordenada del mando: mientras Jarvis habla o no ha pasado
+// BLOQUEO_IR_TRAS_ORDEN_MS desde la última tecla aceptada, toda señal IR
+// se rechaza con NACK;IR;OCUPADO. La saltan el aprendizaje (IR_GRABAR_*),
+// la tecla 0 (apagado general inmediato) y, fuera de aquí, el PARO físico
+// y el comando Serial PARO, que nunca se bloquean.
+#define BLOQUEO_IR_TRAS_ORDEN_MS 1500UL
+unsigned long irBloqueadoHastaMs = 0;
+
+bool irPuertaOcupada(IRCasa::Tecla tecla) {
+  if (tecla == IRCasa::N_0) return false;  // apagado general: siempre pasa
+  if (jarvisAudio.ocupado()) return true;  // DFPlayer hablando (pin BUSY)
+  return (long)(irBloqueadoHastaMs - millis()) > 0;  // ventana tras la orden
+}
+
 void revisarIRCasa() {
   if (!IR_CASA_HABILITADO) return;
   IRCasa::Evento evento = receptorIR.actualizar();
@@ -1827,7 +1835,12 @@ void revisarIRCasa() {
     emitirEventoLocal("NACK;IR;TECLA_DESCONOCIDA");
     return;
   }
+  if (irPuertaOcupada(evento.tecla)) {
+    emitirEventoLocal("NACK;IR;OCUPADO");
+    return;
+  }
   ejecutarTeclaIRCasa(evento.tecla);
+  irBloqueadoHastaMs = millis() + BLOQUEO_IR_TRAS_ORDEN_MS;
 }
 
 void restaurarModoAutomatico(const String &comando, int indice) {
@@ -2038,6 +2051,8 @@ void procesarComandoTexto(String comando) {
   else if (comando == "REARMAR") rearmarSistema();
   else if (comando == "RECUPERAR") recuperarModoSeguro();
   else if (comando == "MIC_ESTADO") emitirEventoLocal(String("MIC;") + (micHabilitado ? "ON" : "OFF"));
+  else if (comando == "REPETIR") emitirEventoLocal(jarvisAudio.repetirUltima(millis())
+    ? "ACK;REPETIR" : "NACK;REPETIR;AUDIO_NO_DISPONIBLE");
   else if (comando == "SD_PRUEBA") emitirEventoLocal(solicitarPruebaSD() ? "ACK;SD_PRUEBA;ENCOLADA" : "NACK;SD_PRUEBA;NO_DISPONIBLE");
 }
 

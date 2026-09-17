@@ -26,8 +26,13 @@ Firmware `casa_inteligente_v4.ino` completado con todas las características sol
   EQ 3-4 fallo de sensor; tecla 8 (v4) depósito bajo; tecla 9 (v3)
   "Sistemas en línea" (arranque y cambio de voz).
 - CH- fija modo manual y CH+ modo automático en todas las salidas (nota 46).
-- Tecla 6: una pulsación consulta temperatura; doble (<2 s) alterna voces.
-- Nota 67 vigente para PLAY (silencio) y 100+ (repetir o "nada que repetir").
+- Un botón = una función, un toque: sin combinaciones ni dobles pulsaciones.
+- 100+ alterna la voz de un toque (Carlos por defecto; el anuncio suena ya en
+  la voz nueva). PLAY = silencio. Repetir sale del mando, queda en Serial.
+- Puerta ordenada: mientras Jarvis habla o 1.5 s tras la orden, el IR responde
+  `NACK;IR;OCUPADO`. La saltan el aprendizaje, la tecla 0 y el PARO físico.
+- Mapa ordenado como el mando: arriba configuración, abajo acciones en orden
+  (luces y bomba 1-5, lecturas 6-9).
 
 ### 2. Automaciones combinadas y relativas
 - `verificarAutomacionesCombinadas()`: 

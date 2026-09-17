@@ -90,14 +90,34 @@ class JarvisAudioContractTests(unittest.TestCase):
                 self.assertGreater(ruta.stat().st_size, 1000,
                                    f"Archivo demasiado pequeño: {ruta}")
 
-    def test_doble_pulsacion_6_cambia_entre_dos_voces(self):
-        """Una pulsación del 6 consulta temperatura; doble (<2 s) cambia de voz."""
-        self.assertIn("case N_6:", self.firmware)
-        self.assertIn("jarvisAudio.cambiarVoz();", self.firmware)
-        self.assertIn("TECLA_6", self.firmware)
+    def test_tecla_100_alterna_la_voz_de_un_toque(self):
+        """100+ alterna Carlos/Karla de un toque; Carlos es la voz inicial."""
+        teclas = self.firmware.split("void ejecutarTeclaIRCasa", 1)[1].split(
+            "\n}\n", 1)[0]
+        voz = teclas.split("case N_100_MAS:", 1)[1]
+        self.assertIn("jarvisAudio.cambiarVoz();", voz)
+        self.assertIn("ACK;IR;VOZ=", voz)
+        # El anuncio suena ya en la voz nueva (variante 1 = Carlos, 2 = Karla).
+        self.assertIn("TECLA_100", voz)
+        self.assertIn("voz == 1 ? 1 : 2", voz)
+        self.assertNotIn("ultimaN6Ms", self.firmware)
         # La voz 2 usa las carpetas 51-71 (desplazamiento +50 sobre 01-21)
         self.assertIn("DESPLAZAMIENTO_VOZ_2 = 50", self.audio_header)
         self.assertIn("+ DESPLAZAMIENTO_VOZ_2", self.audio_header)
+
+    def test_puerta_ordenada_rechaza_senales_mientras_habla(self):
+        """Mientras Jarvis habla o 1.5 s tras la orden, IR responde OCUPADO."""
+        self.assertIn("BLOQUEO_IR_TRAS_ORDEN_MS 1500", self.firmware)
+        self.assertIn("irPuertaOcupada", self.firmware)
+        self.assertIn("NACK;IR;OCUPADO", self.firmware)
+        self.assertIn("irBloqueadoHastaMs = millis() + BLOQUEO_IR_TRAS_ORDEN_MS",
+                      self.firmware)
+        # La saltan: aprendizaje, tecla 0 y (fuera del IR) PARO físico/Serial.
+        puerta = self.firmware.split("bool irPuertaOcupada", 1)[1].split(
+            "\n}\n", 1)[0]
+        self.assertIn("N_0", puerta)
+        self.assertIn("jarvisAudio.ocupado()", puerta)
+        self.assertIn("bool ocupado() const", self.audio_header)
 
     def test_mapa_21_teclas_con_voz_propia(self):
         """Cada botón anuncia su carpeta (notas 46 y 64).
@@ -128,9 +148,10 @@ class JarvisAudioContractTests(unittest.TestCase):
         self.assertIn("case VOL_MENOS:", self.firmware)
         self.assertIn("ajustarVolumen", self.audio_header)
 
-    def test_tecla_repite_ultima_pista(self):
-        """Test that key 100+ repeats the last track."""
-        self.assertIn("case N_100_MAS:", self.firmware)
+    def test_repetir_solo_por_serial(self):
+        """Repetir salió del mando (100+ = voz); sigue por Serial REPETIR."""
+        self.assertIn('comando == "REPETIR"', self.firmware)
+        self.assertIn("ACK;REPETIR", self.firmware)
         self.assertIn("repetirUltima", self.audio_header)
 
     def test_filtro_sin_repeticion_inmediata(self):
@@ -144,9 +165,11 @@ class JarvisAudioContractTests(unittest.TestCase):
         # Check class definition exists
         self.assertIn("class JarvisAudio", self.audio_header)
         # Check required methods
-        required_methods = ["begin", "habilitado", "silenciado", "volumenActual",
-                           "vozActual", "silenciar", "cambiarVoz", "ajustarVolumen",
-                           "repetirUltima", "reproducir"]
+        required_methods = ["begin", "habilitado", "silenciado", "ocupado",
+                           "volumenActual", "vozActual", "silenciar",
+                           "cambiarVoz", "ajustarVolumen", "repetirUltima",
+                           "reproducir", "reproducirGrupo", "reproducirEstado",
+                           "carpetaPara"]
         for method in required_methods:
             self.assertIn(method, self.audio_header,
                          f"Método {method} debe estar en el header de JarvisAudio")
