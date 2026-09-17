@@ -10,15 +10,22 @@
 // y lo registra en microSD; en host esas salidas se neutralizan pero los
 // símbolos deben existir para enlazar las funciones extraídas del .ino.
 enum class EventoJarvis : uint8_t {
-  SISTEMA_LISTO = 1, ORDEN_ACEPTADA, ORDEN_RECHAZADA, LUZ_ENCENDIDA,
-  LUZ_APAGADA, RIEGO_INICIADO, RIEGO_DETENIDO, TIERRA_SECA,
-  TIERRA_HUMEDA, AGUA_BAJA, TEMPERATURA_ALTA, PRESENCIA, EMERGENCIA,
-  ERROR_SENSOR, MODO_MANUAL, MODO_AUTO, DIAGNOSTICO, TODO_APAGADO,
-  SONIDO_ACTIVADO, SISTEMA_REARMADO, LUZ_CULTIVO_ENCENDIDA,
-  LUZ_CULTIVO_APAGADA, VENTILADOR_ENCENDIDO, VENTILADOR_APAGADO,
-  CONSULTA_TEMP, CONSULTA_HUMEDAD, CONSULTA_SUELO, ESTADO_COMPLETO
+  CH_MENOS = 1, CH, CH_MAS, ANTERIOR, PLAY, SIGUIENTE, VOL_MENOS, VOL_MAS,
+  EQ, TECLA_0, TECLA_100, TECLA_200, TECLA_1, TECLA_2, TECLA_3, TECLA_4,
+  TECLA_5, TECLA_6, TECLA_7, TECLA_8, TECLA_9
 };
-inline bool anunciarJarvis(EventoJarvis, bool = false) { return false; }
+inline bool anunciarJarvis(EventoJarvis, bool = false, uint8_t = 0) { return false; }
+inline bool anunciarJarvisGrupo(EventoJarvis, bool, uint8_t, uint8_t) { return false; }
+inline EventoJarvis carpetaSalida(int indice) {
+  switch (indice) {
+    case 0: return EventoJarvis::TECLA_5;
+    case 1: return EventoJarvis::TECLA_1;
+    case 2: return EventoJarvis::TECLA_2;
+    case 3: return EventoJarvis::TECLA_4;
+    case 4: return EventoJarvis::TECLA_3;
+    default: return EventoJarvis::TECLA_9;
+  }
+}
 enum class TipoRegistroHistorial : uint8_t {
   RIEGO_AUTO, RIEGO_MANUAL, LUZ_ENCENDIDA, LUZ_APAGADA,
   VENT_ENCENDIDO, VENT_APAGADO, PARO_EMERGENCIA, MODO_SEGURO,
@@ -39,13 +46,6 @@ inline void incrementarTotalVentAutomaticos() { estadisticas.totalVentAutomatico
 inline void incrementarTotalCambiosLuz() { estadisticas.totalCambiosLuz++; }
 inline void incrementarTotalEmergencias() { estadisticas.totalEmergencias++; }
 inline void incrementarTotalErroresSensores() { estadisticas.totalErroresSensores++; }
-inline TipoRegistroHistorial historialLuz(bool encender, int indice) {
-  if (indice == 4)
-    return encender ? TipoRegistroHistorial::VENT_ENCENDIDO
-                    : TipoRegistroHistorial::VENT_APAGADO;
-  return encender ? TipoRegistroHistorial::LUZ_ENCENDIDA
-                  : TipoRegistroHistorial::LUZ_APAGADA;
-}
 inline void registrarHistorial(TipoRegistroHistorial, uint8_t, bool, float = 0) {}
 struct String : std::string {
   using std::string::string;

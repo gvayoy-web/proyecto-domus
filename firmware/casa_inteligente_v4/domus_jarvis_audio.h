@@ -2,47 +2,55 @@
 #include <Arduino.h>
 #include "domus_dfplayer.h"
 
-// Catálogo Jarvis 1:1 con las 21 teclas CAR MP3 (nota Obsidian 46) más
-// sensores. Cada evento tiene carpeta propia 01-28 en voz 1 (Carlos) y
-// 51-78 en voz 2 (Karla, desplazamiento +50). DFPlayer exige carpetas
+// Catálogo Jarvis 1:1 con los 21 botones del mando CAR MP3.
+// Cada evento vive en su carpeta: voz 1 (Carlos) 01-21, voz 2 (Karla) 51-71
+// (desplazamiento +50). Códigos físicos capturados en la nota Obsidian 64
+// (protocolo P7); acciones por botón en la nota 46; DFPlayer exige carpetas
 // 01-99 con pistas 001-004 (nota 65).
+//
+// Convención de variantes (001-004) por carpeta:
+// - Conmutadores (sala, cuarto, cultivo, ventilador, riego): 1 = ON manual,
+//   2 = OFF manual, 3 = ON automático, 4 = OFF automático.
+// - Botón 0: 1-2 = apagado general; 3-4 = PARO de emergencia.
+// - EQ: 1-2 = diagnóstico manual; 3-4 = fallo de sensor (automático).
+// - Tecla 8 (suelo): 1-2 = consulta en pantalla; 3 = tierra seca (reservada
+//   para alerta automática); 4 = depósito bajo, riego bloqueado.
+// - Tecla 9 (estado): las 4 = estado general; la 3 = "Sistemas en línea"
+//   (arranque y confirmación de cambio de voz).
+// - Tecla 200+: 1-2 = rearme logrado; 3-4 = sigue bloqueado.
+// - Tecla 100+: 1-2 = "repitiendo"; 3-4 = "nada que repetir".
+// - Resto (CH-, CH, CH+, Play, VOL-, VOL+, 6, 7): 4 variantes del mismo
+//   significado; Play usa paridad ON {1,3} / OFF {2,4}.
 enum class EventoJarvis : uint8_t {
-  SISTEMA_LISTO = 1,      // 01 arranque / cambio de voz confirmado
-  ORDEN_ACEPTADA = 2,     // 02 confirmación genérica
-  ORDEN_RECHAZADA = 3,    // 03 rechazo genérico / riego rechazado
-  LUZ_ENCENDIDA = 4,      // 04 sala o cuarto encendidos (teclas 1/2, Anterior/Siguiente)
-  LUZ_APAGADA = 5,        // 05 sala o cuarto apagados
-  RIEGO_INICIADO = 6,     // 06 tecla 5 aceptada
-  RIEGO_DETENIDO = 7,     // 07 riego detenido / timeout
-  TIERRA_SECA = 8,        // 08 alerta automática suelo seco
-  TIERRA_HUMEDA = 9,      // 09 suelo recuperado
-  AGUA_BAJA = 10,         // 10 riego bloqueado por nivel
-  TEMPERATURA_ALTA = 11,  // 11 alerta térmica / auto ventilador
-  PRESENCIA = 12,         // 12 alerta PIR
-  EMERGENCIA = 13,        // 13 PARO, interrumpe todo, sin enfriamiento
-  ERROR_SENSOR = 14,      // 14 sensor inválido
-  MODO_MANUAL = 15,       // 15 tecla CH-
-  MODO_AUTO = 16,         // 16 tecla CH+
-  DIAGNOSTICO = 17,       // 17 tecla EQ
-  TODO_APAGADO = 18,      // 18 tecla 0
-  SONIDO_ACTIVADO = 19,   // 19 PLAY / 100+ (silencio on/off, repetir)
-  SISTEMA_REARMADO = 20,  // 20 tecla 200+
-  LUZ_CULTIVO_ENCENDIDA = 21,  // 21 tecla 3 on
-  LUZ_CULTIVO_APAGADA = 22,    // 22 tecla 3 off
-  VENTILADOR_ENCENDIDO = 23,   // 23 tecla 4 on
-  VENTILADOR_APAGADO = 24,     // 24 tecla 4 off
-  CONSULTA_TEMP = 25,     // 25 tecla 6
-  CONSULTA_HUMEDAD = 26,  // 26 tecla 7
-  CONSULTA_SUELO = 27,    // 27 tecla 8 (suelo + depósito)
-  ESTADO_COMPLETO = 28    // 28 tecla 9 / CH+
+  CH_MENOS = 1,    // CH- 0x45: modo manual
+  CH = 2,          // CH  0x46: página siguiente del LCD
+  CH_MAS = 3,      // CH+ 0x47: modo automático
+  ANTERIOR = 4,    // Anterior 0x44: luz de sala (comparte con tecla 1)
+  PLAY = 5,        // Play 0x43: silencio on/off
+  SIGUIENTE = 6,   // Siguiente 0x40: luz de cuarto (comparte con tecla 2)
+  VOL_MENOS = 7,   // VOL- 0x07: bajar volumen
+  VOL_MAS = 8,     // VOL+ 0x15: subir volumen
+  EQ = 9,          // EQ 0x09: diagnóstico
+  TECLA_0 = 10,    // 0 0x16: todo apagado (+ PARO físico)
+  TECLA_100 = 11,  // 100+ 0x19: repetir última pista
+  TECLA_200 = 12,  // 200+ 0x0D: rearme seguro
+  TECLA_1 = 13,    // 1 0x0C: luz de sala
+  TECLA_2 = 14,    // 2 0x18: luz de cuarto
+  TECLA_3 = 15,    // 3 0x5E: luz de cultivo
+  TECLA_4 = 16,    // 4 0x08: ventilador
+  TECLA_5 = 17,    // 5 0x1C: riego
+  TECLA_6 = 18,    // 6 0x5A: consulta temperatura (doble = cambio de voz)
+  TECLA_7 = 19,    // 7 0x42: consulta humedad
+  TECLA_8 = 20,    // 8 0x52: consulta suelo + depósito
+  TECLA_9 = 21     // 9 0x4A: estado completo (+ arranque)
 };
 
-// Política no bloqueante de Jarvis: cuatro variantes por carpeta, sin repetir
-// inmediatamente. Las alertas automáticas usan enfriamiento de 30 segundos;
-// EMERGENCIA interrumpe cualquier frase y siempre tiene prioridad.
+// Política no bloqueante de Jarvis: variantes sin repetición inmediata.
+// Las alertas automáticas usan enfriamiento de 30 s; el PARO interrumpe
+// cualquier frase y siempre tiene prioridad.
 class JarvisAudio {
  public:
-  static constexpr uint8_t NUM_EVENTOS = 28;
+  static constexpr uint8_t NUM_EVENTOS = 21;
   static constexpr uint8_t DESPLAZAMIENTO_VOZ_2 = 50;
 
   explicit JarvisAudio(DFPlayerTransport& transporte) : transporte_(transporte) {}
@@ -71,27 +79,34 @@ class JarvisAudio {
     return habilitado_ && transporte_.volumen(volumen_);
   }
 
-  // Carpeta DFPlayer para un evento y voz dados. Voz 1: 01-28, voz 2: 51-78.
+  // Carpeta DFPlayer para un evento y voz dados. Voz 1: 01-21, voz 2: 51-71.
   static uint8_t carpetaPara(EventoJarvis evento, uint8_t voz) {
     const uint8_t base = static_cast<uint8_t>(evento);
     if (base < 1 || base > NUM_EVENTOS) return 0;
     return voz == 2 ? uint8_t(base + DESPLAZAMIENTO_VOZ_2) : base;
   }
 
+  // variante: 0 = aleatoria 1-4; 1-4 = pista fija (p. ej. 1 = ON, 2 = OFF).
   bool reproducir(EventoJarvis evento, uint32_t ahoraMs,
-                  bool alertaAutomatica = false) {
+                  bool alertaAutomatica = false, uint8_t variante = 0) {
     const uint8_t eventoBase = static_cast<uint8_t>(evento);
     if (!habilitado_ || silenciado_ || eventoBase < 1 || eventoBase > NUM_EVENTOS)
       return false;
+    if (variante > 4) return false;
     const uint8_t carpeta = carpetaPara(evento, voz_);
-    const bool emergencia = evento == EventoJarvis::EMERGENCIA;
+    const bool emergencia = evento == EventoJarvis::TECLA_0 && variante >= 3;
     if (!emergencia && transporte_.ocupado()) return false;
     if (alertaAutomatica && !emergencia &&
         ahoraMs - ultimoEventoMs_[eventoBase] < ENFRIAMIENTO_ALERTA_MS) return false;
     if (emergencia) transporte_.detener();
 
-    uint8_t pista = 1 + uint8_t(esp_random() % 4U);
-    if (pista == ultimaPista_[eventoBase]) pista = uint8_t((pista % 4U) + 1U);
+    uint8_t pista;
+    if (variante != 0) {
+      pista = variante;
+    } else {
+      pista = 1 + uint8_t(esp_random() % 4U);
+      if (pista == ultimaPista_[eventoBase]) pista = uint8_t((pista % 4U) + 1U);
+    }
     if (!transporte_.reproducirCarpeta(carpeta, pista)) return false;
     ultimaPista_[eventoBase] = pista;
     ultimoEventoMs_[eventoBase] = ahoraMs;
@@ -99,6 +114,30 @@ class JarvisAudio {
     ultimaCarpetaReproducida_ = carpeta;
     ultimaPistaReproducida_ = pista;
     return true;
+  }
+
+  // Aleatoria entre dos variantes (p. ej. grupo(1,2) = par ON/OFF manual),
+  // evitando repetir la misma pista dos veces seguidas.
+  bool reproducirGrupo(EventoJarvis evento, uint32_t ahoraMs,
+                       bool alertaAutomatica, uint8_t vA, uint8_t vB) {
+    if (vA < 1 || vA > 4 || vB < 1 || vB > 4 || vA == vB) return false;
+    const uint8_t eventoBase = static_cast<uint8_t>(evento);
+    const uint8_t elegida =
+        (ultimaPista_[eventoBase] == vA) ? vB
+        : (ultimaPista_[eventoBase] == vB) ? vA
+        : (esp_random() % 2U == 0 ? vA : vB);
+    return reproducir(evento, ahoraMs, alertaAutomatica, elegida);
+  }
+
+  // Conmutador con alternas: ON rota {1,3}, OFF rota {2,4} (carpeta Play).
+  bool reproducirEstado(EventoJarvis evento, uint32_t ahoraMs,
+                        bool alertaAutomatica, bool encendido) {
+    const uint8_t eventoBase = static_cast<uint8_t>(evento);
+    if (eventoBase < 1 || eventoBase > NUM_EVENTOS) return false;
+    const uint8_t base = encendido ? 1 : 2;
+    const uint8_t alt = uint8_t(base + 2U);
+    const uint8_t elegida = (ultimaPista_[eventoBase] == base) ? alt : base;
+    return reproducir(evento, ahoraMs, alertaAutomatica, elegida);
   }
 
   bool repetirUltima(uint32_t ahoraMs) {
@@ -114,7 +153,7 @@ class JarvisAudio {
   DFPlayerTransport& transporte_;
   uint32_t ultimoEventoMs_[NUM_EVENTOS + 1] = {};
   uint8_t ultimaPista_[NUM_EVENTOS + 1] = {};
-  EventoJarvis ultimoEvento_ = EventoJarvis::SISTEMA_LISTO;
+  EventoJarvis ultimoEvento_ = EventoJarvis::CH_MENOS;
   uint8_t ultimaCarpetaReproducida_ = 0;
   uint8_t ultimaPistaReproducida_ = 0;
   uint8_t volumen_ = 18;

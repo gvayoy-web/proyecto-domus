@@ -598,14 +598,7 @@ inline void incrementarTotalCambiosLuz() { estadisticas.totalCambiosLuz++; }
 inline void incrementarTotalEmergencias() { estadisticas.totalEmergencias++; }
 inline void incrementarTotalErroresSensores() { estadisticas.totalErroresSensores++; }
 
-// Historial por salida de luz: evita aritmética sobre enum class
-// (TipoRegistroHistorial::LUZ_ENCENDIDA + indice no compila).
-inline TipoRegistroHistorial historialLuz(bool encender, int indice) {
-  if (indice == 4) return encender ? TipoRegistroHistorial::VENT_ENCENDIDO
-                                   : TipoRegistroHistorial::VENT_APAGADO;
-  return encender ? TipoRegistroHistorial::LUZ_ENCENDIDA
-                  : TipoRegistroHistorial::LUZ_APAGADA;
-}
+
 void sumarTiempoEncendidoBomba(unsigned long ms) {
   estadisticas.tiempoEncendidoBomba += ms;
 }
@@ -647,7 +640,7 @@ void registrarApagadoBomba() {
 
 void registrarCambioLuz(int indice) {
   incrementarTotalCambiosLuz();
-  registrarHistorial(historialLuz(true, indice), (uint8_t)indice, true);
+  registrarHistorial(TipoRegistroHistorial::LUZ_ENCENDIDA, (uint8_t)indice, true);
 }
 
 void registrarEmergenciaActivada() {
@@ -835,16 +828,41 @@ bool pantallaDisponible() {
 // ============================================================================
 // SECCIÓN 7: MÓDULO MP3 (respuestas habladas, opcional)
 // ============================================================================
-bool anunciarJarvis(EventoJarvis evento, bool alertaAutomatica = false) {
+// variante: 0 = aleatoria; 1-4 = pista fija (1 = ON manual, 2 = OFF manual,
+// 3 = ON automático, 4 = OFF automático en carpetas de conmutador).
+bool anunciarJarvis(EventoJarvis evento, bool alertaAutomatica = false,
+                    uint8_t variante = 0) {
   if (!MP3_HABILITADO) return false;
-  const bool reproducida = jarvisAudio.reproducir(evento, millis(), alertaAutomatica);
+  const bool reproducida =
+      jarvisAudio.reproducir(evento, millis(), alertaAutomatica, variante);
   if (reproducida) {
     char detalle[32];
-    snprintf(detalle, sizeof(detalle), "Carpeta %u; variante 1-4",
-             (unsigned)JarvisAudio::carpetaPara(evento, jarvisAudio.vozActual()));
+    snprintf(detalle, sizeof(detalle), "Carpeta %u pista %u",
+             (unsigned)JarvisAudio::carpetaPara(evento, jarvisAudio.vozActual()),
+             (unsigned)variante);
     log("MP3", detalle);
   }
   return reproducida;
+}
+
+// Grupo aleatorio entre dos variantes (p. ej. 1-2 = par manual).
+bool anunciarJarvisGrupo(EventoJarvis evento, bool alertaAutomatica,
+                         uint8_t vA, uint8_t vB) {
+  if (!MP3_HABILITADO) return false;
+  return jarvisAudio.reproducirGrupo(evento, millis(), alertaAutomatica, vA, vB);
+}
+
+// Carpeta del botón que gobierna cada salida: bomba = tecla 5,
+// sala = tecla 1, cuarto = tecla 2, ventilador = tecla 4, cultivo = tecla 3.
+EventoJarvis carpetaSalida(int indice) {
+  switch (indice) {
+    case 0: return EventoJarvis::TECLA_5;
+    case 1: return EventoJarvis::TECLA_1;
+    case 2: return EventoJarvis::TECLA_2;
+    case 3: return EventoJarvis::TECLA_4;
+    case 4: return EventoJarvis::TECLA_3;
+    default: return EventoJarvis::TECLA_9;
+  }
 }
 
 // ============================================================================
@@ -898,12 +916,9 @@ fallosVerificacionSalida[indice] = 0;
   estadoSalidas[indice] = true;
   log("SALIDA", String(NOMBRES_SALIDAS[indice]) + " -> ENCENDIDO (nivel GPIO verificado)");
   incrementarTotalEncendidos();
-  registrarHistorial(historialLuz(true, indice), (uint8_t)indice, true);
+  registrarHistorial(TipoRegistroHistorial::LUZ_ENCENDIDA, (uint8_t)indice, true);
   if (anunciarPorVoz && MP3_HABILITADO) {
-    if (indice == 0) anunciarJarvis(EventoJarvis::RIEGO_INICIADO);
-    else if (indice == 4) anunciarJarvis(EventoJarvis::LUZ_CULTIVO_ENCENDIDA);
-    else if (indice == 3) anunciarJarvis(EventoJarvis::VENTILADOR_ENCENDIDO);
-    else anunciarJarvis(EventoJarvis::LUZ_ENCENDIDA);
+    anunciarJarvis(carpetaSalida(indice), false, 1);
   }
   return true;
 }
@@ -927,12 +942,9 @@ fallosVerificacionSalida[indice] = 0;
   estadoSalidas[indice] = false;
   log("SALIDA", String(NOMBRES_SALIDAS[indice]) + " -> APAGADO (nivel GPIO verificado)");
   incrementarTotalApagados();
-  registrarHistorial(historialLuz(false, indice), (uint8_t)indice, false);
+  registrarHistorial(TipoRegistroHistorial::LUZ_APAGADA, (uint8_t)indice, false);
   if (anunciarPorVoz && MP3_HABILITADO) {
-    if (indice == 0) anunciarJarvis(EventoJarvis::RIEGO_DETENIDO);
-    else if (indice == 4) anunciarJarvis(EventoJarvis::LUZ_CULTIVO_APAGADA);
-    else if (indice == 3) anunciarJarvis(EventoJarvis::VENTILADOR_APAGADO);
-    else anunciarJarvis(EventoJarvis::LUZ_APAGADA);
+    anunciarJarvis(carpetaSalida(indice), false, 2);
   }
   return true;
 }
@@ -1003,7 +1015,7 @@ ResultadoOrden ejecutarOrdenActuador(const OrdenActuador &orden) {
       if (orden.origen == ORIGEN_IR) {
         responderJarvis("No puedo regar: el deposito no tiene agua suficiente.");
       }
-      anunciarJarvis(EventoJarvis::AGUA_BAJA, orden.origen == ORIGEN_AUTOMATICO);
+      anunciarJarvis(EventoJarvis::TECLA_8, orden.origen == ORIGEN_AUTOMATICO, 4);
       return bloqueo;
     }
   }
@@ -1043,19 +1055,12 @@ ResultadoOrden ejecutarOrdenActuador(const OrdenActuador &orden) {
   ResultadoOrden resultado = {true, estadoAnterior != orden.encender, "ok"};
   if (resultado.cambioReal) {
     const bool automatica = orden.origen == ORIGEN_AUTOMATICO;
-    if (orden.indiceRele == 0) {
-      anunciarJarvis(orden.encender ? EventoJarvis::RIEGO_INICIADO
-                                    : EventoJarvis::RIEGO_DETENIDO, automatica);
-    } else if (orden.indiceRele == 1 || orden.indiceRele == 2) {
-      anunciarJarvis(orden.encender ? EventoJarvis::LUZ_ENCENDIDA
-                                    : EventoJarvis::LUZ_APAGADA, automatica);
-    } else if (orden.indiceRele == 4) {
-      anunciarJarvis(orden.encender ? EventoJarvis::LUZ_CULTIVO_ENCENDIDA
-                                    : EventoJarvis::LUZ_CULTIVO_APAGADA, automatica);
-    } else if (orden.indiceRele == 3) {
-      anunciarJarvis(orden.encender ? EventoJarvis::VENTILADOR_ENCENDIDO
-                                    : EventoJarvis::VENTILADOR_APAGADO, automatica);
-    }
+    // Pista fija por botón: 1 = ON manual, 2 = OFF manual,
+    // 3 = ON automático, 4 = OFF automático.
+    uint8_t variante;
+    if (orden.encender) variante = automatica ? 3 : 1;
+    else variante = automatica ? 4 : 2;
+    anunciarJarvis(carpetaSalida(orden.indiceRele), automatica, variante);
   }
   if (orden.origen == ORIGEN_IR) {
     responderJarvis(construirRespuestaJarvis(orden, estadoAnterior, resultado));
@@ -1637,24 +1642,42 @@ void alternarSalidaIR(int indice, const char* nombre) {
   ejecutarComandoRele(comando, indice, !estadoSalidas[indice], ORIGEN_IR);
 }
 
-// Mapa final de las 21 teclas CAR MP3 (nota Obsidian 46): cada tecla tiene su
-// respuesta Jarvis propia tras el ACK/NACK real del despachador. CH y VOL
-// confirman solo en pantalla/LCD; el resto anuncia su carpeta dedicada.
+// Mapa final de las 21 teclas CAR MP3 (notas Obsidian 46 y 64): cada botón
+// tiene su carpeta de voz propia (01-21 Carlos, 51-71 Karla) y anuncia tras
+// el ACK/NACK real del despachador. CH- = modo manual, CH+ = modo
+// automático, CH = página del LCD; el resto conserva el mapa vigente.
+void fijarModoManualIR() {
+  for (int i = 0; i < TOTAL_SALIDAS; ++i) {
+    propietarioSalidas[i] =
+        estadoSalidas[i] ? PROPIETARIO_MANUAL_ON : PROPIETARIO_MANUAL_OFF;
+  }
+  log("MODO", "Manual por IR: automaticos detenidos, estados conservados");
+  emitirEventoLocal("ACK;IR;MODO_MANUAL");
+}
+
+void fijarModoAutoIR() {
+  for (int i = 0; i < TOTAL_SALIDAS; ++i) {
+    propietarioSalidas[i] = PROPIETARIO_AUTOMATICO;
+  }
+  log("MODO", "Automatico por IR: reglas gobiernan las salidas");
+  emitirEventoLocal("ACK;IR;MODO_AUTO");
+}
+
 void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
   using namespace IRCasa;
   switch (tecla) {
     case CH_MENOS:
-      pantallaFinal.anterior();
-      emitirEventoLocal("ACK;IR;PANTALLA_ANTERIOR");
-      anunciarJarvis(EventoJarvis::MODO_MANUAL);
+      fijarModoManualIR();
+      anunciarJarvis(EventoJarvis::CH_MENOS);
       break;
     case CH:
       pantallaFinal.siguiente();
       emitirEventoLocal("ACK;IR;PANTALLA_SIGUIENTE");
+      anunciarJarvis(EventoJarvis::CH);
       break;
     case CH_MAS:
-      emitirEventoLocal(construirReporteEstado());
-      anunciarJarvis(EventoJarvis::ESTADO_COMPLETO);
+      fijarModoAutoIR();
+      anunciarJarvis(EventoJarvis::CH_MAS);
       break;
     case ANTERIOR: case N_1: alternarSalidaIR(1, "LUZ1"); break;
     case SIGUIENTE: case N_2: alternarSalidaIR(2, "LUZ2"); break;
@@ -1666,21 +1689,19 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
     case N_0:
       for (int i = 0; i < TOTAL_SALIDAS; ++i)
         ejecutarComandoRele("IR_TODO_OFF", i, false, ORIGEN_IR);
-      anunciarJarvis(EventoJarvis::TODO_APAGADO);
+      anunciarJarvisGrupo(EventoJarvis::TECLA_0, false, 1, 2);
       break;
     case N_200_MAS:
-      if (rearmarSistema()) anunciarJarvis(EventoJarvis::SISTEMA_REARMADO);
-      else anunciarJarvis(EventoJarvis::ORDEN_RECHAZADA);
+      if (rearmarSistema()) anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 1, 2);
+      else anunciarJarvisGrupo(EventoJarvis::TECLA_200, false, 3, 4);
       break;
     case EQ:
       emitirEventoLocal(construirReporteDiagnostico());
-      anunciarJarvis(EventoJarvis::DIAGNOSTICO);
+      anunciarJarvisGrupo(EventoJarvis::EQ, false, 1, 2);
       break;
     case N_6: {
-      // Nota 67: la tecla 6 (0x005A) alternaba voces porque 6-9 repetían el
-      // mismo reporte. Con el catálogo de 28 carpetas cada consulta ya tiene
-      // voz propia, así que una pulsación consulta temperatura y una doble
-      // pulsación (<2 s) alterna Carlos/Karla.
+      // Nota 67: la tecla 6 (0x005A) también alterna voces. Una pulsación
+      // consulta temperatura; doble pulsación (<2 s) cambia Carlos/Karla.
       static unsigned long ultimaN6Ms = 0;
       const unsigned long ahora = millis();
       if (ahora - ultimaN6Ms < 2000 && jarvisAudio.habilitado()) {
@@ -1689,32 +1710,33 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
         char ack[20];
         snprintf(ack, sizeof(ack), "ACK;IR;VOZ=%u", (unsigned)jarvisAudio.vozActual());
         emitirEventoLocal(ack);
-        anunciarJarvis(EventoJarvis::SISTEMA_LISTO);
+        anunciarJarvis(EventoJarvis::TECLA_9, false, 3);
       } else {
         ultimaN6Ms = ahora;
         emitirEventoLocal(construirReporteEstado());
-        anunciarJarvis(EventoJarvis::CONSULTA_TEMP);
+        anunciarJarvisGrupo(EventoJarvis::TECLA_6, false, 1, 2);
       }
       break;
     }
     case N_7:
       emitirEventoLocal(construirReporteEstado());
-      anunciarJarvis(EventoJarvis::CONSULTA_HUMEDAD);
+      anunciarJarvis(EventoJarvis::TECLA_7);
       break;
     case N_8:
       emitirEventoLocal(construirReporteEstado());
-      anunciarJarvis(EventoJarvis::CONSULTA_SUELO);
+      anunciarJarvisGrupo(EventoJarvis::TECLA_8, false, 1, 2);
       break;
     case N_9:
       emitirEventoLocal(construirReporteEstado());
-      anunciarJarvis(EventoJarvis::ESTADO_COMPLETO);
+      anunciarJarvis(EventoJarvis::TECLA_9);
       break;
     case PLAY:
       if (!jarvisAudio.habilitado()) emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
       else {
         jarvisAudio.silenciar(!jarvisAudio.silenciado());
         emitirEventoLocal(jarvisAudio.silenciado() ? "ACK;IR;AUDIO_OFF" : "ACK;IR;AUDIO_ON");
-        if (!jarvisAudio.silenciado()) anunciarJarvis(EventoJarvis::SONIDO_ACTIVADO);
+        jarvisAudio.reproducirEstado(EventoJarvis::PLAY, millis(), false,
+                                     !jarvisAudio.silenciado());
       }
       break;
     case VOL_MENOS:
@@ -1725,12 +1747,18 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
         char ack[24];
         snprintf(ack, sizeof(ack), "ACK;IR;VOLUMEN=%u", (unsigned)jarvisAudio.volumenActual());
         emitirEventoLocal(ack);
+        anunciarJarvis(tecla == VOL_MAS ? EventoJarvis::VOL_MAS
+                                        : EventoJarvis::VOL_MENOS);
       }
       break;
     case N_100_MAS:
       // Nota 67 (vigente): 100+ repite la última pista cuando hay audio.
-      emitirEventoLocal(jarvisAudio.repetirUltima(millis())
-        ? "ACK;IR;REPETIR" : "NACK;IR;AUDIO_NO_DISPONIBLE");
+      if (jarvisAudio.repetirUltima(millis())) {
+        emitirEventoLocal("ACK;IR;REPETIR");
+      } else {
+        emitirEventoLocal("NACK;IR;AUDIO_NO_DISPONIBLE");
+        anunciarJarvisGrupo(EventoJarvis::TECLA_100, false, 3, 4);
+      }
       break;
     default: break;
   }
@@ -1819,7 +1847,7 @@ void activarParoEmergencia(const char* motivo) {
     ejecutarOrdenActuador(orden);
   }
   emitirEventoLocal("EVENTO;PARO_EMERGENCIA;ACTIVO");
-  anunciarJarvis(EventoJarvis::EMERGENCIA);
+  anunciarJarvisGrupo(EventoJarvis::TECLA_0, false, 3, 4);
 }
 
 void entrarModoSeguro(const char* motivo) {
@@ -2197,7 +2225,7 @@ void setup() {
 
   log("JARVIS", "Control por IR activo; audio aplazado, sin reconocimiento de voz");
 
-  if (MP3_HABILITADO) anunciarJarvis(EventoJarvis::SISTEMA_LISTO);
+  if (MP3_HABILITADO) anunciarJarvis(EventoJarvis::TECLA_9, false, 3);
   delay(1000);
   log("SISTEMA", "=== Sistema listo ===");
 }

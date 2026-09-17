@@ -7,11 +7,31 @@
 #include <IRremote.hpp>
 
 namespace IRCasa {
+// Botones del mando CAR MP3 con sus códigos físicos capturados en la
+// nota Obsidian 64 (protocolo P7). Cada botón tiene su carpeta de voz
+// Jarvis propia: evento = índice + 1 (ver domus_jarvis_audio.h).
 enum Tecla : uint8_t {
-  CH_MENOS = 0, CH = 1, CH_MAS = 2, ANTERIOR = 3, PLAY = 4,
-  SIGUIENTE = 5, VOL_MENOS = 6, VOL_MAS = 7, EQ = 8, N_0 = 9,
-  N_100_MAS = 10, N_200_MAS = 11, N_1 = 12, N_2 = 13, N_3 = 14,
-  N_4 = 15, N_5 = 16, N_6 = 17, N_7 = 18, N_8 = 19, N_9 = 20,
+  CH_MENOS = 0,   // 0x45 modo manual
+  CH = 1,         // 0x46 página LCD
+  CH_MAS = 2,     // 0x47 modo automático
+  ANTERIOR = 3,   // 0x44 luz de sala
+  PLAY = 4,       // 0x43 silencio
+  SIGUIENTE = 5,  // 0x40 luz de cuarto
+  VOL_MENOS = 6,  // 0x07 bajar volumen
+  VOL_MAS = 7,    // 0x15 subir volumen
+  EQ = 8,         // 0x09 diagnóstico
+  N_0 = 9,        // 0x16 todo apagado
+  N_100_MAS = 10,  // 0x19 repetir pista
+  N_200_MAS = 11,  // 0x0D rearme
+  N_1 = 12,       // 0x0C luz de sala
+  N_2 = 13,       // 0x18 luz de cuarto
+  N_3 = 14,       // 0x5E luz de cultivo
+  N_4 = 15,       // 0x08 ventilador
+  N_5 = 16,       // 0x1C riego
+  N_6 = 17,       // 0x5A consulta temp (doble = cambio de voz)
+  N_7 = 18,       // 0x42 consulta humedad
+  N_8 = 19,       // 0x52 consulta suelo + depósito
+  N_9 = 20,       // 0x4A estado completo
   TOTAL = 21, NINGUNA = 255
 };
 

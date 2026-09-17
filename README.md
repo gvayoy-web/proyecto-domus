@@ -28,9 +28,10 @@ Casa inteligente local para una maqueta con **ESP32-S3 N16R8** (16MB Flash / 8MB
 
 ## ✨ Características Implementadas
 
-### Expansión de Audio
-- **224 MP3 tracks** (28 eventos x 4 variantes x 2 voces): **Carlos** SD 01-28 y **Karla** SD 51-78
-- `MANIFEST.csv` con 224 filas (voz, carpeta, pista, evento, frase, SHA-256)
+### Audio 1:1 por botón (21 eventos)
+- **168 MP3 tracks** (21 botones x 4 variantes x 2 voces): **Carlos** SD 01-21 y **Karla** SD 51-71
+- Cada botón del mando CAR MP3 tiene su carpeta (códigos nota 64, acciones nota 46)
+- `MANIFEST.csv` con 168 filas (voz, carpeta, pista, evento, frase, SHA-256)
 - Antes: 64 subfolders desorganizados
 
 ### Automatizaciones Inteligentes
@@ -57,7 +58,7 @@ Casa inteligente local para una maqueta con **ESP32-S3 N16R8** (16MB Flash / 8MB
 PROJECT DOMUS/
 ├── firmware/              # Producto principal + diagnósticos
 ├── obsidian/              # Notas 00-68 + bitácora completa
-├── audio/                 # 224 MP3 (Carlos/Karla 01-28) + MANIFEST.csv
+├── audio/                 # 168 MP3 (Carlos/Karla 01-21) + MANIFEST.csv
 ├── visualizaciones/       # Diagramas SVG
 ├── docs/                  # Documentos de entrega
 ├── tools/                 # Validadores y generadores

@@ -1,12 +1,16 @@
-"""Genera la microSD de Jarvis definida por las notas Obsidian 46, 65 y 66.
+"""Genera la microSD de Jarvis: 21 carpetas, una por botón del mando CAR MP3.
 
-Cada una de las 21 teclas CAR MP3 tiene respuesta de voz propia (nota 46);
-los eventos 1-14 conservan el catálogo original y los eventos 15-28 cubren
-modo manual/auto, diagnóstico, todo apagado, silencio, rearme, cultivo,
-ventilador y consultas de sensores.
+Códigos físicos en la nota Obsidian 64, acciones por botón en la nota 46 y
+formato DFPlayer en la nota 65. Convención de variantes por carpeta:
+conmutadores 1 = ON manual, 2 = OFF manual, 3 = ON automático,
+4 = OFF automático; botón 0: 1-2 apagado, 3-4 emergencia; EQ: 1-2
+diagnóstico, 3-4 fallo de sensor; tecla 8: 1-2 consulta, 3 tierra seca
+(reservada), 4 depósito bajo; tecla 9: estado (3 = "Sistemas en línea":
+arranque y cambio de voz); 200+: 1-2 rearme logrado, 3-4 sigue bloqueado;
+100+: 1-2 repitiendo, 3-4 nada que repetir.
 
-Requiere ``edge-tts`` y acceso de red. La voz 1 (Carlos) usa carpetas 01-28
-y la voz 2 (Karla) usa 51-78; ambas llevan pistas 001-004, tal como espera
+Requiere ``edge-tts`` y acceso de red. La voz 1 (Carlos) usa carpetas 01-21
+y la voz 2 (Karla) usa 51-71; ambas llevan pistas 001-004, tal como espera
 el DFPlayer Mini (playFolder 01-99).
 """
 
@@ -23,34 +27,27 @@ import edge_tts
 
 
 CATALOGO = {
-    1: ("sistema_listo", ("Sistemas en línea.", "DOMUS operativo.", "Inicialización completa.", "Casa preparada.")),
-    2: ("orden_aceptada", ("Entendido.", "Orden confirmada.", "Ejecutando instrucción.", "Como ordene.")),
-    3: ("orden_rechazada", ("Orden no permitida.", "No puedo ejecutar eso.", "Solicitud bloqueada.", "Acción denegada por seguridad.")),
-    4: ("luz_encendida", ("Iluminación activada.", "Luz encendida.", "He encendido la luz.", "Circuito de luz activo.")),
-    5: ("luz_apagada", ("Iluminación desactivada.", "Luz apagada.", "He apagado la luz.", "Circuito de luz detenido.")),
-    6: ("riego_iniciado", ("Iniciando riego.", "Bomba de agua activada.", "Regando el cultivo.", "Ciclo de riego en marcha.")),
-    7: ("riego_detenido", ("Riego detenido.", "Bomba desactivada.", "Ciclo de agua finalizado.", "He detenido el riego.")),
-    8: ("tierra_seca", ("La tierra está seca.", "Humedad del suelo baja.", "El cultivo necesita agua.", "Suelo por debajo del nivel ideal.")),
-    9: ("tierra_humeda", ("Humedad adecuada.", "La tierra está húmeda.", "Suelo dentro del nivel esperado.", "El cultivo tiene suficiente humedad.")),
-    10: ("agua_baja", ("Nivel de agua bajo.", "Depósito insuficiente.", "Riego bloqueado por falta de agua.", "Recargue el depósito.")),
-    11: ("temperatura_alta", ("Temperatura elevada.", "El ambiente está caliente.", "Recomiendo ventilación.", "Umbral térmico superado.")),
-    12: ("presencia", ("Presencia detectada.", "Movimiento registrado.", "Hay actividad en la casa.", "Sensor de presencia activado.")),
-    13: ("emergencia", ("Emergencia activada.", "Todas las salidas fueron detenidas.", "Sistema bloqueado por seguridad.", "Paro de emergencia activo.")),
-    14: ("error_sensor", ("Sensor sin respuesta.", "Lectura no válida.", "Revise las conexiones del sensor.", "Diagnóstico requerido.")),
-    15: ("modo_manual", ("Modo manual activado.", "Control manual habilitado.", "Tú mandas, yo obedezco.", "Automático desactivado.")),
-    16: ("modo_auto", ("Modo automático activado.", "Automatización habilitada.", "La casa se gobierna sola.", "Control automático en marcha.")),
-    17: ("diagnostico", ("Diagnóstico completado.", "Revisión del sistema terminada.", "Todos los módulos responden.", "Diagnóstico sin fallos críticos.")),
-    18: ("todo_apagado", ("Todas las cargas han sido apagadas.", "Casa completamente apagada.", "He detenido todas las salidas.", "Todo apagado, sistema en reposo.")),
-    19: ("sonido_activado", ("Sonido activado.", "Voz reanudada.", "Jarvis en línea.", "Respuestas de voz habilitadas.")),
-    20: ("sistema_rearmado", ("Sistema rearmado.", "Bloqueo liberado, todo listo.", "Seguridad restablecida.", "Puedes continuar operando.")),
-    21: ("luz_cultivo_encendida", ("Iluminación suplementaria activada.", "Luz de cultivo encendida.", "Cultivo iluminado.", "Lámpara de cultivo activa.")),
-    22: ("luz_cultivo_apagada", ("Iluminación suplementaria apagada.", "Luz de cultivo desactivada.", "Cultivo en penumbra.", "Lámpara de cultivo detenida.")),
-    23: ("ventilador_encendido", ("He encendido la ventilación.", "Ventilador activado.", "Circulación de aire en marcha.", "Ventilación encendida.")),
-    24: ("ventilador_apagado", ("He apagado la ventilación.", "Ventilador desactivado.", "Circulación de aire detenida.", "Ventilación apagada.")),
-    25: ("consulta_temp", ("La temperatura aparece en pantalla.", "Revisa el termómetro en el LCD.", "Temperatura mostrada en pantalla.", "El valor térmico está en pantalla.")),
-    26: ("consulta_humedad", ("La humedad aparece en pantalla.", "Humedad ambiental en el LCD.", "Valor de humedad mostrado.", "Revisa la humedad en pantalla.")),
-    27: ("consulta_suelo", ("El estado del suelo y del depósito aparece en pantalla.", "Suelo y agua mostrados en el LCD.", "Nivel de cultivo en pantalla.", "Revisa suelo y depósito en pantalla.")),
-    28: ("estado_completo", ("El sistema está funcionando.", "Casa operativa sin fallos.", "Todos los sistemas nominales.", "DOMUS trabajando con normalidad.")),
+    1: ("ch_menos", ("Modo manual activado.", "Control manual habilitado.", "Tú mandas, yo obedezco.", "Automático desactivado.")),
+    2: ("ch_pagina", ("Página siguiente.", "Cambiando de página.", "En pantalla lo ves.", "Mira el LCD.")),
+    3: ("ch_mas", ("Modo automático activado.", "Automatización habilitada.", "La casa se gobierna sola.", "Control automático en marcha.")),
+    4: ("anterior_sala", ("Luz de sala encendida.", "Luz de sala apagada.", "Sala iluminada en automático.", "Sala apagada en automático.")),
+    5: ("play_silencio", ("Sonido activado.", "Silencio activado.", "Voz reanudada.", "Jarvis enmudecido.")),
+    6: ("siguiente_cuarto", ("Luz de cuarto encendida.", "Luz de cuarto apagada.", "Cuarto iluminado en automático.", "Cuarto apagado en automático.")),
+    7: ("vol_menos", ("Volumen más bajo.", "Bajando el volumen.", "Volumen al mínimo.", "Casi en silencio.")),
+    8: ("vol_mas", ("Volumen más alto.", "Subiendo el volumen.", "Volumen al máximo.", "Se escucha fuerte.")),
+    9: ("eq_diagnostico", ("Diagnóstico completado.", "Revisión del sistema terminada.", "Sensor sin respuesta.", "Revisa las conexiones del sensor.")),
+    10: ("tecla_0", ("Todo apagado.", "Cargas detenidas.", "Emergencia activada.", "Paro de emergencia, todo detenido.")),
+    11: ("tecla_100", ("Repitiendo última frase.", "De nuevo.", "Nada que repetir.", "Sin pista anterior.")),
+    12: ("tecla_200", ("Sistema rearmado.", "Bloqueo liberado, todo listo.", "Sigue bloqueado.", "No puedo rearmar todavía.")),
+    13: ("tecla_1_sala", ("Luz de sala encendida.", "Luz de sala apagada.", "Sala iluminada en automático.", "Sala apagada en automático.")),
+    14: ("tecla_2_cuarto", ("Luz de cuarto encendida.", "Luz de cuarto apagada.", "Cuarto iluminado en automático.", "Cuarto apagado en automático.")),
+    15: ("tecla_3_cultivo", ("Luz de cultivo encendida.", "Luz de cultivo apagada.", "Cultivo iluminado en automático.", "Cultivo apagado en automático.")),
+    16: ("tecla_4_vent", ("Ventilación encendida.", "Ventilación apagada.", "Calor detectado, ventilando.", "Ventilación automática detenida.")),
+    17: ("tecla_5_riego", ("Iniciando riego.", "Riego detenido.", "Riego automático en marcha.", "Riego automático detenido.")),
+    18: ("tecla_6_temp", ("La temperatura aparece en pantalla.", "Revisa el termómetro en el LCD.", "Temperatura mostrada en pantalla.", "El valor térmico está en pantalla.")),
+    19: ("tecla_7_humedad", ("La humedad aparece en pantalla.", "Humedad ambiental en el LCD.", "Valor de humedad mostrado.", "Revisa la humedad en pantalla.")),
+    20: ("tecla_8_suelo", ("Suelo y depósito en pantalla.", "Revisa suelo y agua en el LCD.", "La tierra está seca.", "Depósito bajo, riego bloqueado.")),
+    21: ("tecla_9_estado", ("El sistema está funcionando.", "Casa operativa sin fallos.", "Sistemas en línea.", "DOMUS trabajando con normalidad.")),
 }
 
 VOCES = {
