@@ -216,8 +216,8 @@ la lógica segura. Nivel inválido sí bloquea la bomba. PARO apaga todo siempre
   la última frase cuando el audio esté habilitado.
 - Las demás acciones conservan el mapa actual. Jarvis habla solo después del
   ACK/NACK del despachador, nunca antes.
-- Catálogo, carpetas y selección aleatoria: [[65 - Arquitectura de audios
-  Jarvis con DFPlayer]].
+- Catálogo, carpetas y selección aleatoria:
+  [[65 - Arquitectura de audios Jarvis con DFPlayer]].
 
 ## Secuencia de arranque final
 

@@ -100,6 +100,8 @@
 #include "domus_calibration.h"
 #include "domus_drivers.h"
 #include "domus_ir_casa.h"
+#include "domus_dfplayer.h"
+#include "domus_jarvis_audio.h"
 #include "esp_heap_caps.h"
 #include "esp_task_wdt.h"   // watchdog de hardware
 #include "esp_system.h"     // esp_get_free_heap_size(), esp_restart()
@@ -232,11 +234,10 @@ static_assert(!(BOMBA_DIRECTA_S8050 && SALIDA_FISICA_CASA[3]),
 // autorizado. Se asigna UART con F5, nunca antes.
 #define MP3_RX_PIN      -1
 #define MP3_TX_PIN      -1
+#define MP3_BUSY_PIN    -1
 #define MP3_HABILITADO  false // reproductor opcional; no instalado en el banco
-// Pistas sugeridas a grabar en la microSD del módulo (archivos 0001.mp3, etc):
-//   0001.mp3 = "Regando ahora"      0002.mp3 = "Riego detenido"
-//   0003.mp3 = "Luz encendida"      0004.mp3 = "Luz apagada"
-//   0005.mp3 = "Ventilador activado" 0006.mp3 = "Sistema listo"
+// La microSD usa carpetas 01-14 y pistas 001-004 según notas 65/66. Los GPIO
+// siguen en -1 hasta crear y auditar CASA_FINAL_DRV8833_DFPLAYER.
 
 // ============================================================================
 // SECCIÓN 2: CONSTANTES DE CALIBRACIÓN - AJUSTAR CON MEDICIONES REALES
@@ -357,7 +358,9 @@ static_assert(MEMORIA_LIBRE_CRITICA_BYTES < MEMORIA_LIBRE_RECUPERACION_BYTES,
 // ============================================================================
 // SECCIÓN 3: OBJETOS GLOBALES
 // ============================================================================
-HardwareSerial SerialMP3(1); // UART1 para el módulo MP3
+HardwareSerial SerialMP3(1); // UART1 reservada para el futuro perfil final
+DFPlayerTransport transporteDFPlayer(SerialMP3);
+JarvisAudio jarvisAudio(transporteDFPlayer);
 SPIClass spiMicroSD(FSPI);
 std::atomic<bool> microSdMontada{false};
 std::atomic<uint32_t> sdDescartados{0};
@@ -696,16 +699,13 @@ bool pantallaDisponible() {
 // ============================================================================
 // SECCIÓN 7: MÓDULO MP3 (respuestas habladas, opcional)
 // ============================================================================
-void reproducirPista(uint8_t numeroPista) {
-  if (!MP3_HABILITADO) return;
-  uint8_t comando[10] = {0x7E, 0xFF, 0x06, 0x03, 0x00, 0x00, numeroPista, 0x00, 0x00, 0xEF};
-  uint16_t suma = 0;
-  for (int i = 1; i <= 6; i++) suma += comando[i];
-  uint16_t checksum = -suma;
-  comando[7] = (checksum >> 8) & 0xFF;
-  comando[8] = checksum & 0xFF;
-  SerialMP3.write(comando, 10);
-  log("MP3", "Reproduciendo pista " + String(numeroPista));
+bool anunciarJarvis(EventoJarvis evento, bool alertaAutomatica = false) {
+  if (!MP3_HABILITADO) return false;
+  const bool reproducida = jarvisAudio.reproducir(evento, millis(), alertaAutomatica);
+  if (reproducida) {
+    log("MP3", "Carpeta " + String(static_cast<uint8_t>(evento)) + "; variante 1-4");
+  }
+  return reproducida;
 }
 
 // ============================================================================
@@ -760,9 +760,8 @@ bool solicitarSalida(int indice, bool anunciarPorVoz = true) {
   log("SALIDA", String(NOMBRES_SALIDAS[indice]) + " -> ENCENDIDO (nivel GPIO verificado)");
 
   if (anunciarPorVoz && MP3_HABILITADO) {
-    if (indice == 0) reproducirPista(1);       // "Regando ahora"
-    else if (indice == 3) reproducirPista(5);  // "Ventilador activado"
-    else reproducirPista(3);                    // "Luz encendida" (genérico)
+    if (indice == 0) anunciarJarvis(EventoJarvis::RIEGO_INICIADO);
+    else anunciarJarvis(EventoJarvis::LUZ_ENCENDIDA);
   }
   return true;
 }
@@ -787,8 +786,8 @@ bool desactivarSalida(int indice, bool anunciarPorVoz = true) {
   log("SALIDA", String(NOMBRES_SALIDAS[indice]) + " -> APAGADO (nivel GPIO verificado)");
 
   if (anunciarPorVoz && MP3_HABILITADO) {
-    if (indice == 0) reproducirPista(2);       // "Riego detenido"
-    else reproducirPista(4);                    // "Luz apagada" (genérico)
+    if (indice == 0) anunciarJarvis(EventoJarvis::RIEGO_DETENIDO);
+    else anunciarJarvis(EventoJarvis::LUZ_APAGADA);
   }
   return true;
 }
@@ -859,6 +858,7 @@ ResultadoOrden ejecutarOrdenActuador(const OrdenActuador &orden) {
       if (orden.origen == ORIGEN_IR) {
         responderJarvis("No puedo regar: el deposito no tiene agua suficiente.");
       }
+      anunciarJarvis(EventoJarvis::AGUA_BAJA, orden.origen == ORIGEN_AUTOMATICO);
       return bloqueo;
     }
   }
@@ -896,6 +896,16 @@ ResultadoOrden ejecutarOrdenActuador(const OrdenActuador &orden) {
       ";origen=" + String((int)orden.origen) +
       ";estado=" + String(orden.encender ? 1 : 0));
   ResultadoOrden resultado = {true, estadoAnterior != orden.encender, "ok"};
+  if (resultado.cambioReal) {
+    const bool automatica = orden.origen == ORIGEN_AUTOMATICO;
+    if (orden.indiceRele == 0) {
+      anunciarJarvis(orden.encender ? EventoJarvis::RIEGO_INICIADO
+                                    : EventoJarvis::RIEGO_DETENIDO, automatica);
+    } else if (orden.indiceRele == 1 || orden.indiceRele == 2 || orden.indiceRele == 4) {
+      anunciarJarvis(orden.encender ? EventoJarvis::LUZ_ENCENDIDA
+                                    : EventoJarvis::LUZ_APAGADA, automatica);
+    }
+  }
   if (orden.origen == ORIGEN_IR) {
     responderJarvis(construirRespuestaJarvis(orden, estadoAnterior, resultado));
   }
@@ -1375,10 +1385,33 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
       break;
     case N_200_MAS: rearmarSistema(); break;
     case EQ: emitirEventoLocal(construirReporteDiagnostico()); break;
-    case N_6: case N_7: case N_8: case N_9:
+    case N_6:
+      if (!jarvisAudio.habilitado()) emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
+      else {
+        jarvisAudio.cambiarVoz();
+        emitirEventoLocal("ACK;IR;VOZ=" + String(jarvisAudio.vozActual()));
+        anunciarJarvis(EventoJarvis::SISTEMA_LISTO);
+      }
+      break;
+    case N_7: case N_8: case N_9:
       emitirEventoLocal(construirReporteEstado()); break;
-    case PLAY: case VOL_MENOS: case VOL_MAS: case N_100_MAS:
-      emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO"); break;
+    case PLAY:
+      if (!jarvisAudio.habilitado()) emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
+      else {
+        jarvisAudio.silenciar(!jarvisAudio.silenciado());
+        emitirEventoLocal(String("ACK;IR;AUDIO_") + (jarvisAudio.silenciado() ? "OFF" : "ON"));
+      }
+      break;
+    case VOL_MENOS:
+    case VOL_MAS:
+      if (!jarvisAudio.ajustarVolumen(tecla == VOL_MAS ? 1 : -1))
+        emitirEventoLocal("NACK;IR;AUDIO_DESHABILITADO_EN_BANCO");
+      else emitirEventoLocal("ACK;IR;VOLUMEN=" + String(jarvisAudio.volumenActual()));
+      break;
+    case N_100_MAS:
+      emitirEventoLocal(jarvisAudio.repetirUltima(millis())
+        ? "ACK;IR;REPETIR" : "NACK;IR;AUDIO_NO_DISPONIBLE");
+      break;
     default: break;
   }
 }
@@ -1466,6 +1499,7 @@ void activarParoEmergencia(const char* motivo) {
     ejecutarOrdenActuador(orden);
   }
   emitirEventoLocal("EVENTO;PARO_EMERGENCIA;ACTIVO");
+  anunciarJarvis(EventoJarvis::EMERGENCIA);
 }
 
 void entrarModoSeguro(const char* motivo) {
@@ -1696,6 +1730,7 @@ void revisarControlesFisicos() {
   bool nuevoMicHabilitado = digitalRead(MAPA_CASA.micOff) != LOW;
   if (nuevoMicHabilitado != micHabilitado) {
     micHabilitado = nuevoMicHabilitado;
+    jarvisAudio.silenciar(!micHabilitado);
     emitirEventoLocal(String("EVENTO;SILENCIO;") + (micHabilitado ? "OFF" : "ON"));
   }
 
@@ -1828,14 +1863,18 @@ void setup() {
     log("BANCO", "Bomba S8050 bloqueada al arrancar; usa RIEGO_ON o RIEGO_AUTO con la bomba sumergida");
 
   if (MP3_HABILITADO) {
-    SerialMP3.begin(9600, SERIAL_8N1, MP3_RX_PIN, MP3_TX_PIN);
-    delay(500);
-    log("MP3", "UART iniciado para módulo reproductor");
+    if (transporteDFPlayer.begin(MP3_RX_PIN, MP3_TX_PIN, MP3_BUSY_PIN)) {
+      jarvisAudio.begin(18);
+      jarvisAudio.silenciar(!micHabilitado);
+      log("MP3", "DFPlayer iniciado; volumen 18/30");
+    } else {
+      log("MP3", "AUDIO_OFF: GPIO UART/BUSY no asignados o invalidos");
+    }
   }
 
   log("JARVIS", "Control por IR activo; audio aplazado, sin reconocimiento de voz");
 
-  if (MP3_HABILITADO) reproducirPista(6); // "Sistema listo"
+  if (MP3_HABILITADO) anunciarJarvis(EventoJarvis::SISTEMA_LISTO);
   delay(1000);
   log("SISTEMA", "=== Sistema listo ===");
 }

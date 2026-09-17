@@ -1,0 +1,113 @@
+﻿voz,motor_voz,carpeta,pista,evento,frase,biblioteca,archivo,bytes,sha256
+1,es-HN-CarlosNeural,01,001,sistema_listo,Sistemas en línea.,Carlos/01/001.mp3,01/001.mp3,13392,a9374df42489b60e34a5b521a86337ec524259dd3f70229de958068135861518
+1,es-HN-CarlosNeural,01,002,sistema_listo,DOMUS operativo.,Carlos/01/002.mp3,01/002.mp3,12384,434a1ee7d9ebd7261950a899d983842ed9f5c632b036ecfe51cd95b8d16275ee
+1,es-HN-CarlosNeural,01,003,sistema_listo,Inicialización completa.,Carlos/01/003.mp3,01/003.mp3,15120,f2a5d850e57c0a3a9b430b16151300470e8a8dc78ff932402fa12bea50cd0545
+1,es-HN-CarlosNeural,01,004,sistema_listo,Casa preparada.,Carlos/01/004.mp3,01/004.mp3,11520,6895611efa8b3b5020d3cbfdcb057f31a3f3c90de439358d1c5f303aa66273c6
+1,es-HN-CarlosNeural,02,001,orden_aceptada,Entendido.,Carlos/02/001.mp3,02/001.mp3,11232,a414912ed14f04afa48313fd2853c1d704494ab8373c6d5c9331458a506512c5
+1,es-HN-CarlosNeural,02,002,orden_aceptada,Orden confirmada.,Carlos/02/002.mp3,02/002.mp3,12384,57ae360f53442067d5ff91625d5ea2a58ddf291ae09d904159cc1fa52b8e7d9c
+1,es-HN-CarlosNeural,02,003,orden_aceptada,Ejecutando instrucción.,Carlos/02/003.mp3,02/003.mp3,14112,2ebb370093e04bc9ef0b0d93a53ea72bddd351599811bfe3b7e521ea28795818
+1,es-HN-CarlosNeural,02,004,orden_aceptada,Como ordene.,Carlos/02/004.mp3,02/004.mp3,11232,ae13db8199c24afb8893de4c734cec34e92b69d137f37a683c922e95f603ea85
+1,es-HN-CarlosNeural,03,001,orden_rechazada,Orden no permitida.,Carlos/03/001.mp3,03/001.mp3,13392,feacab1b15c36076da33202a9f6a23226b31aa9efd5a8d7b6878ab98132fb28f
+1,es-HN-CarlosNeural,03,002,orden_rechazada,No puedo ejecutar eso.,Carlos/03/002.mp3,03/002.mp3,13536,47dbab7c1a4cb9832b5824a8558b48ac993dcc542baf114b7004631dc5eda944
+1,es-HN-CarlosNeural,03,003,orden_rechazada,Solicitud bloqueada.,Carlos/03/003.mp3,03/003.mp3,13680,57ed0b3271b6f1065eef575e106f566dbe116d9df809e94aa362fb124cf3fac3
+1,es-HN-CarlosNeural,03,004,orden_rechazada,Acción denegada por seguridad.,Carlos/03/004.mp3,03/004.mp3,16704,b3cd25f9e456c5d96874d7d751c2372096906eeb7cfbfc6bac18d1d30dac4b24
+1,es-HN-CarlosNeural,04,001,luz_encendida,Iluminación activada.,Carlos/04/001.mp3,04/001.mp3,13968,a94069e3175e1b8e5167469a288c911e53048547dc0e7138cf560d360520c299
+1,es-HN-CarlosNeural,04,002,luz_encendida,Luz encendida.,Carlos/04/002.mp3,04/002.mp3,11808,52c18c574905a358a5737d54749f157dfa2720ab7a6c45a19031e07d839d7cae
+1,es-HN-CarlosNeural,04,003,luz_encendida,He iluminado el área.,Carlos/04/003.mp3,04/003.mp3,13968,3b401650c6b8df65e492eaabfeff31147b09d918e80f334da48958e0611f5154
+1,es-HN-CarlosNeural,04,004,luz_encendida,Circuito de luz activo.,Carlos/04/004.mp3,04/004.mp3,14544,9804eadf027f5ac2134308702bf510557db2aab6ee4d2e7d5c1188b373607acb
+1,es-HN-CarlosNeural,05,001,luz_apagada,Iluminación desactivada.,Carlos/05/001.mp3,05/001.mp3,15120,dbc653077c78ba43660cfc0b6fca3fd6626138a5632fdc89246c144630ea78ab
+1,es-HN-CarlosNeural,05,002,luz_apagada,Luz apagada.,Carlos/05/002.mp3,05/002.mp3,11232,857b7740b65c41ce3968f73b72dc6134d1994e5cc27aa38b16c433da3901be53
+1,es-HN-CarlosNeural,05,003,luz_apagada,Área en modo oscuro.,Carlos/05/003.mp3,05/003.mp3,13536,62d0a85566d30f4db182676b7a8e4176c1e74cdf8297ff9725f1b8a513fdf8c6
+1,es-HN-CarlosNeural,05,004,luz_apagada,Circuito de luz detenido.,Carlos/05/004.mp3,05/004.mp3,15120,f73b6dab5f8222ac6222588f6e1377b4726adc362bfe67288a7d46e2c21614ce
+1,es-HN-CarlosNeural,06,001,riego_iniciado,Iniciando riego.,Carlos/06/001.mp3,06/001.mp3,12528,1e7bf5121ff1ba21de2b11fb93e92e2dd418aadcf7fdd2c1b715e88e67f235dc
+1,es-HN-CarlosNeural,06,002,riego_iniciado,Bomba de agua activada.,Carlos/06/002.mp3,06/002.mp3,13824,059e05d6aed13184afd05776d20c86582ec78ed35d0856c8cb0c8cbb48015d5c
+1,es-HN-CarlosNeural,06,003,riego_iniciado,Regando el cultivo.,Carlos/06/003.mp3,06/003.mp3,12528,4cb97d7b78623d0bb88d330d547f11194a8b5362fbb9db97528a659897b5f9ff
+1,es-HN-CarlosNeural,06,004,riego_iniciado,Ciclo de riego en marcha.,Carlos/06/004.mp3,06/004.mp3,14976,86e1ea2b576009e743402882421c35679129a1750827f727ee44f4ca756bd86a
+1,es-HN-CarlosNeural,07,001,riego_detenido,Riego detenido.,Carlos/07/001.mp3,07/001.mp3,11952,c33d907ebd39db75b545dbef4d4c943ee603981ffb2e6194d7a080bdbdaa3fa8
+1,es-HN-CarlosNeural,07,002,riego_detenido,Bomba desactivada.,Carlos/07/002.mp3,07/002.mp3,12816,308a6f70554f483b518834a2c3cb66d86b02e46f72e0e8fb11b8dd4d5128ba8b
+1,es-HN-CarlosNeural,07,003,riego_detenido,Ciclo de agua finalizado.,Carlos/07/003.mp3,07/003.mp3,15408,2889092ac262ce1479c4d8c9167ede89956a1e0f15f74c5cf88f3e7b76759599
+1,es-HN-CarlosNeural,07,004,riego_detenido,He detenido el riego.,Carlos/07/004.mp3,07/004.mp3,13104,9bb13ba819db9cd735a8c02becbd9c5ce2c74c9989a3da4f8f068d0e7548ab82
+1,es-HN-CarlosNeural,08,001,tierra_seca,La tierra está seca.,Carlos/08/001.mp3,08/001.mp3,13104,2fa9076d7adaa7f7b7352877964d056808b443224d03af90d4e63f371fb5f522
+1,es-HN-CarlosNeural,08,002,tierra_seca,Humedad del suelo baja.,Carlos/08/002.mp3,08/002.mp3,14112,206060f549e3198134ccd450c0f9b905e29609a2e8770b74ec5ce04370e027ec
+1,es-HN-CarlosNeural,08,003,tierra_seca,El cultivo necesita agua.,Carlos/08/003.mp3,08/003.mp3,15552,00eea49ea2c873b4d6e886e2dcf2cd06f8d882e2f919aa58360590afc293fd29
+1,es-HN-CarlosNeural,08,004,tierra_seca,Suelo por debajo del nivel ideal.,Carlos/08/004.mp3,08/004.mp3,17424,2a8f29767c29281e122fdae3e47103da14ec4461eb9f512839cfca69b1d31de7
+1,es-HN-CarlosNeural,09,001,tierra_humeda,Humedad adecuada.,Carlos/09/001.mp3,09/001.mp3,12384,fee7b126305569de1556fa3a027fd9fd8dab3be7e59ac83bcf899288842d963b
+1,es-HN-CarlosNeural,09,002,tierra_humeda,La tierra está húmeda.,Carlos/09/002.mp3,09/002.mp3,13392,40b516b5d163bb6cda13e774c4d0bafc69ecd6a8165319eaf2fb6d988c7442bd
+1,es-HN-CarlosNeural,09,003,tierra_humeda,Suelo dentro del nivel esperado.,Carlos/09/003.mp3,09/003.mp3,16992,5e40661c39a5dab3c219d53e4364de76fffa8b2b78e67a775142a3752b7b7649
+1,es-HN-CarlosNeural,09,004,tierra_humeda,El cultivo tiene suficiente humedad.,Carlos/09/004.mp3,09/004.mp3,18576,ed3452ff72c2c27452f303b78f29e31cb2bff16ab7a0efd908d3ce1f6282c56e
+1,es-HN-CarlosNeural,10,001,agua_baja,Nivel de agua bajo.,Carlos/10/001.mp3,10/001.mp3,12960,2e036160677d2a7b911796b5f94649c13c0712834a92ea839a3be0f80245a80b
+1,es-HN-CarlosNeural,10,002,agua_baja,Depósito insuficiente.,Carlos/10/002.mp3,10/002.mp3,13968,9ba7ab2a653defa32cfe18313a714458d5986cf51a15c53023667c4cd81d15af
+1,es-HN-CarlosNeural,10,003,agua_baja,Riego bloqueado por falta de agua.,Carlos/10/003.mp3,10/003.mp3,17424,ec0fd7248b7ac75fd455c68b0e5d3aa8ed3c56b405cf1beaf2138ccfcfc7999c
+1,es-HN-CarlosNeural,10,004,agua_baja,Recargue el depósito.,Carlos/10/004.mp3,10/004.mp3,12960,d340220136027cf8aa456a4a4be1e362bf31c26260d644726a58c2081889a16b
+1,es-HN-CarlosNeural,11,001,temperatura_alta,Temperatura elevada.,Carlos/11/001.mp3,11/001.mp3,13536,bac05bbc7520bf49ebefe6fc998bf0860c1aa6a2b9c7cc106e73a13add548430
+1,es-HN-CarlosNeural,11,002,temperatura_alta,El ambiente está caliente.,Carlos/11/002.mp3,11/002.mp3,14688,671a3209a84f21c06ac704f747e401b0dab4df6bd23eea8423478984f314bbb8
+1,es-HN-CarlosNeural,11,003,temperatura_alta,Recomiendo ventilación.,Carlos/11/003.mp3,11/003.mp3,13968,3bb9e58dc4f5e0cb6d2a74652b0e2f5f319dd4dec0c79ae7185feaeeb32ce56f
+1,es-HN-CarlosNeural,11,004,temperatura_alta,Umbral térmico superado.,Carlos/11/004.mp3,11/004.mp3,14976,5d59a8424bd94a21ade9e647c9f53ede184ece7f88e789beb5a48bd01a96ff0c
+1,es-HN-CarlosNeural,12,001,presencia,Presencia detectada.,Carlos/12/001.mp3,12/001.mp3,13248,501e76fba847e68ea3c9661870889451db5730549d1ca788722ee077d25863fc
+1,es-HN-CarlosNeural,12,002,presencia,Movimiento registrado.,Carlos/12/002.mp3,12/002.mp3,14256,fdf1f7815ad04e2d9f7873d2a56a4b72bbe74b860bff37306b4fca0f7957cc6b
+1,es-HN-CarlosNeural,12,003,presencia,Hay actividad en la casa.,Carlos/12/003.mp3,12/003.mp3,14112,fc7d3580cf5c07d3294185260e8678d01859a137e5718d8848d2a5a734d711c2
+1,es-HN-CarlosNeural,12,004,presencia,Sensor de presencia activado.,Carlos/12/004.mp3,12/004.mp3,16272,0452de6721c79dd3bf99886a2945564e03ff12b405cf61d1bac32211b52bc2a2
+1,es-HN-CarlosNeural,13,001,emergencia,Emergencia activada.,Carlos/13/001.mp3,13/001.mp3,13536,5b6d7c7d3225a4aa4ca71558f1d2afe72b2cc351330852f2ccd87415b22fee49
+1,es-HN-CarlosNeural,13,002,emergencia,Todas las salidas fueron detenidas.,Carlos/13/002.mp3,13/002.mp3,17568,937b9227da6e5a5b60895b73b509c71ecf80e81053f7fd4b09050de18c8cde70
+1,es-HN-CarlosNeural,13,003,emergencia,Sistema bloqueado por seguridad.,Carlos/13/003.mp3,13/003.mp3,17136,b1c514768287f4e2b3436242a0e4e3ddbdf3c040b205ab4d1976d38c44b5c996
+1,es-HN-CarlosNeural,13,004,emergencia,Paro de emergencia activo.,Carlos/13/004.mp3,13/004.mp3,14400,23af6895e83b04bfdbeb5b26178098d7929de006eb1486ee6bb6ea8807f3f303
+1,es-HN-CarlosNeural,14,001,error_sensor,Sensor sin respuesta.,Carlos/14/001.mp3,14/001.mp3,14112,ce1531cec3386738d7d31378066f59f9e44997ec3db15ee89bf873b6a5994050
+1,es-HN-CarlosNeural,14,002,error_sensor,Lectura no válida.,Carlos/14/002.mp3,14/002.mp3,13104,ca2fd96bc565757c4ff0092029182b796b99e46ad8a285f3ee5085364957d153
+1,es-HN-CarlosNeural,14,003,error_sensor,Revise las conexiones del sensor.,Carlos/14/003.mp3,14/003.mp3,17424,8ad633d8c44c00b191b673e9c5c1e08789151d2c1eb98d519504c76b72ed14e1
+1,es-HN-CarlosNeural,14,004,error_sensor,Diagnóstico requerido.,Carlos/14/004.mp3,14/004.mp3,14400,e0c32ca524346bd6cc61b7d257ff77486664e32620214984da41053125c6e1b3
+2,es-HN-KarlaNeural,51,001,sistema_listo,Sistemas en línea.,Karla/01/001.mp3,51/001.mp3,13824,5e9ce1253e406752675af9957ead717cf1e6013734689c9f29b1eaf6807f6b32
+2,es-HN-KarlaNeural,51,002,sistema_listo,DOMUS operativo.,Karla/01/002.mp3,51/002.mp3,13536,b5433c4d49739e62ee5f127c4b1647b6c7bb27b7b27282fc65f1ec0f74a1f213
+2,es-HN-KarlaNeural,51,003,sistema_listo,Inicialización completa.,Karla/01/003.mp3,51/003.mp3,15840,57411e3c16afb53d755fe9a23914153e51b0fd968a6f0f1853faebbb94b13890
+2,es-HN-KarlaNeural,51,004,sistema_listo,Casa preparada.,Karla/01/004.mp3,51/004.mp3,12384,4987d7c93077871ef817dbec4d4e07395aac35fde8e9d0846dc308f3ae7c8f69
+2,es-HN-KarlaNeural,52,001,orden_aceptada,Entendido.,Karla/02/001.mp3,52/001.mp3,11520,dd6d1d538a76e8b88bbd9f76053364509689665cb1306c369ebced4912f368ab
+2,es-HN-KarlaNeural,52,002,orden_aceptada,Orden confirmada.,Karla/02/002.mp3,52/002.mp3,13248,44731ee5ea89e5a3da9ad6590583afa02c1d073afe5519e670f10b1e32ebce97
+2,es-HN-KarlaNeural,52,003,orden_aceptada,Ejecutando instrucción.,Karla/02/003.mp3,52/003.mp3,14832,303ef0b929899846f5909dca9462093afd90ccc4d6b071371d4b6a35fa613acc
+2,es-HN-KarlaNeural,52,004,orden_aceptada,Como ordene.,Karla/02/004.mp3,52/004.mp3,11520,3380a9b47d8a0bd35903824da559d80476fbcf16cb6054e35c16204b4e6d21ea
+2,es-HN-KarlaNeural,53,001,orden_rechazada,Orden no permitida.,Karla/03/001.mp3,53/001.mp3,13968,29de6e3e5ccb3987b452c91d4a344a1302d500c44b9748b37bc230966f4a4148
+2,es-HN-KarlaNeural,53,002,orden_rechazada,No puedo ejecutar eso.,Karla/03/002.mp3,53/002.mp3,15264,2e47fad47d702e49085032cc3e24376f5362f5d69d3afc5b1f27b156e09bea6e
+2,es-HN-KarlaNeural,53,003,orden_rechazada,Solicitud bloqueada.,Karla/03/003.mp3,53/003.mp3,14256,2d33c28bccdb656d328c7c54b3c45127fbd581cc454babc3fe6feb0d574aced2
+2,es-HN-KarlaNeural,53,004,orden_rechazada,Acción denegada por seguridad.,Karla/03/004.mp3,53/004.mp3,17568,db8756a9f7d89055904a7b4588e2250da91da230337aebaffedafe6ee0aec0ca
+2,es-HN-KarlaNeural,54,001,luz_encendida,Iluminación activada.,Karla/04/001.mp3,54/001.mp3,15120,02350b5c26573816c9c151b340d1729d5243524bd3fcbf82a0586816ebcb598f
+2,es-HN-KarlaNeural,54,002,luz_encendida,Luz encendida.,Karla/04/002.mp3,54/002.mp3,12528,fdb53656cda69dd8b694c01460ab6bbd4a1ace03139223f07d0b208655d0ba9b
+2,es-HN-KarlaNeural,54,003,luz_encendida,He iluminado el área.,Karla/04/003.mp3,54/003.mp3,14832,c163d9e022dd99ae8946c07c5fa551a685c2f326b337eb77448d86d8ce784dce
+2,es-HN-KarlaNeural,54,004,luz_encendida,Circuito de luz activo.,Karla/04/004.mp3,54/004.mp3,15696,6d9e12811bdda8c245d55233f7e5b30301cb3efe766eb4e4c56e3de3332e2e97
+2,es-HN-KarlaNeural,55,001,luz_apagada,Iluminación desactivada.,Karla/05/001.mp3,55/001.mp3,16128,f7360e22d29a88053b7c73cfafb110ceed90c2acbf2a5699e031f67165290af2
+2,es-HN-KarlaNeural,55,002,luz_apagada,Luz apagada.,Karla/05/002.mp3,55/002.mp3,11952,af4467a9e3fb492b2e152129cf2d938041589b8be85735617850c84d861feaec
+2,es-HN-KarlaNeural,55,003,luz_apagada,Área en modo oscuro.,Karla/05/003.mp3,55/003.mp3,15408,4a0993fa0ef4d6a820b31175d260a485e6eb24bdaadff443ee12ddfea098ae8a
+2,es-HN-KarlaNeural,55,004,luz_apagada,Circuito de luz detenido.,Karla/05/004.mp3,55/004.mp3,16128,27e4ad07595b11351752358a68fc3625113385fd220ee96e3ab28418ba354b68
+2,es-HN-KarlaNeural,56,001,riego_iniciado,Iniciando riego.,Karla/06/001.mp3,56/001.mp3,13104,34fc860a63ef91865838f9a73675a663d74d795a654c78923ff3a1ac68ae5349
+2,es-HN-KarlaNeural,56,002,riego_iniciado,Bomba de agua activada.,Karla/06/002.mp3,56/002.mp3,15264,40a6c644499bc897f19271322610beeab78c7cec51e00a672704aa4f100e3481
+2,es-HN-KarlaNeural,56,003,riego_iniciado,Regando el cultivo.,Karla/06/003.mp3,56/003.mp3,13536,9238ebfc5bc50996d2549765ddbc444ee350049352fb4b244d9c374499b17e41
+2,es-HN-KarlaNeural,56,004,riego_iniciado,Ciclo de riego en marcha.,Karla/06/004.mp3,56/004.mp3,15552,168b454bc83f3b5f0287a9d139b48f3f9156b87a903025b6d14790e891838d4c
+2,es-HN-KarlaNeural,57,001,riego_detenido,Riego detenido.,Karla/07/001.mp3,57/001.mp3,12960,4f0524c3872c6d83c05ea92e16a66f97284591a62e34745fd9dab07b99c45014
+2,es-HN-KarlaNeural,57,002,riego_detenido,Bomba desactivada.,Karla/07/002.mp3,57/002.mp3,13968,cd9e3770b628af1900568e3ec23699518b524e2d10983c8e96652f71f0ba993d
+2,es-HN-KarlaNeural,57,003,riego_detenido,Ciclo de agua finalizado.,Karla/07/003.mp3,57/003.mp3,16416,1e0928ab1307f26d54919576889920835b5c60841e39680e2a43f5087d626e3f
+2,es-HN-KarlaNeural,57,004,riego_detenido,He detenido el riego.,Karla/07/004.mp3,57/004.mp3,14256,b15d7a73c800ac2124369612598e1ec8712ff2d8574a313737954d8c640bd56e
+2,es-HN-KarlaNeural,58,001,tierra_seca,La tierra está seca.,Karla/08/001.mp3,58/001.mp3,14688,fb363889ba0b55a0176ad1b9c50e062a8fa18593b2a5992b57bdf39358d5781e
+2,es-HN-KarlaNeural,58,002,tierra_seca,Humedad del suelo baja.,Karla/08/002.mp3,58/002.mp3,14976,0178253efb32473454ac55da91c2e6d6b030bc5819a308b159314bdb3c2a80de
+2,es-HN-KarlaNeural,58,003,tierra_seca,El cultivo necesita agua.,Karla/08/003.mp3,58/003.mp3,16560,b2335f3f1518c3ee6f663233b03395d34b3f23c79a4a1e1e3ee4269aedecc1c0
+2,es-HN-KarlaNeural,58,004,tierra_seca,Suelo por debajo del nivel ideal.,Karla/08/004.mp3,58/004.mp3,18576,bd01d5fd3f788ac6618ea5aabff1f8f40a94060c471057d4d74f8912b048efec
+2,es-HN-KarlaNeural,59,001,tierra_humeda,Humedad adecuada.,Karla/09/001.mp3,59/001.mp3,13104,057cbcab7655318e6aa4c10255fe4b0736581e09854c548ad1405657c3be4d9e
+2,es-HN-KarlaNeural,59,002,tierra_humeda,La tierra está húmeda.,Karla/09/002.mp3,59/002.mp3,14832,7c459f3dc4e8dac375aff440c19a1d0f8ab7e518c88571524726e569f55488bc
+2,es-HN-KarlaNeural,59,003,tierra_humeda,Suelo dentro del nivel esperado.,Karla/09/003.mp3,59/003.mp3,17856,015ab94691f36346321a441da4038f0bf45c7ce15db5fb42b6f40feba4712f84
+2,es-HN-KarlaNeural,59,004,tierra_humeda,El cultivo tiene suficiente humedad.,Karla/09/004.mp3,59/004.mp3,18576,1d9555c1c547b4f2fd0121f44651096f0efb6360d12636570c013364ee4b83b3
+2,es-HN-KarlaNeural,60,001,agua_baja,Nivel de agua bajo.,Karla/10/001.mp3,60/001.mp3,14256,b9c121fba9708202c4a8b37a903504b33908e96dfd6b56a9fe905f40c20ffcc4
+2,es-HN-KarlaNeural,60,002,agua_baja,Depósito insuficiente.,Karla/10/002.mp3,60/002.mp3,15408,59cca76571b33664afc6cc54cbb5eeceeeed0fe137df770c30f52be2361f6046
+2,es-HN-KarlaNeural,60,003,agua_baja,Riego bloqueado por falta de agua.,Karla/10/003.mp3,60/003.mp3,19008,f2479a4c915b9f2862f0dfd16e55d23f858eedf5a4f5cfa2072b7bcc6220d4d0
+2,es-HN-KarlaNeural,60,004,agua_baja,Recargue el depósito.,Karla/10/004.mp3,60/004.mp3,14400,fe2d1d4bf890258d963610a734143a1d3ee5db8617e5eb1f50deddf1ecbacdef
+2,es-HN-KarlaNeural,61,001,temperatura_alta,Temperatura elevada.,Karla/11/001.mp3,61/001.mp3,14832,a7c645621f206d54dea314b981e2e564d82b3168ff08b4a11f1caa036254ed7f
+2,es-HN-KarlaNeural,61,002,temperatura_alta,El ambiente está caliente.,Karla/11/002.mp3,61/002.mp3,16128,5d6f3d679b39ecac46349156f11d43d1cf2243819a93598e208f035be0399b08
+2,es-HN-KarlaNeural,61,003,temperatura_alta,Recomiendo ventilación.,Karla/11/003.mp3,61/003.mp3,15264,3d423140490b8a7e6ef3c422c78d4c5e39e1ca1e1fb370a7d27fc729d5683c98
+2,es-HN-KarlaNeural,61,004,temperatura_alta,Umbral térmico superado.,Karla/11/004.mp3,61/004.mp3,15984,1968d1cb707693ad6a7fd8772b8d954334f27930c042d852ace9473d2fc17827
+2,es-HN-KarlaNeural,62,001,presencia,Presencia detectada.,Karla/12/001.mp3,62/001.mp3,13824,1ddd17b123bcb151e55cc403e9e4209c1fad2ccf8c6520ab8281e53fb1bf07a7
+2,es-HN-KarlaNeural,62,002,presencia,Movimiento registrado.,Karla/12/002.mp3,62/002.mp3,15840,b6b5ce41aa52fce7639b7fa4c91479608b5a69b62a1e90b00fe533cb83c56194
+2,es-HN-KarlaNeural,62,003,presencia,Hay actividad en la casa.,Karla/12/003.mp3,62/003.mp3,15120,b9b9e79796d728a26801d32929f02ab71d3604d437bd8db517555fa827ae492b
+2,es-HN-KarlaNeural,62,004,presencia,Sensor de presencia activado.,Karla/12/004.mp3,62/004.mp3,16992,b8cf3be98037eda2d7f0e505cb14c1909c5f6fdc99bc8189b911936bab4aaeae
+2,es-HN-KarlaNeural,63,001,emergencia,Emergencia activada.,Karla/13/001.mp3,63/001.mp3,14400,214b9cacdc8ed53c7fde1c3db0af07e3d71fe0eb872857c8aca943d9a3b201bb
+2,es-HN-KarlaNeural,63,002,emergencia,Todas las salidas fueron detenidas.,Karla/13/002.mp3,63/002.mp3,19152,066709cc8366e2ab30682a536eae9386e249793ff0c8639d7703192d09d78f4e
+2,es-HN-KarlaNeural,63,003,emergencia,Sistema bloqueado por seguridad.,Karla/13/003.mp3,63/003.mp3,18144,65efad35f62ac935dbeac00761f5564a3b9db21966aed36af338694822eda7ae
+2,es-HN-KarlaNeural,63,004,emergencia,Paro de emergencia activo.,Karla/13/004.mp3,63/004.mp3,15552,88ddbb02633b4a4227cc6b7db6ad274a0805d34f668a1528520f2f39e1e999b5
+2,es-HN-KarlaNeural,64,001,error_sensor,Sensor sin respuesta.,Karla/14/001.mp3,64/001.mp3,14688,373b546c4d3a92b5eb32887d04f73567659c165dcd1353f8a581f8829f787043
+2,es-HN-KarlaNeural,64,002,error_sensor,Lectura no válida.,Karla/14/002.mp3,64/002.mp3,14112,ca4dc6759e418680763e004a5eff8d2c08317e8e1ad2dde5b8822f4849e05ed3
+2,es-HN-KarlaNeural,64,003,error_sensor,Revise las conexiones del sensor.,Karla/14/003.mp3,64/003.mp3,18144,1386f9017cb1b6213485b476e72c8407c96390e69f94c9e8f69abcb2c46d8856
+2,es-HN-KarlaNeural,64,004,error_sensor,Diagnóstico requerido.,Karla/14/004.mp3,64/004.mp3,15120,4ed0c69398da638f4fed7468d7497ba510a357c2babc69673e41f03d9236cda8

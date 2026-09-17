@@ -43,7 +43,8 @@ muestra `APRENDIDAS=n/21`.
 
 Acciones principales: 1/Anterior sala, 2/Siguiente cuarto, 3 cultivo, 4
 ventilador (responde bloqueado), 5 riego, 0 todo apagado, 200+ rearme, CH/CH-
-cambian la pantalla y EQ muestra diagnóstico.
+cambian la pantalla y EQ muestra diagnóstico. La tecla 6 (`0x005A`) alterna
+las voces 1 y 2; 7, 8 y 9 conservan el reporte de estado redundante.
 
 La vista 0 del LCD muestra temperatura y humedad del aire. La vista 1 muestra
 humedad de suelo y agua en porcentaje. El porcentaje de agua usa provisionalmente
@@ -90,3 +91,9 @@ El MAX98306 de la compra es un amplificador con entrada analógica, no I2S y no
 reproduce archivos por sí solo. La fuente definida es DFPlayer Mini con microSD
 y cuatro pistas por evento; sigue deshabilitada hasta asignar UART libre y
 validar alimentación, tarjeta y parlante. Ver la nota Obsidian 65.
+
+Las 112 pistas generadas (56 por voz) y su manifiesto reproducible están en
+`audio/jarvis_sd/`. La voz 1 usa carpetas 01-14 y la voz 2 usa 51-64.
+El firmware ya contiene `JarvisAudio` y `DFPlayerTransport`, pero mantiene
+RX/TX/BUSY en `-1` y `MP3_HABILITADO=false`: la nota 66 exige identificar los
+GPIO libres y el módulo físico antes de crear el perfil final.
