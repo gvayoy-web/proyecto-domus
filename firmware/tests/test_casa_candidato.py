@@ -5,6 +5,7 @@ como fuente real, máscara física por perfil, driver/IR/audio preparados pero
 deshabilitados y nombre diagnosticado sin la palabra FINAL. No toca el
 esqueleto (congelado).
 """
+import re
 import shutil
 import tempfile
 import unittest
@@ -51,6 +52,17 @@ class CasaCandidatoTests(unittest.TestCase):
             self.assertIn(campo, self.source.split("struct MapaPinesCasa {", 1)[1].split("};", 1)[0])
         self.assertIn("MAPA_CASA.sda", self.source)
         self.assertIn("MAPA_CASA.salidas[indice]", self.source)
+
+    def test_mapa_solo_usa_el_lado_utilizable_de_la_placa(self):
+        # Nota 69: la placa real solo expone el lado izquierdo
+        # (GPIO 3-18 + doble 3V3/5V0/GND). El derecho (0/1/2/19/20/35-48)
+        # está prohibido: ningún pin del MAPA_CASA puede salir de 3-18.
+        bloque = self.source.split("constexpr MapaPinesCasa MAPA_CASA = {", 1)[1].split("};", 1)[0]
+        pines = {int(x) for x in re.findall(r"\b\d+\b", bloque)}
+        lado_ok = set(range(3, 19))
+        self.assertTrue(pines, "MAPA_CASA vacío")
+        self.assertEqual(pines - lado_ok, set(),
+                         f"GPIO fuera del lado usable: {sorted(pines - lado_ok)}")
 
     def test_mascara_fisica_bloquea_sin_etapa_y_motores(self):
         self.assertIn("constexpr bool SALIDA_FISICA_CASA[TOTAL_SALIDAS]", self.source)
