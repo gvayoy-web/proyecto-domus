@@ -24,7 +24,12 @@ SENSORES;TEMP_C=-1.0;HUM_AIRE=-1.0;HUM_PCT=-1;NIVEL=-1;LUZ_PCT=100/98/86;PIR=1;S
 | Suelo (GPIO15) | Fuera de rango (-1) | Revisar VCC/GND/AO; calibrar seco/húmedo |
 | Nivel (GPIO16) | Fuera de rango (-1) | Revisar S/+/-; calibrar vacío/lleno |
 | DHT11 (GPIO14) | NaN, suspendido con reintento 60 s | Revisar cableado + R 5.1–10 kΩ p1–p2 |
-| LDR (GPIO3) | **VIVO** (100→98→86 varía con luz) | Calibrar oscuro/claro |
+| LDR (GPIO3) | **NO VERIFICADO** (ver nota abajo) | Conectarlo y hacer prueba de sombra |
+> **Corrección**: el 100→98→86 era un pin flotante a la deriva, no el LDR
+> (el dueño confirmó que no estaba conectado). Un ADC sin nada enchufado
+> capta ruido y el porcentaje, truncado a 100, parece "vivo". Lección:
+> que varíe no prueba nada; la prueba real es taparlo y verlo **caer en
+> picada**. Ningún sensor analógico queda confirmado vivo.
 | PIR (GPIO9) | HIGH fijo | Probar reposo 60 s + potenciómetros |
 | LCD 0x27 / IR | PASS | Aprender 21 teclas (`IR_GRABAR_*`) |
 | Salidas / PARO / watchdog | Todo en 0, `REINICIOS_CRITICOS=0` | Sano |
