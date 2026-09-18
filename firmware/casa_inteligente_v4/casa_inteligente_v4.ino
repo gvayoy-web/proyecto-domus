@@ -1150,8 +1150,25 @@ EstadoSalidaFinal clasificarSalidaFinal(int indice) {
   return estadoSalidas[indice] ? SAL_ON : SAL_OFF;
 }
 
+// Si el LCD se cae en caliente (cable flojo), antes quedaba en
+// PANTALLA_NINGUNA para siempre. Ahora reintenta el escaneo cada 30 s.
+#define INTERVALO_REINTENTO_PANTALLA_MS 30000UL
+unsigned long ultimoReintentoPantallaMs = 0;
+
 void refrescarPantallaFinal() {
-  if (!pantallaDisponible()) return;
+  if (!pantallaDisponible()) {
+    if (millis() - ultimoReintentoPantallaMs >= INTERVALO_REINTENTO_PANTALLA_MS) {
+      ultimoReintentoPantallaMs = millis();
+      if (lcd != nullptr) {
+        delete lcd;
+        lcd = nullptr;
+      }
+      log("PANTALLA", "Reintentando deteccion tras caida del bus");
+      detectarPantalla();
+      pantallaFinal.begin(lcd);
+    }
+    return;
+  }
 
   int humedadCrudo = 0, humedadPct = 0, nivelAgua = 0, ldrCrudo = 0, luzPct = 0;
   float tempC = 0, humAire = 0;
@@ -2424,11 +2441,13 @@ void setup() {
 
   detectarPantalla();
   pantallaFinal.begin(lcd);
+  if (watchdogActivo) esp_task_wdt_reset();
 
   analogReadResolution(12);
   analogSetAttenuation(ADC_11db);
   pinMode(MAPA_CASA.pir, INPUT);
   inicializarMicroSD();
+  if (watchdogActivo) esp_task_wdt_reset();
 
   dht.begin();
   log("SISTEMA", "DHT11 inicializado (temperatura/humedad ambiental)");
@@ -2486,18 +2505,12 @@ void demoSecuenciaActualizar() {
   if (millis() - ultimaDemoCambioMs < INTERVALO_DEMO_MS) return;
   ultimaDemoCambioMs = millis();
 
-  // Alterna todas las salidas que están instaladas en este perfil
+  // Alterna todas las salidas instaladas pasando por el despachador: así
+  // la demo respeta interlocks (nivel, PARO, driver), propiedad, historial
+  // y voz. Antes escribía el GPIO directo y podía regar en seco.
   for (int i = 0; i < TOTAL_SALIDAS; i++) {
     if (SALIDA_FISICA_CASA[i]) {
-      bool nuevoEstado = !estadoSalidas[i];
-      digitalWrite(MAPA_CASA.salidas[i], nivelSalida(i, nuevoEstado));
-      if (nuevoEstado) {
-        estadoSalidas[i] = true;
-        log("DEMO", String(NOMBRES_SALIDAS[i]) + " encendido en demo");
-      } else {
-        estadoSalidas[i] = false;
-        log("DEMO", String(NOMBRES_SALIDAS[i]) + " apagado en demo");
-      }
+      ejecutarComandoRele("DEMO_TOGGLE", i, !estadoSalidas[i], ORIGEN_MANUAL);
     }
   }
 }

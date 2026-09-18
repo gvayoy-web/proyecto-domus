@@ -207,6 +207,19 @@ class FirmwareContractTests(unittest.TestCase):
         self.assertIn("ORIGEN_IR", self.source)
         self.assertIn("EVENTO;SILENCIO;", self.source)
 
+    def test_pintest_diagnostico_y_demo_por_despachador(self):
+        # PINTEST <gpio> reporta crudo/pull-up/pull-down y dictamina
+        # FLOTANTE vs CONECTADO; no entra a COMANDOS_VALIDOS (diagnóstico).
+        self.assertIn("bool procesarPinTest(const String &comando)", self.source)
+        self.assertIn("PINTEST;GPIO=%d;CRUDO=%d;PULLUP=%d;PULLDOWN=%d", self.source)
+        self.assertIn("FLOTANTE", self.source)
+        # La demo pasa por el despachador (interlocks intactos), no al GPIO.
+        demo = self.source.split("void demoSecuenciaActualizar() {", 1)[1].split("\n}\n", 1)[0]
+        self.assertIn("ejecutarComandoRele", demo)
+        self.assertNotIn("digitalWrite", demo)
+        # Pantalla caída en caliente se reintenta, no se abandona.
+        self.assertIn("INTERVALO_REINTENTO_PANTALLA_MS", self.source)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
