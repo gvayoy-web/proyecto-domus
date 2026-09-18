@@ -44,9 +44,29 @@ SENSORES;TEMP_C=-1.0;HUM_AIRE=-1.0;HUM_PCT=-1;NIVEL=-1;LUZ_PCT=100/98/86;PIR=1;S
 - **Verificado**: 12 s de Serial → 6 líneas (todas `SENSORES;`), **0 errores**.
 - Compilación Arduino: 13% flash / 8% RAM. Tests host: 102 passed, 0 failed.
 
+## Diagnóstico PINTEST (comando nuevo: `PINTEST <gpio>`)
+
+Crudo / pull-up / pull-down medidos en la placa real:
+
+| GPIO | Crudo | PullUp | PullDown | Lectura |
+|---|---|---|---|---|
+| 16 (nivel) | 339 | 2967 | 377 | Cargado a GND: módulo a medio conectar o fila compartida en la protoboard apretada. NO flotante puro |
+| 15 (suelo) | 4095 | 4095 | 3688 | Forzado a HIGH: módulo alimentado con sonda seca (o AO a 3V3). Probar sonda en agua |
+| 3 (LDR) | 1435 | 1433 | 1434 | **Divisor real, clavado**: LDR confirmado vivo |
+| 14 (DHT) | 3312 | 3316 | 2637 | Pull-up externo de 10k presente; el chip no responde → revisar VCC pata 1 |
+| 9 (PIR) | 4052 | 4007 | 3987 | Forzado a HIGH de verdad: probar reposo 60 s + pote de tiempo al mínimo |
+
+Lección doble: un pin flotante puede leer "válido" estable (~1480) y un
+sensor a medio conectar también. `leerSensorPromediado()` ahora devuelve -1
+si el pin sigue los pulls a los rieles (>3500 y <600); comando `PINTEST`
+para medir a mano. Suite: 112 passed (HIL 8/8 incluido).
+
 ## Al despertar
 
-1. Revisar cableado de suelo y nivel (lo más probable: VCC o GND sueltos).
-2. DHT11: resistencia entre p1–p2 y `DHT_FALLOS` en `DIAGNOSTICO`.
-3. Aprender el mando y calibrar (`CAL_*` + `CAL_GUARDAR`).
-4. Bomba: diodo 1N4007 + `OUT-`→GND, prueba sumergida.
+1. Nivel: con todo desconectado del sensor, `PINTEST 16` debe decir
+   FLOTANTE; si no, el jumper del GPIO16 toca otra fila en la protoboard.
+2. Suelo: meter la sonda en agua y mirar `SENSORES;` (debe aparecer HUM_PCT).
+3. DHT11: verificar 3V3 en pata 1 (el pull-up de 10k sí está).
+4. PIR: cuarto solo 60 s, pote de tiempo al mínimo.
+5. Aprender el mando y calibrar (`CAL_*` + `CAL_GUARDAR`).
+6. Bomba: diodo 1N4007 + `OUT-`→GND, prueba sumergida.

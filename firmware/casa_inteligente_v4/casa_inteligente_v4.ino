@@ -1224,7 +1224,20 @@ int leerSensorPromediado(int pin, int muestras = 4) {
     suma += analogRead(pin);
     delayMicroseconds(100);
   }
-  return muestras > 0 ? suma / muestras : 0;
+  const int promedio = muestras > 0 ? (int)(suma / muestras) : 0;
+  // Detección de pin flotante: un pin sin nada conectado sigue a los
+  // pull-up/down internos hasta los rieles; un sensor real (divisor de
+  // baja impedancia) apenas se mueve. Devuelve -1 = desconectado, que
+  // cae fuera de todos los rangos válidos.
+  pinMode(pin, INPUT_PULLUP);
+  delayMicroseconds(200);
+  const int conPullUp = analogRead(pin);
+  pinMode(pin, INPUT_PULLDOWN);
+  delayMicroseconds(200);
+  const int conPullDown = analogRead(pin);
+  pinMode(pin, INPUT);
+  if (conPullUp > 3500 && conPullDown < 600) return -1;
+  return promedio;
 }
 
 int fallosConsecutivosHumedad = 0;
@@ -2155,6 +2168,40 @@ bool despacharComandoRele(const String &comando) {
   return false;
 }
 
+// Diagnóstico de flotancia: PINTEST <gpio> reporta crudo, con pull-up y
+// con pull-down. Un pin flotante sigue los pulls (alto/bajo); un sensor
+// real apenas se mueve. No entra a COMANDOS_VALIDOS: es solo diagnóstico.
+bool procesarPinTest(const String &comando) {
+  if (!comando.startsWith("PINTEST")) return false;
+  String numero = comando.substring(7);
+  numero.trim();
+  for (unsigned int i = 0; i < numero.length(); ++i) {
+    if (!isDigit(numero[i])) {
+      emitirEventoLocal("NACK;PINTEST;USA_PINTEST_GPIO");
+      return true;
+    }
+  }
+  const int pin = numero.toInt();
+  if (numero.length() == 0 || pin < 0 || pin > 48) {
+    emitirEventoLocal("NACK;PINTEST;GPIO_0_48");
+    return true;
+  }
+  const int crudo = analogRead(pin);
+  pinMode(pin, INPUT_PULLUP);
+  delayMicroseconds(500);
+  const int conPullUp = analogRead(pin);
+  pinMode(pin, INPUT_PULLDOWN);
+  delayMicroseconds(500);
+  const int conPullDown = analogRead(pin);
+  pinMode(pin, INPUT);
+  char linea[96];
+  snprintf(linea, sizeof(linea), "PINTEST;GPIO=%d;CRUDO=%d;PULLUP=%d;PULLDOWN=%d;%s",
+           pin, crudo, conPullUp, conPullDown,
+           (conPullUp > 3500 && conPullDown < 600) ? "FLOTANTE" : "CONECTADO");
+  emitirEventoLocal(linea);
+  return true;
+}
+
 void procesarComandoTexto(const String &comandoCrudo) {
   // Copia local editable: el parámetro llega por referencia constante para
   // no duplicar el buffer en cada comando (antes se pasaba por valor).
@@ -2184,6 +2231,7 @@ void procesarComandoTexto(const String &comandoCrudo) {
 
   if (procesarCalibracion(comando)) return;
   if (procesarComandoIR(comando)) return;
+  if (procesarPinTest(comando)) return;
   if (!esComandoValido(comando)) {
     registrarError("COMANDO", "No reconocido: " + comando);
     emitirEventoLocal("NACK;" + comando + ";no_reconocido");
