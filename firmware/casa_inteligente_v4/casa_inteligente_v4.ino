@@ -325,7 +325,11 @@ static_assert(!(BOMBA_DIRECTA_S8050 && SALIDA_FISICA_CASA[3]),
 
 // --- Sistema de errores en memoria (buffer circular) ---
 #define MAX_ERRORES_GUARDADOS   6
-#define LONGITUD_MAX_ERROR      40
+#define LONGITUD_MAX_ERROR      64
+// Un sensor caído registraba ~20 errores/s (86k acumulados en banco e
+// inundaba el Serial). Cada origen avisa como máximo una vez cada 30 s;
+// el contador fallosConsecutivos* sigue detectando a la 3ª lectura mala.
+#define INTERVALO_AVISO_SENSOR_MS 30000UL
 
 // --- I2C: reintentos ante fallo transitorio de pantalla ---
 #define I2C_MAX_REINTENTOS      3
@@ -1248,9 +1252,13 @@ int convertirHumedadAPorcentaje(int lecturaCruda) {
 bool leerHumedad(int &crudoSalida, int &pctSalida) {
   int lectura = leerSensorPromediado(MAPA_CASA.suelo);
   if (lectura < HUMEDAD_MIN_VALIDA || lectura > HUMEDAD_MAX_VALIDA) {
+    static unsigned long ultimoAvisoMs = 0;
     fallosConsecutivosHumedad++;
     if (fallosConsecutivosHumedad >= MAX_FALLOS_ANTES_DE_REGISTRAR) {
-      registrarError("SENSOR", "Humedad fuera de rango repetidamente, revisar conexion");
+      if (millis() - ultimoAvisoMs >= INTERVALO_AVISO_SENSOR_MS) {
+        ultimoAvisoMs = millis();
+        registrarError("SENSOR", "Humedad fuera de rango, revisar conexion");
+      }
       fallosConsecutivosHumedad = 0;
     }
     return false;
@@ -1266,10 +1274,14 @@ bool leerHumedad(int &crudoSalida, int &pctSalida) {
 bool leerNivelAgua(int &valorSalida) {
   int lectura = leerSensorPromediado(MAPA_CASA.nivel);
   if (lectura < NIVEL_AGUA_MIN_VALIDO || lectura > NIVEL_AGUA_MAX_VALIDO) {
+    static unsigned long ultimoAvisoMs = 0;
     muestrasNivelAguaValidasConsecutivas = 0;
     fallosConsecutivosNivelAgua++;
     if (fallosConsecutivosNivelAgua >= MAX_FALLOS_ANTES_DE_REGISTRAR) {
-      registrarError("SENSOR", "Nivel de agua fuera de rango, revisar conexion");
+      if (millis() - ultimoAvisoMs >= INTERVALO_AVISO_SENSOR_MS) {
+        ultimoAvisoMs = millis();
+        registrarError("SENSOR", "Nivel de agua fuera de rango, revisar conexion");
+      }
       fallosConsecutivosNivelAgua = 0;
     }
     return false;
@@ -1296,9 +1308,13 @@ int convertirLdrAPorcentaje(int lecturaCruda) {
 bool leerLuz(int &crudoSalida, int &pctSalida) {
   int lectura = leerSensorPromediado(MAPA_CASA.ldr);
   if (lectura < LDR_MIN_VALIDO || lectura > LDR_MAX_VALIDO) {
+    static unsigned long ultimoAvisoMs = 0;
     fallosConsecutivosLdr++;
     if (fallosConsecutivosLdr >= MAX_FALLOS_ANTES_DE_REGISTRAR) {
-      registrarError("SENSOR", "LDR fuera de rango repetidamente, revisar conexion");
+      if (millis() - ultimoAvisoMs >= INTERVALO_AVISO_SENSOR_MS) {
+        ultimoAvisoMs = millis();
+        registrarError("SENSOR", "LDR fuera de rango, revisar conexion");
+      }
       fallosConsecutivosLdr = 0;
     }
     return false;
@@ -1341,12 +1357,17 @@ bool leerAmbiente(float &tempCSalida, float &humAireSalida) {
   float hum = dht.readHumidity();
 
   if (isnan(temp) || isnan(hum)) {
+    static unsigned long ultimoAvisoMs = 0;
     fallosDhtConsecutivos++;
     if (fallosDhtConsecutivos >= 3) {
       dhtSuspendido = true;
       ultimoReintentoDhtMs = millis();
-      registrarError("SENSOR", "DHT11 suspendido 60s tras 3 fallos; revisa pin 14");
-    } else {
+      if (millis() - ultimoAvisoMs >= INTERVALO_AVISO_SENSOR_MS) {
+        ultimoAvisoMs = millis();
+        registrarError("SENSOR", "DHT11 suspendido 60s tras 3 fallos; revisa pin 14");
+      }
+    } else if (millis() - ultimoAvisoMs >= INTERVALO_AVISO_SENSOR_MS) {
+      ultimoAvisoMs = millis();
       registrarError("SENSOR", "DHT11 no respondio (lectura NaN), revisar cableado/pin 14");
     }
     return false;

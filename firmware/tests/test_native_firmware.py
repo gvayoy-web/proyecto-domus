@@ -61,7 +61,7 @@ class NativeFirmwareTests(unittest.TestCase):
             self.skipTest("No host C++ compiler; native behavior runs on Ubuntu CI")
         source = SKETCH.read_text(encoding="utf-8")
         constants = "\n".join(re.findall(
-            r"^#define (?:NIVEL_AGUA_(?:MIN_VALIDO|MAX_VALIDO|MUESTRAS_ESTABLES)|MAX_FALLOS_ANTES_DE_REGISTRAR)\s+\d+", source, re.M))
+            r"^#define (?:NIVEL_AGUA_(?:MIN_VALIDO|MAX_VALIDO|MUESTRAS_ESTABLES)|MAX_FALLOS_ANTES_DE_REGISTRAR|INTERVALO_AVISO_SENSOR_MS)\s+\d+(?:UL)?", source, re.M))
         polarity = re.search(r"const bool SALIDA_ACTIVA_EN_BAJO\[TOTAL_SALIDAS\] = \{.*?\};", source, re.S)[0]
         actual = "\n".join(function(source, signature) for signature in (
             "int nivelSalida(int indice, bool encendida)",
@@ -89,10 +89,11 @@ std::vector<std::string> commands, events;
 void procesarComandoTexto(const String &s) { commands.push_back(s); }
 void emitirEventoLocal(const String &s) { events.push_back(s); }
 void registrarError(const char*, const String&) {}
-int adc=1000, fallosConsecutivosNivelAgua=0, ultimoNivelAguaValido=-1;
-uint8_t muestrasNivelAguaValidasConsecutivas=0;
-int leerSensorPromediado(int) { return adc; }
-'''
+    int adc=1000, fallosConsecutivosNivelAgua=0, ultimoNivelAguaValido=-1;
+    uint8_t muestrasNivelAguaValidasConsecutivas=0;
+    int leerSensorPromediado(int) { return adc; }
+    unsigned long millis() { return 0; }
+    '''
         checks = r'''
 void drain() { while(Serial.available()) revisarComandosSerial(); }
 int main() {
