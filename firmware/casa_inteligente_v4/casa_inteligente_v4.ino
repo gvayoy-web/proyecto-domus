@@ -462,6 +462,14 @@ RegistroError bufferErrores[MAX_ERRORES_GUARDADOS];
 int indiceErrorActual = 0;
 unsigned long totalErroresAcumulados = 0; // contador histórico, no se resetea al sobreescribir
 
+// Contadores DHT a nivel de fichero (visibles en DIAGNOSTICO, que se define
+// antes que la sección de sensores; Arduino no adelanta globales). Antes
+// eran static locales invisibles y la suspensión era un latch permanente.
+uint8_t fallosDhtConsecutivos = 0;
+bool dhtSuspendido = false;
+unsigned long ultimoReintentoDhtMs = 0;
+#define DHT_REINTENTO_SUSPENDIDO_MS 60000UL
+
 void log(const char* etiqueta, const char* mensaje);
 void emitirEventoLocal(const char* linea);
 bool leerNivelAgua(int &valorSalida);
@@ -1309,13 +1317,8 @@ bool leerLuz(int &crudoSalida, int &pctSalida) {
 // dentro de la librería - por eso aquí solo se valida el RANGO físico
 // razonable, no se promedia como los sensores ADC (el DHT11 es lento,
 // máximo ~1 lectura/segundo, promediar 8 muestras lo saturaría).
-// Contadores DHT a nivel de fichero (visibles en DIAGNOSTICO): antes eran
-// static locales e invisibles, y la suspensión era un latch permanente.
-uint8_t fallosDhtConsecutivos = 0;
-bool dhtSuspendido = false;
-unsigned long ultimoReintentoDhtMs = 0;
-#define DHT_REINTENTO_SUSPENDIDO_MS 60000UL
-
+// Contadores DHT arriba (los usa DIAGNOSTICO, definido antes que sensores;
+// Arduino no adelanta variables globales como sí hace con funciones).
 bool leerAmbiente(float &tempCSalida, float &humAireSalida) {
   if (dhtSuspendido) {
     // Backoff con recuperación: reintenta cada 60 s en vez de exigir reset.
@@ -2392,7 +2395,7 @@ void setup() {
 // Secuencia de demostración: alterna todas las luces en un patrón.
 // No bloquea el sistema principal.
 enum EstadoDemo { DEMO_DETENIDO, DEMO_EN_CURSO };
-enumEstadoDemo estadoDemo = DEMO_DETENIDO;
+EstadoDemo estadoDemo = DEMO_DETENIDO;
 unsigned long ultimaDemoCambioMs = 0;
 const unsigned long INTERVALO_DEMO_MS = 2000; // 2 segundos entre cambios
 
