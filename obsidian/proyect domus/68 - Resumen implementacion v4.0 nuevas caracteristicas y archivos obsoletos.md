@@ -117,8 +117,16 @@ Firmware `casa_inteligente_v4.ino` completado con todas las características sol
 - **103 passed, 0 failed** (8 skipped = HIL sin placa). Harness de pantalla
   con bloque AVISO_OK; stubs nativos intactos.
 
+## Hito físico 2026-09-18: HIL 8/8 en COM9
+- Compilación Arduino real ESP32-S3 (16 MB + app3M_fat9M_16MB + PSRAM OPI):
+  13% flash, 8% RAM. Subido por CH343 a COM9, hash verificado.
+- `test_hil_producto.py`: **8/8 passed** con el firmware nuevo, incluyendo
+  `test_07` (stream `SENSORES;` cada 2 s).
+- MicroSD `JARVIS_SD` (D:\) lista: FAT32 con 01-21 y 51-71 (168/168 vs MANIFEST).
+
 ## Próximos pasos
-- Validación física con hardware ESP32-S3 (21 teclas, DFPlayer + BUSY, parlante)
-- Copiar `audio/jarvis_sd` (01-21, 51-71) a la microSD FAT32
-- Compilación Arduino real (los nativos g++ ya pasan; falta el build ESP32)
+- Aprender las 21 teclas (`IR_GRABAR_0`…`IR_GRABAR_20`) con el mando real.
+- Calibrar suelo/agua/LDR (`CAL_*` + `CAL_GUARDAR`).
+- Revisar etapa S8050 + diodo 1N4007 con bomba sumergida.
+- DFPlayer: cablear UART + BUSY (GPIO por auditar) y probar `01/001.mp3`.
 - Despliegue a producción
