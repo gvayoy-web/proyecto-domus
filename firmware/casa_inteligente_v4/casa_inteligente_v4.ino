@@ -151,11 +151,13 @@
 // Si se instala una etapa distinta, calibrar esta tabla y el perfil.
 #define TOTAL_SALIDAS 5
 
+// Perfil 4 es CASA_FINAL_DRV8833_DFPLAYER: DRV8833 para bomba y
+// ventilador, luces directas por GPIO (sin 74HC595), DFPlayer por SoftwareSerial.
 // Perfil 3 es el banco actual: usa el mismo firmware de producto con una
 // bomba por S8050, luces LED e infrarrojo; el driver doble y el audio quedan
 // fuera hasta que llegue el hardware. Cambiar a 0 restaura banco sin salidas.
 #ifndef DOMUS_PERFIL_CASA
-#define DOMUS_PERFIL_CASA 3
+#define DOMUS_PERFIL_CASA 4
 #endif
 
 // Mantener 0 para el cableado original. Seleccionar 1 únicamente
@@ -171,8 +173,7 @@ const bool SALIDA_ACTIVA_EN_BAJO[TOTAL_SALIDAS] = {
   DOMUS_PERFIL_CASA == 3 ? false : !DOMUS_SALIDAS_ECONOMICAS
 };
 const char* NOMBRES_SALIDAS[TOTAL_SALIDAS] = {
-  "Bomba", "Luz Sala", "Luz Cuarto", "Ventilador",
-  "Luz Inv."
+  "Bomba", "Casa", "Porche", "Cultivo", "Spare"
 };
 
 // --- Perfil del candidato y mapa central (nota 53/54, jefatura) ---
@@ -182,79 +183,79 @@ const char* NOMBRES_SALIDAS[TOTAL_SALIDAS] = {
 // final no se usa en ningún binario (ver puertas F1-F7). Selección por
 // bandera -DDOMUS_PERFIL_CASA=N.
 enum class PerfilCasa : uint8_t {
-  BANCO_SIN_ACTUADORES, LED_SIN_MOTORES, MOTOR_PENDIENTE_DRIVER,
-  BANCO_COMPLETO_S8050_IR
-};
-static_assert(DOMUS_PERFIL_CASA >= 0 && DOMUS_PERFIL_CASA <= 3,
-              "DOMUS_PERFIL_CASA debe ser 0, 1, 2 o 3");
-constexpr PerfilCasa PERFIL_CASA =
-    DOMUS_PERFIL_CASA == 1 ? PerfilCasa::LED_SIN_MOTORES :
-    DOMUS_PERFIL_CASA == 2 ? PerfilCasa::MOTOR_PENDIENTE_DRIVER :
-    DOMUS_PERFIL_CASA == 3 ? PerfilCasa::BANCO_COMPLETO_S8050_IR :
-                             PerfilCasa::BANCO_SIN_ACTUADORES;
-constexpr const char* nombrePerfilCasa(PerfilCasa p) {
-  return p == PerfilCasa::BANCO_COMPLETO_S8050_IR ? "BANCO_COMPLETO_S8050_IR" :
-         p == PerfilCasa::LED_SIN_MOTORES ? "CANDIDATO_LED_SIN_MOTORES" :
-         p == PerfilCasa::MOTOR_PENDIENTE_DRIVER ? "CANDIDATO_MOTOR_PENDIENTE_DRIVER" :
-         "CANDIDATO_BANCO_SIN_ACTUADORES";
-}
-// Nombre corto para el LCD 16x2 (vista 6): el largo se trunca a "PERFIL:BANCO_COM".
-constexpr const char* nombrePerfilCortoCasa(PerfilCasa p) {
-  return p == PerfilCasa::BANCO_COMPLETO_S8050_IR ? "BANCO_S8050_IR" :
-         p == PerfilCasa::LED_SIN_MOTORES ? "LED" :
-         p == PerfilCasa::MOTOR_PENDIENTE_DRIVER ? "MOTOR_PEND" :
-         "SIN_ACT";
-}
+   BANCO_SIN_ACTUADORES, LED_SIN_MOTORES, MOTOR_PENDIENTE_DRIVER,
+   BANCO_COMPLETO_S8050_IR, CASA_FINAL_DRV8833_DFPLAYER
+ };
+ static_assert(DOMUS_PERFIL_CASA >= 0 && DOMUS_PERFIL_CASA <= 4,
+               "DOMUS_PERFIL_CASA debe ser 0, 1, 2, 3 o 4");
+ constexpr PerfilCasa PERFIL_CASA =
+     DOMUS_PERFIL_CASA == 1 ? PerfilCasa::LED_SIN_MOTORES :
+     DOMUS_PERFIL_CASA == 2 ? PerfilCasa::MOTOR_PENDIENTE_DRIVER :
+     DOMUS_PERFIL_CASA == 3 ? PerfilCasa::BANCO_COMPLETO_S8050_IR :
+     DOMUS_PERFIL_CASA == 4 ? PerfilCasa::CASA_FINAL_DRV8833_DFPLAYER :
+                              PerfilCasa::BANCO_SIN_ACTUADORES;
+ constexpr const char* nombrePerfilCasa(PerfilCasa p) {
+   return p == PerfilCasa::BANCO_COMPLETO_S8050_IR ? "BANCO_COMPLETO_S8050_IR" :
+          p == PerfilCasa::LED_SIN_MOTORES ? "CANDIDATO_LED_SIN_MOTORES" :
+          p == PerfilCasa::MOTOR_PENDIENTE_DRIVER ? "CANDIDATO_MOTOR_PENDIENTE_DRIVER" :
+          p == PerfilCasa::CASA_FINAL_DRV8833_DFPLAYER ? "CASA_FINAL_DRV8833_DFPLAYER" :
+          "CANDIDATO_BANCO_SIN_ACTUADORES";
+ }
+ // Nombre corto para el LCD 16x2 (vista 6): el largo se trunca a "PERFIL:BANCO_COM".
+ constexpr const char* nombrePerfilCortoCasa(PerfilCasa p) {
+   return p == PerfilCasa::BANCO_COMPLETO_S8050_IR ? "BANCO_S8050_IR" :
+          p == PerfilCasa::LED_SIN_MOTORES ? "LED" :
+          p == PerfilCasa::MOTOR_PENDIENTE_DRIVER ? "MOTOR_PEND" :
+          p == PerfilCasa::CASA_FINAL_DRV8833_DFPLAYER ? "DRV8833_DF" :
+          "SIN_ACT";
+ }
 // Mapa GPIO central: ÚNICA fuente de pines del candidato (nota 55).
 // Costado accesible autorizado (nota 46/47): suelo 15, nivel 16, SDA 17,
 // demo/modo 18. Todo el firmware lee MAPA_CASA; no existen #define de pines.
 struct MapaPinesCasa {
   int suelo, nivel, ldr;
-  int bomba, sala, cuarto, vent, inv;
+  int bomba, casa, porche, cultivo, spare;
   int pir, paro, micOff, demo, scl, dht, sda, ir;
   int salidas[TOTAL_SALIDAS];
 };
 constexpr MapaPinesCasa MAPA_CASA = {
   15, 16, 3,
-  4, 5, 6, 7, 8,
+  4, 5, 8, 7, 8,
   9, 10, 11, 18, 13, 14, 17, 12,
-  {4, 5, 6, 7, 8}
+  {4, 5, 8, 7, 8}
 };
 DHT dht(MAPA_CASA.dht, TIPO_DHT);
-static_assert(MAPA_CASA.bomba == 4 && MAPA_CASA.sala == 5 && MAPA_CASA.cuarto == 6 &&
-              MAPA_CASA.vent == 7 && MAPA_CASA.inv == 8, "Mapa de salidas del candidato");
+static_assert(MAPA_CASA.bomba == 4 && MAPA_CASA.casa == 5 && MAPA_CASA.porche == 8 &&
+              MAPA_CASA.cultivo == 7 && MAPA_CASA.spare == 8, "Mapa de salidas del candidato");
 static_assert(MAPA_CASA.suelo == 15 && MAPA_CASA.nivel == 16 && MAPA_CASA.sda == 17 &&
               MAPA_CASA.demo == 18 && MAPA_CASA.scl == 13 && MAPA_CASA.ir == 12,
               "Costado accesible autorizado");
-static_assert(MAPA_CASA.bomba == MAPA_CASA.salidas[0] && MAPA_CASA.sala == MAPA_CASA.salidas[1] &&
-              MAPA_CASA.cuarto == MAPA_CASA.salidas[2] && MAPA_CASA.vent == MAPA_CASA.salidas[3] &&
-              MAPA_CASA.inv == MAPA_CASA.salidas[4], "Campos y arreglo de salidas unidos");
+static_assert(MAPA_CASA.bomba == MAPA_CASA.salidas[0] && MAPA_CASA.casa == MAPA_CASA.salidas[1] &&
+              MAPA_CASA.porche == MAPA_CASA.salidas[2] && MAPA_CASA.cultivo == MAPA_CASA.salidas[3] &&
+              MAPA_CASA.spare == MAPA_CASA.salidas[4], "Campos y arreglo de salidas unidos");
 // Habilitación física derivada del perfil. Los motores quedan bloqueados en
 // los tres perfiles vigentes (ver DRIVER_MOTORES_LISTO en domus_drivers.h).
 constexpr bool SALIDA_FISICA_CASA[TOTAL_SALIDAS] = {
-  PERFIL_CASA == PerfilCasa::BANCO_COMPLETO_S8050_IR,
-  PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES,
-  PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES,
-  false,
-  PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES
+   PERFIL_CASA == PerfilCasa::BANCO_COMPLETO_S8050_IR,
+   PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES,
+   PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES,
+   PERFIL_CASA == PerfilCasa::CASA_FINAL_DRV8833_DFPLAYER,
+   PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES
 };
 constexpr bool BOMBA_DIRECTA_S8050 =
-  PERFIL_CASA == PerfilCasa::BANCO_COMPLETO_S8050_IR;
+   PERFIL_CASA == PerfilCasa::BANCO_COMPLETO_S8050_IR;
 constexpr bool IR_CASA_HABILITADO =
-  PERFIL_CASA == PerfilCasa::BANCO_COMPLETO_S8050_IR;
+   PERFIL_CASA >= PerfilCasa::BANCO_COMPLETO_S8050_IR;
 static_assert(!(BOMBA_DIRECTA_S8050 && SALIDA_FISICA_CASA[3]),
-              "Un solo S8050: bomba y ventilador no pueden habilitarse juntos");
+               "Un solo S8050: bomba y ventilador no pueden habilitarse juntos");
 
-// --- Módulo MP3 (DFPlayer / TF-16P) - SIN ASIGNAR (FINAL-ONLY) ---
-// Sin pines en el candidato: GPIO18 es el botón demo/modo del costado
-// autorizado. Se asigna UART con F5, nunca antes.
-#define MP3_RX_PIN      -1
-#define MP3_TX_PIN      -1
+// --- Luces directas por GPIO (sin 74HC595) ---
+
+// --- DFPlayer Mini (perfil CASA_FINAL_DRV8833_DFPLAYER) ---
+// SoftwareSerial en pines compartidos (nota 69 opcion c).
+// RX y TX se asignan al inicio del setup() segun el perfil.
 #define MP3_BUSY_PIN    -1
-#define MP3_HABILITADO  false // reproductor opcional; no instalado en el banco
-// La microSD usa carpetas 01-21 (Carlos) y 51-71 (Karla), pistas 001-004:
-// 21 botones x 4 variantes x 2 voces = 168 MP3 (notas 46/64/65). Los GPIO
-// siguen en -1 hasta crear y auditar CASA_FINAL_DRV8833_DFPLAYER.
+#define MP3_HABILITADO  (PERFIL_CASA == PerfilCasa::CASA_FINAL_DRV8833_DFPLAYER)
 
 // ============================================================================
 // SECCIÓN 2: CONSTANTES DE CALIBRACIÓN - AJUSTAR CON MEDICIONES REALES
@@ -379,7 +380,11 @@ static_assert(MEMORIA_LIBRE_CRITICA_BYTES < MEMORIA_LIBRE_RECUPERACION_BYTES,
 // ============================================================================
 // SECCIÓN 3: OBJETOS GLOBALES
 // ============================================================================
-HardwareSerial SerialMP3(1); // UART1 reservada para el futuro perfil final
+// DFPlayer por HardwareSerial con pin remapping (nota 69 opcion c).
+// UART1 remapeada: RX=GPIO4 (compartido con DRV8833 AIN1),
+// TX=GPIO7 (compartido con DRV8833 AIN2). El DRV8833 mantiene la
+// direccion estable durante la reproduccion de audio.
+HardwareSerial SerialMP3(1); // UART1 reservada
 DFPlayerTransport transporteDFPlayer(SerialMP3);
 JarvisAudio jarvisAudio(transporteDFPlayer);
 SPIClass spiMicroSD(FSPI);
@@ -476,6 +481,9 @@ unsigned long ultimoReintentoDhtMs = 0;
 
 void log(const char* etiqueta, const char* mensaje);
 void emitirEventoLocal(const char* linea);
+bool leerHumedad(int &crudoSalida, int &pctSalida);
+bool leerLuz(int &crudoSalida, int &pctSalida);
+bool leerAmbiente(float &tempCSalida, float &humAireSalida);
 bool leerNivelAgua(int &valorSalida);
 bool probarMicroSD();
 void registrarLineaMicroSD(const String &linea);
@@ -509,8 +517,13 @@ String obtenerUltimoError() {
 // String (una reserva por +=). Ahora un solo snprintf a buffer estático;
 // el String de retorno es una única asignación para el Serial.
 String construirReporteDiagnostico() {
-  static char buf[768];
+  static char buf[1024];
   const String ultimo = obtenerUltimoError();
+  int humCrudo = -1, sueloCrudo = -1, ldrCrudo = -1, nivelCrudo = -1;
+  if (ultimaHumedadValida >= 0) humCrudo = (int)ultimaHumedadValida;
+  if (ultimoHumedadPctValido >= 0) sueloCrudo = (int)ultimoHumedadPctValido;
+  if (ultimoLdrCrudoValido >= 0) ldrCrudo = (int)ultimoLdrCrudoValido;
+  if (ultimoNivelAguaValido >= 0) nivelCrudo = (int)ultimoNivelAguaValido;
   snprintf(buf, sizeof(buf),
     "DIAGNOSTICO;"
     "PERFIL_CANDIDATO=%s;"
@@ -530,7 +543,9 @@ String construirReporteDiagnostico() {
     "IR=%s;IR_ULTIMO=0x%X;"
     "BOMBA_ETAPA=%s;"
     "SD_DESCARTADOS=%lu;SD_ERRORES=%lu;SD_PRUEBA=%d;"
-    "RECONOCIMIENTO_VOZ=NO_USADO;AUDIO=APLAZADO;",
+    "RECONOCIMIENTO_VOZ=NO_USADO;AUDIO=APLAZADO;"
+    "ADC_SUELRO=%d;ADC_NIVEL=%d;ADC_LDR=%d;"
+    "CAL_SECO=%d;CAL_HUMEDO=%d;CAL_OSCURO=%d;CAL_CLARO=%d;CAL_NIVEL_MIN=%d;",
     nombrePerfilCasa(PERFIL_CASA),
     (unsigned long)(millis() / 1000),
     (unsigned long)esp_get_free_heap_size(),
@@ -554,8 +569,30 @@ String construirReporteDiagnostico() {
     BOMBA_DIRECTA_S8050 ? "S8050_GPIO4" : "DRV",
     (unsigned long)sdDescartados.load(),
     (unsigned long)sdErrores.load(),
-    (int)sdUltimaPrueba.load());
+    (int)sdUltimaPrueba.load(),
+    sueloCrudo, nivelCrudo, ldrCrudo,
+    calibracion.sueloSeco, calibracion.sueloHumedo,
+    calibracion.luzOscura, calibracion.luzClara,
+    calibracion.nivelMinimo);
   return String(buf);
+}
+
+// ============================================================================
+// Dispatch de motores DRV8833 (perfil 4)
+// ============================================================================
+bool driverMotoresAplicarFinal(uint8_t canal, bool activar) {
+  if (!DRIVER_MOTORES_LISTO) return false;
+  if (canal > 1) return false;
+  if (canal == 0) {
+    // Bomba: AIN1=GPIO4, AIN2=GPIO7
+    digitalWrite(DRV8833_PIN_AIN1, activar ? HIGH : LOW);
+    digitalWrite(DRV8833_PIN_AIN2, activar ? LOW : HIGH);
+  } else {
+    // Ventilador: BIN1=GPIO5, BIN2=GPIO6
+    digitalWrite(DRV8833_PIN_BIN1, activar ? HIGH : LOW);
+    digitalWrite(DRV8833_PIN_BIN2, activar ? LOW : HIGH);
+  }
+  return true;
 }
 
 // ============================================================================
@@ -1084,6 +1121,17 @@ ResultadoOrden ejecutarOrdenActuador(const OrdenActuador &orden) {
     return fallo;
   }
 
+  // Perfil final: conducir DRV8833 para motores
+  if (orden.encender && orden.indiceRele == 0 && driverMotoresListo()) {
+    driverMotoresAplicarFinal(0, true);
+  } else if (!orden.encender && orden.indiceRele == 0 && driverMotoresListo()) {
+    driverMotoresAplicarFinal(0, false);
+  } else if (orden.encender && orden.indiceRele == 3 && driverMotoresListo()) {
+    driverMotoresAplicarFinal(1, true);
+  } else if (!orden.encender && orden.indiceRele == 3 && driverMotoresListo()) {
+    driverMotoresAplicarFinal(1, false);
+  }
+
   // Una orden manual/IR toma propiedad incluso si fue idempotente.
   // Así el automático no apagará después algo que el usuario decidió dejar ON.
   if (orden.encender) {
@@ -1473,18 +1521,17 @@ void verificarRiegoAutomatico() {
 }
 
 // Nueva regla combinada: temperatura alta + tierra seca + nivel suficiente
-void verificarRiegoAutomaticoCombinado() {
+// Optimización: reutiliza la lectura de DHT de verificarVentiladorCombinado
+// para evitar lecturas redundantes del sensor.
+void verificarRiegoAutomaticoCombinado(float tempC_cached, bool tempValida_cached) {
   if (modoSeguroActivo) return;
 
   int crudo, pct;
   bool humValida = leerHumedad(crudo, pct);
-  float tempC = 0, humAire = 0;
-  bool tempValida = leerAmbiente(tempC, humAire);
   int nivelAgua = 0;
   bool nivelValido = leerNivelAgua(nivelAgua);
 
-  // Regla: si hace calor y la tierra está seca y hay agua, iniciar riego enfriamiento
-  if (tempValida && tempC >= UMBRAL_TEMP_ALTA_C && humValida && pct < UMBRAL_HUMEDAD_SECA_PCT &&
+  if (tempValida_cached && tempC_cached >= UMBRAL_TEMP_ALTA_C && humValida && pct < UMBRAL_HUMEDAD_SECA_PCT &&
       nivelValido && nivelAgua >= calibracion.nivelMinimo) {
     if (!estadoSalidas[0] || propietarioSalidas[0] == PROPIETARIO_AUTOMATICO) {
       log("AUTO_COMBINADO", "Calor + tierra seca + nivel OK: riego de enfriamiento");
@@ -1495,34 +1542,8 @@ void verificarRiegoAutomaticoCombinado() {
     }
   }
   // Regla: si hace calor y la tierra está húmeda, solo ventilador, no riego
-  else if (tempValida && tempC >= UMBRAL_TEMP_ALTA_C && humValida && pct >= UMBRAL_HUMEDAD_HUMEDA_PCT) {
+  else if (tempValida_cached && tempC_cached >= UMBRAL_TEMP_ALTA_C && humValida && pct >= UMBRAL_HUMEDAD_HUMEDA_PCT) {
     // Ya maneja ventilador automático abajo
-  }
-}
-
-// Automación: ventilador con combinación de temperatura y presencia
-void verificarVentiladorCombinado() {
-  if (modoSeguroActivo) return;
-
-  float tempC2, humAire2;
-  bool tempValida = leerAmbiente(tempC2, humAire2);
-
-  if (tempValida && tempC2 >= UMBRAL_TEMP_ALTA_C && ultimaPresenciaValida &&
-      millis() - ultimaPresenciaMs <= PIR_RETENCION_MS) {
-    if (!estadoSalidas[3] || propietarioSalidas[3] == PROPIETARIO_AUTOMATICO) {
-      log("AUTO_COMBINADO", "Calor + presencia: ventilador automático");
-      OrdenActuador orden = {3, true, ORIGEN_AUTOMATICO, 1.0f, "VENT_COMBINADO"};
-      if (ejecutarOrdenActuador(orden).exito) {
-        emitirEventoLocal("EVENTO;VENT_COMBINADO;CALOR_PRESENCIA");
-      }
-    }
-  } else if (tempValida && tempC2 <= UMBRAL_TEMP_NORMAL_C && estadoSalidas[3] &&
-             propietarioSalidas[3] == PROPIETARIO_AUTOMATICO) {
-    log("AUTO_COMBINADO", "Temperatura normal sin presencia: ventilador off");
-    OrdenActuador orden = {3, false, ORIGEN_AUTOMATICO, 1.0f, "VENT_COMBINADO_OFF"};
-    if (ejecutarOrdenActuador(orden).exito) {
-      emitirEventoLocal("EVENTO;VENT_COMBINADO_OFF;TEMP_NORMAL_SIN_PRESENCIA");
-    }
   }
 }
 
@@ -1584,100 +1605,15 @@ void verificarLucesCombinadas() {
   }
 }
 
-// SECCIÓN 10B: VENTILADOR AUTOMÁTICO (no bloqueante)
-// ============================================================================
-unsigned long ultimaVerificacionVentilador = 0;
-
-void verificarVentiladorAutomatico() {
-  if (millis() - ultimaVerificacionVentilador < INTERVALO_RIEGO_MS) return;
-  ultimaVerificacionVentilador = millis();
-
-  float tempC, humAire;
-  if (!leerAmbiente(tempC, humAire)) {
-    if (estadoSalidas[3] && propietarioSalidas[3] == PROPIETARIO_AUTOMATICO) {
-      OrdenActuador corte = {3, false, ORIGEN_AUTOMATICO, 1.0f, "DHT_INVALIDO"};
-      ejecutarOrdenActuador(corte);
-      emitirEventoLocal("EVENTO;VENT_BLOQUEADO_SENSOR;0");
-    }
-    return;
-  }
-
-  if (tempC >= UMBRAL_TEMP_ALTA_C && !estadoSalidas[3] &&
-      propietarioSalidas[3] != PROPIETARIO_MANUAL_OFF) {
-    log("AUTO", "Temperatura alta (" + String(tempC, 1) + "C), activando ventilador automático");
-    OrdenActuador orden = {3, true, ORIGEN_AUTOMATICO, 1.0f, "VENT_AUTO_ON"};
-    if (ejecutarOrdenActuador(orden).exito) {
-      emitirEventoLocal("EVENTO;VENT_AUTO_ON;" + String(tempC, 1));
-    }
-  } else if (tempC <= UMBRAL_TEMP_NORMAL_C && estadoSalidas[3] &&
-             propietarioSalidas[3] == PROPIETARIO_AUTOMATICO) {
-    log("AUTO", "Temperatura normal (" + String(tempC, 1) + "C), apagando ventilador automático");
-    OrdenActuador orden = {3, false, ORIGEN_AUTOMATICO, 1.0f, "VENT_AUTO_OFF"};
-    if (ejecutarOrdenActuador(orden).exito) {
-      emitirEventoLocal("EVENTO;VENT_AUTO_OFF;" + String(tempC, 1));
-    }
-  }
-}
-
 // La sala se enciende únicamente con oscuridad y presencia. La retención
 // evita que el PIR apague la luz entre pulsos. El invernadero usa solo el LDR.
-unsigned long ultimaVerificacionLuces = 0;
-
-void verificarLucesAutomaticas() {
-  if (millis() - ultimaVerificacionLuces < 500UL) return;
-  ultimaVerificacionLuces = millis();
-
-  ultimaPresenciaValida = digitalRead(MAPA_CASA.pir) == HIGH;
-  if (ultimaPresenciaValida) ultimaPresenciaMs = millis();
-
-  int ldrCrudo = 0, luzPct = 0;
-  if (!leerLuz(ldrCrudo, luzPct)) {
-    const int lucesAutomaticas[] = {1, 4};
-    bool huboCorte = false;
-    for (int indice : lucesAutomaticas) {
-      if (estadoSalidas[indice] && propietarioSalidas[indice] == PROPIETARIO_AUTOMATICO) {
-        OrdenActuador corte = {indice, false, ORIGEN_AUTOMATICO, 1.0f, "LDR_INVALIDO"};
-        ejecutarOrdenActuador(corte);
-        huboCorte = true;
-      }
-    }
-    if (huboCorte) emitirEventoLocal("EVENTO;LUCES_AUTO_BLOQUEADAS_SENSOR;0");
-    return;
-  }
-
-  bool presenciaReciente = ultimaPresenciaMs != 0 &&
-                           millis() - ultimaPresenciaMs <= PIR_RETENCION_MS;
-  if (propietarioSalidas[1] != PROPIETARIO_MANUAL_ON &&
-      propietarioSalidas[1] != PROPIETARIO_MANUAL_OFF) {
-    if (!estadoSalidas[1] && luzPct <= UMBRAL_LUZ_OSCURO_PCT && presenciaReciente) {
-      OrdenActuador orden = {1, true, ORIGEN_AUTOMATICO, 1.0f, "LUZ_SALA_AUTO_ON"};
-      ejecutarOrdenActuador(orden);
-    } else if (estadoSalidas[1] && propietarioSalidas[1] == PROPIETARIO_AUTOMATICO &&
-               (luzPct >= UMBRAL_LUZ_CLARO_PCT || !presenciaReciente)) {
-      OrdenActuador orden = {1, false, ORIGEN_AUTOMATICO, 1.0f, "LUZ_SALA_AUTO_OFF"};
-      ejecutarOrdenActuador(orden);
-    }
-  }
-
-  if (propietarioSalidas[4] != PROPIETARIO_MANUAL_ON &&
-      propietarioSalidas[4] != PROPIETARIO_MANUAL_OFF) {
-    if (!estadoSalidas[4] && luzPct <= UMBRAL_LUZ_OSCURO_PCT) {
-      OrdenActuador orden = {4, true, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_AUTO_ON"};
-      ejecutarOrdenActuador(orden);
-    } else if (estadoSalidas[4] && propietarioSalidas[4] == PROPIETARIO_AUTOMATICO &&
-               luzPct >= UMBRAL_LUZ_CLARO_PCT) {
-      OrdenActuador orden = {4, false, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_AUTO_OFF"};
-      ejecutarOrdenActuador(orden);
-    }
-  }
-}
 
 // ============================================================================
 // SECCIÓN 11: COMANDOS LOCALES POR USB SERIAL
 // ============================================================================
 // Comandos de texto terminados en salto de línea:
 //   RIEGO_ON / RIEGO_OFF | LUZ1_ON / LUZ1_OFF | LUZ2_ON / LUZ2_OFF
-//   VENT_ON / VENT_OFF   | INVER_ON / INVER_OFF | ESTADO | DIAGNOSTICO
+//   INVER_ON / INVER_OFF | ESTADO | DIAGNOSTICO
 //
 //   "ACK;<comando>;<estado_logico_0_o_1>"   -> el comando se aplicó y se confirmó por GPIO
 //   "NACK;<comando>;<motivo>"               -> el comando no pudo confirmarse o fue rechazado
@@ -1719,11 +1655,11 @@ void emitirPruebaGuiada() {
 }
 
 const char* COMANDOS_VALIDOS[] = {
-  "RIEGO_ON", "RIEGO_OFF", "LUZ1_ON", "LUZ1_OFF", "LUZ2_ON", "LUZ2_OFF",
-  "VENT_ON", "VENT_OFF", "INVER_ON", "INVER_OFF",
-  "RIEGO_AUTO", "LUZ1_AUTO", "LUZ2_AUTO", "VENT_AUTO", "INVER_AUTO",
-  "ESTADO", "DIAGNOSTICO", "PRUEBA", "PARO", "REARMAR", "RECUPERAR",
-  "MIC_ESTADO", "SD_PRUEBA"
+   "RIEGO_ON", "RIEGO_OFF", "LUZ1_ON", "LUZ1_OFF", "LUZ2_ON", "LUZ2_OFF",
+   "INVER_ON", "INVER_OFF",
+   "RIEGO_AUTO", "LUZ1_AUTO", "LUZ2_AUTO", "INVER_AUTO",
+   "ESTADO", "DIAGNOSTICO", "PRUEBA", "PARO", "REARMAR", "RECUPERAR",
+   "MIC_ESTADO", "SD_PRUEBA", "PINTEST_ALL", "CAL_NIVEL", "CAL_SUELDO"
 };
 const int CANTIDAD_COMANDOS_VALIDOS =
   sizeof(COMANDOS_VALIDOS) / sizeof(COMANDOS_VALIDOS[0]);
@@ -2169,8 +2105,7 @@ static const EntradaComandoRele TABLA_COMANDOS_RELE[] = {
   {"RIEGO_ON", 0, 1}, {"RIEGO_OFF", 0, 0}, {"RIEGO_AUTO", 0, -1},
   {"LUZ1_ON", 1, 1}, {"LUZ1_OFF", 1, 0}, {"LUZ1_AUTO", 1, -1},
   {"LUZ2_ON", 2, 1}, {"LUZ2_OFF", 2, 0}, {"LUZ2_AUTO", 2, -1},
-  {"VENT_ON", 3, 1}, {"VENT_OFF", 3, 0}, {"VENT_AUTO", 3, -1},
-  {"INVER_ON", 4, 1}, {"INVER_OFF", 4, 0}, {"INVER_AUTO", 4, -1},
+  {"INVER_ON", 3, 1}, {"INVER_OFF", 3, 0}, {"INVER_AUTO", 3, -1},
 };
 
 bool despacharComandoRele(const String &comando) {
@@ -2246,10 +2181,30 @@ void procesarComandoTexto(const String &comandoCrudo) {
     return;
   }
 
-  if (procesarCalibracion(comando)) return;
-  if (procesarComandoIR(comando)) return;
-  if (procesarPinTest(comando)) return;
-  if (!esComandoValido(comando)) {
+   if (procesarCalibracion(comando)) return;
+   if (procesarComandoIR(comando)) return;
+   if (procesarPinTest(comando)) return;
+   if (comando == "PINTEST_ALL") {
+     emitirEventoLocal("PINTEST;INICIO;GPIO_3_18");
+     for (int pin = 3; pin <= 18; ++pin) {
+       const int crudo = analogRead(pin);
+       pinMode(pin, INPUT_PULLUP);
+       delayMicroseconds(500);
+       const int conPullUp = analogRead(pin);
+       pinMode(pin, INPUT_PULLDOWN);
+       delayMicroseconds(500);
+       const int conPullDown = analogRead(pin);
+       pinMode(pin, INPUT);
+       char linea[96];
+       snprintf(linea, sizeof(linea), "PINTEST;GPIO=%d;CRUDO=%d;PULLUP=%d;PULLDOWN=%d;%s",
+                pin, crudo, conPullUp, conPullDown,
+                (conPullUp > 3500 && conPullDown < 600) ? "FLOTANTE" : "CONECTADO");
+       emitirEventoLocal(linea);
+     }
+     emitirEventoLocal("PINTEST;FIN");
+     return;
+   }
+   if (!esComandoValido(comando)) {
     registrarError("COMANDO", "No reconocido: " + comando);
     emitirEventoLocal("NACK;" + comando + ";no_reconocido");
     return;
@@ -2322,24 +2277,21 @@ void revisarComandosSerial() {
 }
 
 void revisarControlesFisicos() {
+  // Botones SILENCIO y MODO leidos directamente desde GPIO
   bool nuevoMicHabilitado = digitalRead(MAPA_CASA.micOff) != LOW;
   if (nuevoMicHabilitado != micHabilitado) {
     micHabilitado = nuevoMicHabilitado;
     jarvisAudio.silenciar(!micHabilitado);
     emitirEventoLocal(String("EVENTO;SILENCIO;") + (micHabilitado ? "OFF" : "ON"));
   }
-
   if (digitalRead(MAPA_CASA.paro) == LOW) {
     if (!paroEmergenciaActivo) activarParoEmergencia("PARO_FISICO");
   }
-
   bool botonModo = digitalRead(MAPA_CASA.demo);
   if (botonModo != ultimoBotonDemo && millis() - ultimoCambioBotonDemoMs >= 40UL) {
     ultimoCambioBotonDemoMs = millis();
     ultimoBotonDemo = botonModo;
     if (botonModo == LOW && !paroEmergenciaActivo) {
-      // MODO es exclusivamente navegación del LCD. Las cargas solo cambian
-      // mediante sus órdenes dedicadas (Serial/IR futuro), nunca al navegar.
       pantallaFinal.siguiente();
       emitirEventoLocal(String("ACK;MODO_LCD;") + pantallaFinal.indice());
     }
@@ -2456,22 +2408,39 @@ void setup() {
     receptorIR.begin(MAPA_CASA.ir);
     log("IR", "HX1838 iniciado en GPIO12; usa IR_GRABAR_0 hasta IR_GRABAR_20");
   }
-  if (BOMBA_DIRECTA_S8050)
-    log("BANCO", "Bomba S8050 bloqueada al arrancar; usa RIEGO_ON o RIEGO_AUTO con la bomba sumergida");
+if (BOMBA_DIRECTA_S8050)
+     log("BANCO", "Bomba S8050 bloqueada al arrancar; usa RIEGO_ON o RIEGO_AUTO con la bomba sumergida");
 
-  if (MP3_HABILITADO) {
-    if (transporteDFPlayer.begin(MP3_RX_PIN, MP3_TX_PIN, MP3_BUSY_PIN)) {
+  // Perfil final: inicializar DRV8833
+  if (PERFIL_CON_DRV8833) {
+    // DRV8833: AIN1=GPIO4, AIN2=GPIO7, BIN1=GPIO5, BIN2=GPIO6
+    // nSLEEP → VCC
+    pinMode(DRV8833_PIN_AIN1, OUTPUT);
+    pinMode(DRV8833_PIN_AIN2, OUTPUT);
+    pinMode(DRV8833_PIN_BIN1, OUTPUT);
+    pinMode(DRV8833_PIN_BIN2, OUTPUT);
+    digitalWrite(DRV8833_PIN_AIN1, LOW);
+    digitalWrite(DRV8833_PIN_AIN2, LOW);
+    digitalWrite(DRV8833_PIN_BIN1, LOW);
+    digitalWrite(DRV8833_PIN_BIN2, LOW);
+    log("DRV8833", "DRV8833 inicializado (luces directas GPIO)");
+  }
+
+if (MP3_HABILITADO) {
+    // DFPlayer: UART1 remapeada a GPIO11(RX)/GPIO18(TX)
+    if (transporteDFPlayer.begin(11, 18, MP3_BUSY_PIN)) {
       jarvisAudio.begin(18);
       jarvisAudio.silenciar(!micHabilitado);
-      log("MP3", "DFPlayer iniciado; volumen 18/30");
+      log("MP3", "DFPlayer iniciado en GPIO11/RX, GPIO18/TX; volumen 18/30");
     } else {
-      log("MP3", "AUDIO_OFF: GPIO UART/BUSY no asignados o invalidos");
+      log("MP3", "AUDIO_OFF: DFPlayer no detectado en GPIO11/RX, GPIO18/TX");
     }
+  } else {
+    log("MP3", "AUDIO_OFF: GPIO UART/BUSY no asignados o invalidos");
   }
 
   log("JARVIS", "Control por IR activo; audio aplazado, sin reconocimiento de voz");
 
-  if (MP3_HABILITADO) anunciarJarvis(EventoJarvis::TECLA_9, false, 3);
   delay(1000);
   log("SISTEMA", "=== Sistema listo ===");
 }
@@ -2622,11 +2591,10 @@ void loop() {
   // 3. Automatización local. En modo seguro queda suspendida para no generar
   // intentos repetidos de encendido ni más presión sobre memoria/registros.
   if (!modoSeguroActivo) {
+    float tempAutoC = 0, humAutoAire = 0;
+    bool tempAutoValida = leerAmbiente(tempAutoC, humAutoAire);
     verificarRiegoAutomatico();
-    verificarRiegoAutomaticoCombinado();
-    verificarVentiladorAutomatico();
-    verificarVentiladorCombinado();
-    verificarLucesAutomaticas();
+    verificarRiegoAutomaticoCombinado(tempAutoC, tempAutoValida);
     verificarLucesCombinadas();
   }
 

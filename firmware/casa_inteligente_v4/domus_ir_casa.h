@@ -26,7 +26,7 @@ enum Tecla : uint8_t {
   N_1 = 12,       // 0x0C luz de sala
   N_2 = 13,       // 0x18 luz de cuarto
   N_3 = 14,       // 0x5E luz de cultivo
-  N_4 = 15,       // 0x08 ventilador
+  N_4 = 15,       // 0x08 todas las luces ON/OFF
   N_5 = 16,       // 0x1C riego
   N_6 = 17,       // 0x5A consulta temperatura
   N_7 = 18,       // 0x42 consulta humedad

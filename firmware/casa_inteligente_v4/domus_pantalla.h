@@ -204,9 +204,9 @@ class PantallaFinal {
       case 3: {  // Estado de las 5 salidas, compacto de 1 letra:
         // 1 = ON, 0 = OFF, A = AUTO, B = BLOQ, E = ERR.
         // (Las palabras ON/OFF/AUTO no caben: 3x"BLOQ" = 20 > 16.)
-        snprintf(a, sizeof(a), "B:%c S:%c C:%c", etiq(d.salidas[0]),
+        snprintf(a, sizeof(a), "B:%c Ca:%c P:%c", etiq(d.salidas[0]),
                  etiq(d.salidas[1]), etiq(d.salidas[2]));
-        snprintf(b, sizeof(b), "V:%c I:%c", etiq(d.salidas[3]),
+        snprintf(b, sizeof(b), "Cu:%c Sp:%c", etiq(d.salidas[3]),
                  etiq(d.salidas[4]));
         break;
       }
@@ -268,7 +268,7 @@ class PantallaFinal {
     char l0[17];
     char l1[17];
     uint8_t id;
-if (!splashHecho_) {
+    if (!splashHecho_) {
       if (millis() - inicioMs_ < SPLASH_MS) {
         id = ID_SPLASH;
         lineasSplash(l0, l1);
