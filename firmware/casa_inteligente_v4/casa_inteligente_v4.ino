@@ -942,7 +942,7 @@ bool anunciarJarvisGrupo(EventoJarvis evento, bool alertaAutomatica,
 }
 
 // Carpeta del botón que gobierna cada salida: bomba = tecla 5,
-// sala = tecla 1, cuarto = tecla 2, ventilador = tecla 4, cultivo = tecla 3.
+// casa = tecla 1, porche = tecla 2, todas_luces = tecla 4, cultivo = tecla 3.
 EventoJarvis carpetaSalida(int indice) {
   switch (indice) {
     case 0: return EventoJarvis::TECLA_5;

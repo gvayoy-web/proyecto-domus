@@ -8,6 +8,7 @@ diagnóstico, 3-4 fallo de sensor; tecla 8: 1-2 consulta, 3 tierra seca
 (reservada), 4 depósito bajo; tecla 9: estado (3 = "Sistemas en línea":
 arranque y cambio de voz); 200+: 1-2 rearme logrado, 3-4 sigue bloqueado;
 100+: 1/3 voz Carlos, 2/4 voz Karla (un toque alterna; repetir: Serial).
+Tecla 4 = todas_luces (reemplaza ventilador muerto).
 
 Requiere ``edge-tts`` y acceso de red. La voz 1 (Carlos) usa carpetas 01-21
 y la voz 2 (Karla) usa 51-71; ambas llevan pistas 001-004, tal como espera
@@ -30,9 +31,9 @@ CATALOGO = {
     1: ("ch_menos", ("Modo manual activado.", "Control manual habilitado.", "Tú mandas, yo obedezco.", "Automático desactivado.")),
     2: ("ch_pagina", ("Página siguiente.", "Cambiando de página.", "En pantalla lo ves.", "Mira el LCD.")),
     3: ("ch_mas", ("Modo automático activado.", "Automatización habilitada.", "La casa se gobierna sola.", "Control automático en marcha.")),
-    4: ("anterior_sala", ("Luz de sala encendida.", "Luz de sala apagada.", "Sala iluminada en automático.", "Sala apagada en automático.")),
+    4: ("casa", ("Casa encendida.", "Casa apagada.", "Casa en automático.", "Casa apagada en automático.")),
     5: ("play_silencio", ("Sonido activado.", "Silencio activado.", "Voz reanudada.", "Jarvis enmudecido.")),
-    6: ("siguiente_cuarto", ("Luz de cuarto encendida.", "Luz de cuarto apagada.", "Cuarto iluminado en automático.", "Cuarto apagado en automático.")),
+    6: ("porche", ("Porche encendido.", "Porche apagado.", "Porche en automático.", "Porche apagado en automático.")),
     7: ("vol_menos", ("Volumen más bajo.", "Bajando el volumen.", "Volumen al mínimo.", "Casi en silencio.")),
     8: ("vol_mas", ("Volumen más alto.", "Subiendo el volumen.", "Volumen al máximo.", "Se escucha fuerte.")),
     9: ("eq_diagnostico", ("Diagnóstico completado.", "Revisión del sistema terminada.", "Sensor sin respuesta.", "Revisa las conexiones del sensor.")),
@@ -42,7 +43,7 @@ CATALOGO = {
     13: ("tecla_1_sala", ("Luz de sala encendida.", "Luz de sala apagada.", "Sala iluminada en automático.", "Sala apagada en automático.")),
     14: ("tecla_2_cuarto", ("Luz de cuarto encendida.", "Luz de cuarto apagada.", "Cuarto iluminado en automático.", "Cuarto apagado en automático.")),
     15: ("tecla_3_cultivo", ("Luz de cultivo encendida.", "Luz de cultivo apagada.", "Cultivo iluminado en automático.", "Cultivo apagado en automático.")),
-    16: ("tecla_4_vent", ("Ventilación encendida.", "Ventilación apagada.", "Calor detectado, ventilando.", "Ventilación automática detenida.")),
+    16: ("todas_luces", ("Todas las luces encendidas.", "Todas las luces apagadas.", "Luces encendidas en automático.", "Luces apagadas en automático.")),
     17: ("tecla_5_riego", ("Iniciando riego.", "Riego detenido.", "Riego automático en marcha.", "Riego automático detenido.")),
     18: ("tecla_6_temp", ("La temperatura aparece en pantalla.", "Revisa el termómetro en el LCD.", "Temperatura mostrada en pantalla.", "El valor térmico está en pantalla.")),
     19: ("tecla_7_humedad", ("La humedad aparece en pantalla.", "Humedad ambiental en el LCD.", "Valor de humedad mostrado.", "Revisa la humedad en pantalla.")),

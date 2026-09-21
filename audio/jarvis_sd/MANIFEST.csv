@@ -11,18 +11,18 @@
 1,es-HN-CarlosNeural,03,002,ch_mas,Automatización habilitada.,Carlos/03/002.mp3,03/002.mp3,15840,ed6bd3ffddde63d4109e7c99248e75f5d8a8b2544b912dfe321504360873f176
 1,es-HN-CarlosNeural,03,003,ch_mas,La casa se gobierna sola.,Carlos/03/003.mp3,03/003.mp3,15120,a5bf84530da6558eb5c79dcbccc4132aaed7ccbf6d93a5ffeac6ee7d7c987e52
 1,es-HN-CarlosNeural,03,004,ch_mas,Control automático en marcha.,Carlos/03/004.mp3,03/004.mp3,15840,ebc81bf42f65e9a8751483b1c149307a0d04b6336da9c491fe318d06be067bc1
-1,es-HN-CarlosNeural,04,001,anterior_sala,Luz de sala encendida.,Carlos/04/001.mp3,04/001.mp3,14112,9283d35d1f7a491fb239f72f3294d11ca0c48e736eab4a375b7204464c1f0701
-1,es-HN-CarlosNeural,04,002,anterior_sala,Luz de sala apagada.,Carlos/04/002.mp3,04/002.mp3,13824,13c1015a3ac89742287665b183945046facf11d0e791507568106410d83a5bf4
-1,es-HN-CarlosNeural,04,003,anterior_sala,Sala iluminada en automático.,Carlos/04/003.mp3,04/003.mp3,16704,276746f6aa4c8e6e1578f3aac350ed907c9e8ab25991f2d5cb4cfb756913d87e
-1,es-HN-CarlosNeural,04,004,anterior_sala,Sala apagada en automático.,Carlos/04/004.mp3,04/004.mp3,16128,04d860a0c0537a9f30e2683796e80743229f7f05a22d5a6e5ffc80cfc33b692c
+1,es-HN-CarlosNeural,04,001,casa,Casa encendida.,Carlos/04/001.mp3,04/001.mp3,11520,2f85d5053c202ee1808f36a3cc6910fa97bd7a1944ef8d6b261b4af56b99c973
+1,es-HN-CarlosNeural,04,002,casa,Casa apagada.,Carlos/04/002.mp3,04/002.mp3,11232,34e2db605a0d24ac5a220e3f2dbbd80bb43faf1d160522eb522a470f4bb62e32
+1,es-HN-CarlosNeural,04,003,casa,Casa en automático.,Carlos/04/003.mp3,04/003.mp3,12816,e561ba82c4624cc39f988d54b7cbedcefd007e2c4e2236724fbeddf8abb82181
+1,es-HN-CarlosNeural,04,004,casa,Casa apagada en automático.,Carlos/04/004.mp3,04/004.mp3,15552,433e66b2c221833a12681715b00b18d53ae262d6e78a5c51e5b81f1d9dc94557
 1,es-HN-CarlosNeural,05,001,play_silencio,Sonido activado.,Carlos/05/001.mp3,05/001.mp3,12096,a197039194392ce8cafb0d003d2c5f10130f03513eed95c876b7246512c3f764
 1,es-HN-CarlosNeural,05,002,play_silencio,Silencio activado.,Carlos/05/002.mp3,05/002.mp3,13104,49705b6b2dd0f7078e25cc0e3c3ff9c574fd76ce7f8e8233090bca3ff63bd1fa
 1,es-HN-CarlosNeural,05,003,play_silencio,Voz reanudada.,Carlos/05/003.mp3,05/003.mp3,11520,4ed772ee99d35d54a86ec32e270f5caea5777407f860f71925c72eb540838d59
 1,es-HN-CarlosNeural,05,004,play_silencio,Jarvis enmudecido.,Carlos/05/004.mp3,05/004.mp3,13104,6bfa617e9d2fbdf212c9336aa08432dc43aec792aad9820275453a714d4ba43b
-1,es-HN-CarlosNeural,06,001,siguiente_cuarto,Luz de cuarto encendida.,Carlos/06/001.mp3,06/001.mp3,14256,81fb6713c8046041c8e440c848da047e50ffb5f9ca184e1af183b91ae6080467
-1,es-HN-CarlosNeural,06,002,siguiente_cuarto,Luz de cuarto apagada.,Carlos/06/002.mp3,06/002.mp3,13824,8a7d10a81f1a1c5f8b1b287d7e2cce904c519b64372816669c7698d501b86bcf
-1,es-HN-CarlosNeural,06,003,siguiente_cuarto,Cuarto iluminado en automático.,Carlos/06/003.mp3,06/003.mp3,16128,0acb3a626ad1d56b7ea3e5567b7d3e7b2cf10f887f4d92af51181d1e840e710d
-1,es-HN-CarlosNeural,06,004,siguiente_cuarto,Cuarto apagado en automático.,Carlos/06/004.mp3,06/004.mp3,15696,0c6774fd88d7444eb79b039add2265a42e130880aa6e9615b7d30725ad0bee48
+1,es-HN-CarlosNeural,06,001,porche,Porche encendido.,Carlos/06/001.mp3,06/001.mp3,11808,0deb88806af23884cfa6e1d863585ce32f290e1cb452812c5789892f2e067cc9
+1,es-HN-CarlosNeural,06,002,porche,Porche apagado.,Carlos/06/002.mp3,06/002.mp3,11232,5621ffcc4f5f4e38e4107d98b4211b1569313a0d876308aee35c804239203886
+1,es-HN-CarlosNeural,06,003,porche,Porche en automático.,Carlos/06/003.mp3,06/003.mp3,12816,a7c64340c3ba58f00e7a2dbdce257627b91384c3ab633d26f65266b062a85b0e
+1,es-HN-CarlosNeural,06,004,porche,Porche apagado en automático.,Carlos/06/004.mp3,06/004.mp3,15408,7d7e0bbafdbf001e4c39cd679eb09dfe3dd0500e136ca61c467a9957c8658fe2
 1,es-HN-CarlosNeural,07,001,vol_menos,Volumen más bajo.,Carlos/07/001.mp3,07/001.mp3,12816,3b80093573e6696ea7a173db3f050ea7f982a25c0110780cf3d0d44b8f77a6c4
 1,es-HN-CarlosNeural,07,002,vol_menos,Bajando el volumen.,Carlos/07/002.mp3,07/002.mp3,12384,24a9b81e7a58a29bc150622e6675dded25872a3d6a52818d513b19522ae38d0f
 1,es-HN-CarlosNeural,07,003,vol_menos,Volumen al mínimo.,Carlos/07/003.mp3,07/003.mp3,12528,93aeb32f2e46f557c0af481186b0e2b0479827256d34be0db576c7222892f054
@@ -59,10 +59,10 @@
 1,es-HN-CarlosNeural,15,002,tecla_3_cultivo,Luz de cultivo apagada.,Carlos/15/002.mp3,15/002.mp3,14256,af834d6934f9f69fac9d9830a6a117c9194c2a19bd7d0ad7e6b75abeceaf03f2
 1,es-HN-CarlosNeural,15,003,tecla_3_cultivo,Cultivo iluminado en automático.,Carlos/15/003.mp3,15/003.mp3,16848,f9462081409e17ad0d707c6d0714150168509763a25c03426b8583841dacd757
 1,es-HN-CarlosNeural,15,004,tecla_3_cultivo,Cultivo apagado en automático.,Carlos/15/004.mp3,15/004.mp3,16128,0522af20a30d8c4d3c0b8e6258270c918fe656cf2c8a0ca359c9147ade041c99
-1,es-HN-CarlosNeural,16,001,tecla_4_vent,Ventilación encendida.,Carlos/16/001.mp3,16/001.mp3,14112,d8d41a34690341bcfdd55ef6cf1d489ed3c4c0ec2fb1ae5b9a62ed40e54f1059
-1,es-HN-CarlosNeural,16,002,tecla_4_vent,Ventilación apagada.,Carlos/16/002.mp3,16/002.mp3,13680,6d4d37c4f78a6a191608b5d99f41c3d6a7264f8b5a9979abd60211d1f1b0661b
-1,es-HN-CarlosNeural,16,003,tecla_4_vent,"Calor detectado, ventilando.",Carlos/16/003.mp3,16/003.mp3,17712,bdb913c1526c2f690884416362b61e6c48bd1e5912643f86072a0e84f87e1a23
-1,es-HN-CarlosNeural,16,004,tecla_4_vent,Ventilación automática detenida.,Carlos/16/004.mp3,16/004.mp3,17856,637b62638be479b06ff82caa9a4adb98baa4fe5286dcaf0b0dce404a6f1b3a1b
+1,es-HN-CarlosNeural,16,001,todas_luces,Todas las luces encendidas.,Carlos/16/001.mp3,16/001.mp3,15840,3bf271f02682dd8e854a69d8f193f178396e0016e3e19d890f73cf43dc16b6e8
+1,es-HN-CarlosNeural,16,002,todas_luces,Todas las luces apagadas.,Carlos/16/002.mp3,16/002.mp3,15120,87518df0c5982a8a23dad9fafd423dc4577c9ca0b5109ca50fcd9a8c0723366a
+1,es-HN-CarlosNeural,16,003,todas_luces,Luces encendidas en automático.,Carlos/16/003.mp3,16/003.mp3,17424,9709912509517914931047fc9273efca1246503148d0337f66088bd58f142ca8
+1,es-HN-CarlosNeural,16,004,todas_luces,Luces apagadas en automático.,Carlos/16/004.mp3,16/004.mp3,16848,12978992f9bd5406075d536d6e53081f7292daa8396395b9e1beedb243d9b68e
 1,es-HN-CarlosNeural,17,001,tecla_5_riego,Iniciando riego.,Carlos/17/001.mp3,17/001.mp3,12528,b5f4b2e427479481b4c14806bcb6998fc27a902c8dac774d3f74e075a5e6343f
 1,es-HN-CarlosNeural,17,002,tecla_5_riego,Riego detenido.,Carlos/17/002.mp3,17/002.mp3,11952,96aebca221fb3deec3bed39879bca8cc0159368bae911ce0b90a21a749b6e3d6
 1,es-HN-CarlosNeural,17,003,tecla_5_riego,Riego automático en marcha.,Carlos/17/003.mp3,17/003.mp3,14976,464ed0ad0d5ed4999ca3f00fb46ee4757e05cb6be2cd9535b85574d01e20d9af
@@ -95,18 +95,18 @@
 2,es-HN-KarlaNeural,53,002,ch_mas,Automatización habilitada.,Karla/03/002.mp3,53/002.mp3,16704,a92f2836f74ebc210f509aaeeb11b76567e04919f395d85ed940c260939955e5
 2,es-HN-KarlaNeural,53,003,ch_mas,La casa se gobierna sola.,Karla/03/003.mp3,53/003.mp3,15552,1d5acd0b244f40a4f7cae40b1a1d8713346221ddfb87133e7678f1144a69d28d
 2,es-HN-KarlaNeural,53,004,ch_mas,Control automático en marcha.,Karla/03/004.mp3,53/004.mp3,16848,50743b2cf610717957fbcbb8ac628b4b8a8f05465027066b7b1001ecb366aaa9
-2,es-HN-KarlaNeural,54,001,anterior_sala,Luz de sala encendida.,Karla/04/001.mp3,54/001.mp3,15264,71fcc96a66da823b41b2ca02cb188149bcca06728210b50147ae7d008ef70da4
-2,es-HN-KarlaNeural,54,002,anterior_sala,Luz de sala apagada.,Karla/04/002.mp3,54/002.mp3,15264,5c15f48771b6de9d0656f39609b550b3490c8036a964fb3fd532a659b5cc65ea
-2,es-HN-KarlaNeural,54,003,anterior_sala,Sala iluminada en automático.,Karla/04/003.mp3,54/003.mp3,18000,43b2719a3c951a6401efe0ffcb25d64be46ee3ce2b1b67d3229cfb9618efedd9
-2,es-HN-KarlaNeural,54,004,anterior_sala,Sala apagada en automático.,Karla/04/004.mp3,54/004.mp3,17568,4b50d1220a9bafb1079e610ca7bbc6e1bec03b25ad6aefd674da36ef525a4732
+2,es-HN-KarlaNeural,54,001,casa,Casa encendida.,Karla/04/001.mp3,54/001.mp3,12528,982688edbb562cdb688a2453ae7e75fbbc15e382d6a67b7b6226e3e21451c54d
+2,es-HN-KarlaNeural,54,002,casa,Casa apagada.,Karla/04/002.mp3,54/002.mp3,12528,58f513688d2d75723d789c67925d4eb946c4ecc7d403068629d30d2495b91dc4
+2,es-HN-KarlaNeural,54,003,casa,Casa en automático.,Karla/04/003.mp3,54/003.mp3,13968,879119107ec309a35ed4544832f692b71dc08188664ec69b638f193747c15638
+2,es-HN-KarlaNeural,54,004,casa,Casa apagada en automático.,Karla/04/004.mp3,54/004.mp3,16704,6849e2272e63c7a4def8717e583bc007ff8d0de75e9e702a7e4f287ac973f3e1
 2,es-HN-KarlaNeural,55,001,play_silencio,Sonido activado.,Karla/05/001.mp3,55/001.mp3,13680,3d29674fdd7fc84a10b206e66398f366553c54180573bf64c30d776d186b840b
 2,es-HN-KarlaNeural,55,002,play_silencio,Silencio activado.,Karla/05/002.mp3,55/002.mp3,14112,7b01722358b106351a1d11c11318915ce7183d8bf53edd9e98d185b350afa2ed
 2,es-HN-KarlaNeural,55,003,play_silencio,Voz reanudada.,Karla/05/003.mp3,55/003.mp3,12672,783c586aa73c3d85d0205e77d6c1a0dc6f6ec6deada4e1af722051f05a60186b
 2,es-HN-KarlaNeural,55,004,play_silencio,Jarvis enmudecido.,Karla/05/004.mp3,55/004.mp3,14544,391e1557be85d841c2b2fce1b913179286650a0fb7970137ed633564a0d75449
-2,es-HN-KarlaNeural,56,001,siguiente_cuarto,Luz de cuarto encendida.,Karla/06/001.mp3,56/001.mp3,15696,e7dbc55821315081cf729828a64f9b7c6e054f24723afbf99dcfef44cada3e98
-2,es-HN-KarlaNeural,56,002,siguiente_cuarto,Luz de cuarto apagada.,Karla/06/002.mp3,56/002.mp3,15120,d422ecee7bcd2f299dc65eeed77e56c9b4907b3b8a07c72da80b3cace306a944
-2,es-HN-KarlaNeural,56,003,siguiente_cuarto,Cuarto iluminado en automático.,Karla/06/003.mp3,56/003.mp3,17568,5f115a0a4b5818bb722ca3b7e5cda7118da46dc15028f4f225ce5b50a8c49089
-2,es-HN-KarlaNeural,56,004,siguiente_cuarto,Cuarto apagado en automático.,Karla/06/004.mp3,56/004.mp3,17136,43131d54288e223258d8fc35480688538589b5167fd42f759f531d877bd0731a
+2,es-HN-KarlaNeural,56,001,porche,Porche encendido.,Karla/06/001.mp3,56/001.mp3,13392,797ef4ff4e5502a6d758e0cb1ce95e617043c344b7ff3ef8708e773105a0c759
+2,es-HN-KarlaNeural,56,002,porche,Porche apagado.,Karla/06/002.mp3,56/002.mp3,12384,4360e05a2e3fd33842ff84971bb89783cc7b97acb89f5bacb880e5bc13617fd9
+2,es-HN-KarlaNeural,56,003,porche,Porche en automático.,Karla/06/003.mp3,56/003.mp3,14544,48be44e559f554138b1b8a976d450a198650426ddc4bb599eaa4656d5670eb8d
+2,es-HN-KarlaNeural,56,004,porche,Porche apagado en automático.,Karla/06/004.mp3,56/004.mp3,17136,a76f7373ad6f5ab1d36d64e9e1d9cb827046a66376a981208275170c696dc0fa
 2,es-HN-KarlaNeural,57,001,vol_menos,Volumen más bajo.,Karla/07/001.mp3,57/001.mp3,13968,30c2fa7003752d02ef6e202db85a35b7e5a497c71018ea0c6ed3549e746eaace
 2,es-HN-KarlaNeural,57,002,vol_menos,Bajando el volumen.,Karla/07/002.mp3,57/002.mp3,13680,926b5201fe87d71fcb57254e5a38ba7a685a20ce9eb6c2d08115a89e7c47033b
 2,es-HN-KarlaNeural,57,003,vol_menos,Volumen al mínimo.,Karla/07/003.mp3,57/003.mp3,13680,0071fcf1cb751f9e73250f6d6d57a8462d3af4642aebaccc90aec52f184431f0
@@ -143,10 +143,10 @@
 2,es-HN-KarlaNeural,65,002,tecla_3_cultivo,Luz de cultivo apagada.,Karla/15/002.mp3,65/002.mp3,15120,4d58d237e0a1703fef87fe8690162d1185187cf9bba90c6943f45da198eb6c4d
 2,es-HN-KarlaNeural,65,003,tecla_3_cultivo,Cultivo iluminado en automático.,Karla/15/003.mp3,65/003.mp3,18288,3cd68d877303dfbd4e7690506c43d7c55f8a2134a284c9aa085aa36bceba47bb
 2,es-HN-KarlaNeural,65,004,tecla_3_cultivo,Cultivo apagado en automático.,Karla/15/004.mp3,65/004.mp3,17856,fe42ddcb1ef855ea6aaf00963dc42faffab82479c860a58949e43ea3623e9e59
-2,es-HN-KarlaNeural,66,001,tecla_4_vent,Ventilación encendida.,Karla/16/001.mp3,66/001.mp3,15264,b2f9bec80399308ca7c60ba9adaa37ac30db677e3e4f6952db5e3c25682a151d
-2,es-HN-KarlaNeural,66,002,tecla_4_vent,Ventilación apagada.,Karla/16/002.mp3,66/002.mp3,14544,b6c4830d924db22552b756de8770e4499584acc22f9177bbd788e7d6fcced523
-2,es-HN-KarlaNeural,66,003,tecla_4_vent,"Calor detectado, ventilando.",Karla/16/003.mp3,66/003.mp3,18576,6106d55da7e5ad9ecb0a2d18805635ed1f6ef31edaa18fa49fdfba8df3592e8d
-2,es-HN-KarlaNeural,66,004,tecla_4_vent,Ventilación automática detenida.,Karla/16/004.mp3,66/004.mp3,18864,ad0cd4c3f9a05aaab19770416395305828b86dee45dc46e292a369c116054aa7
+2,es-HN-KarlaNeural,66,001,todas_luces,Todas las luces encendidas.,Karla/16/001.mp3,66/001.mp3,17424,6b919adc28d63bddf18d7c8631b704ca420dcf69cf2c0fdded681e8263a3eecd
+2,es-HN-KarlaNeural,66,002,todas_luces,Todas las luces apagadas.,Karla/16/002.mp3,66/002.mp3,16848,f6f7d041eb4d7f085decd298ebfa935de280efa27dc6cdbdea686d1822bcaa3f
+2,es-HN-KarlaNeural,66,003,todas_luces,Luces encendidas en automático.,Karla/16/003.mp3,66/003.mp3,18720,3563574367d628497ed829faa9bb343372a943613614927040f15f0364347bdd
+2,es-HN-KarlaNeural,66,004,todas_luces,Luces apagadas en automático.,Karla/16/004.mp3,66/004.mp3,18288,6b18114f4fd98649bc44814661a9ea36b18faeeb2528743f9a5997502884a793
 2,es-HN-KarlaNeural,67,001,tecla_5_riego,Iniciando riego.,Karla/17/001.mp3,67/001.mp3,13104,85ae48cf4fbfbe37e7eb3fdf1193f7f3fa98ef6e320eb69f8ae6b435eed6da51
 2,es-HN-KarlaNeural,67,002,tecla_5_riego,Riego detenido.,Karla/17/002.mp3,67/002.mp3,12960,bdcce5329452be9144f4327d1bec6e12ceb5c30e610d6066ad3a84daeb19ddae
 2,es-HN-KarlaNeural,67,003,tecla_5_riego,Riego automático en marcha.,Karla/17/003.mp3,67/003.mp3,16416,315403a313ec49c230e0fc3991631a6b2ca52bda88b5a9bbe5af4efcc1e401bc
