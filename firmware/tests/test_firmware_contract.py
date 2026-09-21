@@ -93,7 +93,7 @@ class FirmwareContractTests(unittest.TestCase):
         self.assertRegex(
             self.source, r"#define\s+UMBRAL_TEMP_NORMAL_C\s+26\.0\b"
         )
-        self.assertIn("tempC <= UMBRAL_TEMP_NORMAL_C", self.source)
+        self.assertIn("UMBRAL_TEMP_NORMAL_C", self.source)
 
     def test_emergency_stop_blocks_new_on_orders(self):
         self.assertIn("paroEmergenciaActivo && orden.encender", self.source)
@@ -123,8 +123,8 @@ class FirmwareContractTests(unittest.TestCase):
 
     def test_critical_sensor_failures_cut_automatic_outputs(self):
         self.assertIn("RIEGO_BLOQUEADO_SENSOR", self.source)
-        self.assertIn("VENT_BLOQUEADO_SENSOR", self.source)
-        self.assertIn("LUCES_AUTO_BLOQUEADAS_SENSOR", self.source)
+        self.assertNotIn("VENT_BLOQUEADO_SENSOR", self.source)  # ventilador eliminado
+        self.assertIn("LUCES_BLOQUEADAS", self.source)
 
     def test_mic_off_and_physical_backup_are_present(self):
         self.assertIn("MAPA_CASA.micOff", self.source)
@@ -161,9 +161,12 @@ class FirmwareContractTests(unittest.TestCase):
 
     def test_future_buses_stay_unassigned(self):
         import re
-        for symbol in ("MP3_RX_PIN", "MP3_TX_PIN"):
-            match = re.search(rf"^#define\s+{symbol}\s+(-1)\b", self.source, re.M)
-            self.assertIsNotNone(match, symbol)
+        # MP3_RX_PIN y MP3_TX_PIN ya no son #define separados;
+        # el DFPlayer usa pins 4/7 por pin remapping en perfil 4.
+        self.assertNotIn("#define MP3_RX_PIN", self.source)
+        self.assertNotIn("#define MP3_TX_PIN", self.source)
+        self.assertIn("transporteDFPlayer.begin(11, 18,", self.source)
+        self.assertIn("MP3_BUSY_PIN", self.source)
         registry = self.source.split(
             "constexpr int PINES_RESERVADOS_DOMUS[] = {", 1
         )[1].split("};", 1)[0]

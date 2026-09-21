@@ -51,12 +51,13 @@ class JarvisAudioContractTests(unittest.TestCase):
         for gpio in range(0, 49):
             self.assertNotIn(f"GPIO{gpio}", self.transport)
 
-    def test_banco_mantiene_audio_deshabilitado_y_pines_tbd(self):
-        """Test that audio is disabled by default and pins are TBD."""
-        self.assertIn("#define MP3_RX_PIN      -1", self.firmware)
-        self.assertIn("#define MP3_TX_PIN      -1", self.firmware)
-        self.assertIn("#define MP3_BUSY_PIN    -1", self.firmware)
-        self.assertIn("#define MP3_HABILITADO  false", self.firmware)
+    def test_perfil4_habilita_audio_con_pines_remapeados(self):
+        """Test that audio is enabled in profile 4 with pin remapping."""
+        self.assertIn("CASA_FINAL_DRV8833_DFPLAYER", self.firmware)
+        self.assertIn("PERFIL_CASA == PerfilCasa::CASA_FINAL_DRV8833_DFPLAYER", self.firmware)
+        self.assertIn("transporteDFPlayer.begin(11, 18,", self.firmware)
+        self.assertIn("MP3_BUSY_PIN", self.firmware)
+        self.assertIn("AUDIO_CANDIDATO_HABILITADO", self.audio_header)
 
     def test_manifest_tiene_168_mp3_unicos(self):
         """MANIFEST.csv: 21 botones x 4 pistas x 2 voces = 168 filas."""

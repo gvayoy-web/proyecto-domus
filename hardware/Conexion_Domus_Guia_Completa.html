@@ -161,14 +161,14 @@
   <tr><td><span class="pin">8</span></td><td>Porche</td><td>1 LED + 330ohm</td><td>Salida</td><td>2</td><td><span class="wire-green"></span>Verde</td></tr>
   <tr><td><span class="pin">9</span></td><td>Jarvis VIVO</td><td>LED azul via S8050</td><td>Salida PWM</td><td>1</td><td><span class="wire-white"></span>Blanco</td></tr>
   <tr><td><span class="pin">10</span></td><td>PARO</td><td>Boton → GND</td><td>Entrada Pull-up</td><td>1</td><td><span class="wire-gray"></span>Gris</td></tr>
-  <tr><td><span class="pin">11</span></td><td>ESP32 RX</td><td>DFPlayer TX recibe datos</td><td>Entrada</td><td>2</td><td><span class="wire-orange"></span>Naranja</td></tr>
+  <tr><td><span class="pin">11</span></td><td>ESP32 TX→DFPlayer RX</td><td>ESP32 envia comandos al DFPlayer</td><td>Salida</td><td>2</td><td><span class="wire-orange"></span>Naranja</td></tr>
   <tr><td><span class="pin">12</span></td><td>IR</td><td>VS1838B DATA</td><td>Entrada</td><td>1</td><td><span class="wire-yellow"></span>Amarillo oscuro</td></tr>
   <tr><td><span class="pin">13</span></td><td>LCD SCL</td><td>I2C clock</td><td>Bidireccional</td><td>1</td><td><span class="wire-blue"></span>Azul claro</td></tr>
   <tr><td><span class="pin">14</span></td><td>DHT11</td><td>DATA + pull-up 10k</td><td>Entrada</td><td>1</td><td><span class="wire-orange"></span>Naranja</td></tr>
   <tr><td><span class="pin">15</span></td><td>Suelo</td><td>Sensor resistivo AO</td><td>Entrada analogica</td><td>2</td><td><span class="wire-brown"></span>Marron</td></tr>
   <tr><td><span class="pin">16</span></td><td>Nivel</td><td>Sensor analogico S</td><td>Entrada analogica</td><td>2</td><td><span class="wire-gray"></span>Gris oscuro</td></tr>
   <tr><td><span class="pin">17</span></td><td>LCD SDA</td><td>I2C data</td><td>Bidireccional</td><td>1</td><td><span class="wire-green"></span>Verde</td></tr>
-  <tr><td><span class="pin">18</span></td><td>ESP32 TX</td><td>DFPlayer RX envia comandos</td><td>Salida</td><td>2</td><td><span class="wire-purple"></span>Morado</td></tr>
+  <tr><td><span class="pin">18</span></td><td>ESP32 RX←DFPlayer TX</td><td>ESP32 recibe datos del DFPlayer</td><td>Entrada</td><td>2</td><td><span class="wire-purple"></span>Morado</td></tr>
 </table>
 
 <!-- ============================================ -->
@@ -452,7 +452,7 @@
     <tr><td>VCC</td><td>5V/2A</td><td><span class="wire-red"></span>Rojo</td></tr>
     <tr><td>GND</td><td>GND</td><td><span class="wire-black"></span>Negro</td></tr>
     <tr><td>RX</td><td>GPIO18(Proto1) TX ← ESP32 envia</td><td><span class="wire-purple"></span>Morado</td></tr>
-    <tr><td>TX</td><td>GPIO11(Proto1) RX → ESP32 recibe</td><td><span class="wire-orange"></span>Naranja</td></tr>
+    <tr><td>TX</td><td>GPIO11(Proto1) RX ← ESP32 recibe</td><td><span class="wire-orange"></span>Naranja</td></tr>
     <tr><td>SPK_1</td><td>Parlante 4ohm</td><td>Parlante</td></tr>
     <tr><td>SPK_2</td><td>Parlante 4ohm</td><td>Parlante</td></tr>
   </table>

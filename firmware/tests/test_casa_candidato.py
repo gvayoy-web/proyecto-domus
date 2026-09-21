@@ -35,28 +35,24 @@ class CasaCandidatoTests(unittest.TestCase):
     def test_perfil_casa_es_seleccion_unica(self):
         self.assertIn("enum class PerfilCasa", self.source)
         for perfil in ("BANCO_SIN_ACTUADORES", "LED_SIN_MOTORES", "MOTOR_PENDIENTE_DRIVER",
-                       "BANCO_COMPLETO_S8050_IR"):
+                        "BANCO_COMPLETO_S8050_IR", "CASA_FINAL_DRV8833_DFPLAYER"):
             self.assertIn(perfil, self.source)
         self.assertIn("#ifndef DOMUS_PERFIL_CASA", self.source)
-        self.assertIn("DOMUS_PERFIL_CASA debe ser 0, 1, 2 o 3", self.source)
+        self.assertIn("DOMUS_PERFIL_CASA debe ser 0, 1, 2, 3 o 4", self.source)
         self.assertIn("constexpr PerfilCasa PERFIL_CASA =", self.source)
 
     def test_mapa_central_es_fuente_unica(self):
-        # Nota 55: literales autorizados una sola vez, en el struct.
         bloque = self.source.split("constexpr MapaPinesCasa MAPA_CASA = {", 1)[1].split("};", 1)[0]
         for literal in ("15", "16", "17", "18"):
             self.assertIn(literal, bloque)
-        for campo in ("suelo", "nivel", "ldr", "bomba", "sala", "cuarto",
-                      "vent", "inv", "pir", "paro", "micOff", "ir", "demo",
+        for campo in ("suelo", "nivel", "ldr", "bomba", "casa", "porche",
+                      "cultivo", "spare", "paro", "micOff", "ir", "demo",
                       "scl", "dht", "sda", "salidas"):
             self.assertIn(campo, self.source.split("struct MapaPinesCasa {", 1)[1].split("};", 1)[0])
         self.assertIn("MAPA_CASA.sda", self.source)
         self.assertIn("MAPA_CASA.salidas[indice]", self.source)
 
     def test_mapa_solo_usa_el_lado_utilizable_de_la_placa(self):
-        # Nota 69: la placa real solo expone el lado izquierdo
-        # (GPIO 3-18 + doble 3V3/5V0/GND). El derecho (0/1/2/19/20/35-48)
-        # está prohibido: ningún pin del MAPA_CASA puede salir de 3-18.
         bloque = self.source.split("constexpr MapaPinesCasa MAPA_CASA = {", 1)[1].split("};", 1)[0]
         pines = {int(x) for x in re.findall(r"\b\d+\b", bloque)}
         lado_ok = set(range(3, 19))
@@ -81,17 +77,20 @@ class CasaCandidatoTests(unittest.TestCase):
             self.assertIn(nombre, self.source)
         self.assertNotIn('"FINAL"', self.source)
 
-    def test_banco_actual_usa_producto_con_una_bomba_e_ir(self):
-        self.assertIn("#define DOMUS_PERFIL_CASA 3", self.source)
+    def test_perfil_final_drv8833_dfplayer(self):
+        self.assertIn("#define DOMUS_PERFIL_CASA 4", self.source)
         self.assertIn("constexpr bool BOMBA_DIRECTA_S8050", self.source)
         self.assertIn("constexpr bool IR_CASA_HABILITADO", self.source)
         self.assertIn("MAPA_CASA.ir == 12", self.source)
-        self.assertIn("MAPA_CASA.micOff, MAPA_CASA.ir, MAPA_CASA.demo", self.source)
+        self.assertIn("MAPA_CASA.micOff", self.source)
+        self.assertIn("MAPA_CASA.demo", self.source)
         self.assertIn("receptorIR.begin(MAPA_CASA.ir)", self.source)
         self.assertIn("revisarIRCasa();", self.source)
         self.assertIn('comando.startsWith("IR_GRABAR_")', self.source)
         self.assertIn("!(BOMBA_DIRECTA_S8050 && SALIDA_FISICA_CASA[3])", self.source)
-        self.assertIn("AUDIO_CANDIDATO_HABILITADO = false", self.drivers)
+        self.assertIn("AUDIO_CANDIDATO_HABILITADO", self.drivers)
+        self.assertIn("driverMotoresAplicar", self.source)
+        self.assertIn("DFPlayerTransport", self.source)
 
     def test_ir_solo_acciona_teclas_aprendidas_y_rechaza_duplicados(self):
         ir = CANDIDATE.with_name("domus_ir_casa.h").read_text(encoding="utf-8")
@@ -120,7 +119,7 @@ class CasaCandidatoTests(unittest.TestCase):
         self.assertIn("struct OrdenMotorDriver", self.drivers)
         self.assertNotIn("IR_CANDIDATO_HABILITADO", self.drivers)
         self.assertIn('#include "domus_ir_casa.h"', self.source)
-        self.assertIn("constexpr bool AUDIO_CANDIDATO_HABILITADO = false;", self.drivers)
+        self.assertIn("AUDIO_CANDIDATO_HABILITADO", self.drivers)
         self.assertIn('#include "domus_drivers.h"', self.source)
         self.assertIn("driverMotoresListo()", self.source)
 
@@ -164,11 +163,9 @@ int main() {
             return result.stdout.decode().split()
 
     def test_despacho_distinque_driver_de_etapa(self):
-        # Máscara presente + driver ausente: el motor cae por driver, la luz pasa.
         motivos = self.run_dispatch("true,true,true,true,true", False)
         self.assertEqual(motivos[0], "driver_no_listo")
         self.assertEqual(motivos[1], "SALA_OK")
-        # Máscara ausente + driver listo: el motor cae por etapa del perfil.
         motivos = self.run_dispatch("false,false,false,false,false", True)
         self.assertEqual(motivos[0], "salida_no_instalada")
         self.assertEqual(motivos[1], "salida_no_instalada")

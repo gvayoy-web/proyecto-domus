@@ -215,7 +215,7 @@ enum class PerfilCasa : uint8_t {
 struct MapaPinesCasa {
   int suelo, nivel, ldr;
   int bomba, casa, porche, cultivo, spare;
-  int paro, micOff, demo, scl, dht, sda, ir;
+  int paro, micOff, demo, scl, dht, sda, ir;  // micOff=GPIO11 (tambien DFPlayer RX), demo=GPIO18 (tambien DFPlayer TX)
   int salidas[TOTAL_SALIDAS];
 };
 constexpr MapaPinesCasa MAPA_CASA = {
@@ -1593,14 +1593,14 @@ void verificarLucesCombinadas() {
   }
 
   // Luz cultivo con LDR solo (no necesita presencia)
-  if (propietarioSalidas[4] != PROPIETARIO_MANUAL_ON &&
-      propietarioSalidas[4] != PROPIETARIO_MANUAL_OFF) {
-    if (!estadoSalidas[4] && luzPct <= UMBRAL_LUZ_OSCURO_PCT) {
-      OrdenActuador orden = {4, true, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_COMB"};
+  if (propietarioSalidas[3] != PROPIETARIO_MANUAL_ON &&
+      propietarioSalidas[3] != PROPIETARIO_MANUAL_OFF) {
+    if (!estadoSalidas[3] && luzPct <= UMBRAL_LUZ_OSCURO_PCT) {
+      OrdenActuador orden = {3, true, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_COMB"};
       ejecutarOrdenActuador(orden);
-    } else if (estadoSalidas[4] && propietarioSalidas[4] == PROPIETARIO_AUTOMATICO &&
+    } else if (estadoSalidas[3] && propietarioSalidas[3] == PROPIETARIO_AUTOMATICO &&
                luzPct >= UMBRAL_LUZ_CLARO_PCT) {
-      OrdenActuador orden = {4, false, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_COMB_OFF"};
+      OrdenActuador orden = {3, false, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_COMB_OFF"};
       ejecutarOrdenActuador(orden);
     }
   }

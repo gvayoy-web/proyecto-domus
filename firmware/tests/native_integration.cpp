@@ -61,19 +61,22 @@ constexpr bool MP3_HABILITADO=false;
 constexpr unsigned long TIEMPO_MAXIMO_BOMBA_MS=120000, MEMORIA_LIBRE_RECUPERACION_BYTES=65536;
 enum PropietarioActuador {PROPIETARIO_NINGUNO, PROPIETARIO_MANUAL_ON,
                          PROPIETARIO_MANUAL_OFF, PROPIETARIO_AUTOMATICO};
-int PINES_SALIDAS[5]={4,5,6,7,8}, gpio[64]={};
+int PINES_SALIDAS[5]={4,5,8,7,8}, gpio[64]={};
 bool estadoSalidas[5]={}, SALIDA_ACTIVA_EN_BAJO[5]={true,true,true,true,true};
 int fallosVerificacionSalida[5]={};
-const char *NOMBRES_SALIDAS[5]={"bomba","sala","cuarto","ventilador","invernadero"};
+const char *NOMBRES_SALIDAS[5]={"Bomba","Casa","Porche","Cultivo","Spare"};
 PropietarioActuador propietarioSalidas[5]={};
 // Fake del mapa central (nota 55): mismos valores que MAPA_CASA en producción.
 struct MapaPinesCasa {
-  int suelo, nivel, ldr, bomba, sala, cuarto, vent, inv;
-  int pir, paro, micOff, demo, scl, dht, sda;
+  int suelo, nivel, ldr, bomba, casa, porche, cultivo, spare;
+  int paro, micOff, demo, scl, dht, sda, ir;
   int salidas[5];
 };
 constexpr MapaPinesCasa MAPA_CASA = {
-  15, 16, 3, 4, 5, 6, 7, 8, 9, 10, 11, 18, 13, 14, 17, {4, 5, 6, 7, 8}};
+  15, 16, 3,
+  4, 5, 8, 7, 8,
+  10, 11, 18, 13, 14, 17, 12,
+  {4, 5, 8, 7, 8}};
 // Fakes de perfil (nota 54): máscara con TODAS las etapas + driver validado,
 // para probar la lógica de despacho/seguridad/timeout con actuadores presentes.
 // El rechazo sin etapa y sin driver lo cubren test_casa_candidato.py, el
@@ -81,6 +84,7 @@ constexpr MapaPinesCasa MAPA_CASA = {
 constexpr bool SALIDA_FISICA_CASA[5]={true,true,true,true,true};
 constexpr bool BOMBA_DIRECTA_S8050=false;
 inline bool driverMotoresListo() { return true; }
+inline bool driverMotoresAplicarFinal(uint8_t canal, bool activar) { (void)canal; (void)activar; return true; }
 bool paroEmergenciaActivo=false, modoSeguroActivo=false, watchdogActivo=true;
 char motivoModoSeguro[48]="ninguno";
 unsigned long bombaEncendidaDesdeMs=0, reloj=1000, heap=100000;

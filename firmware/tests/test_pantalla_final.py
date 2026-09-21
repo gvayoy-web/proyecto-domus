@@ -10,7 +10,8 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
-
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_native_firmware import run_host_process
 
 
@@ -124,7 +125,7 @@ int main() {
     CHEQUEA(std::strstr(l0, "ENC:012 APA:010") != nullptr);
     CHEQUEA(std::strstr(l1, "R:03 V:02 E:01") != nullptr);
     p.formatear(3, d, l0, l1);
-    CHEQUEA(std::strstr(l0, "B:0 S:0 C:0") != nullptr);
+    CHEQUEA(std::strstr(l0, "B:0 Ca:0 P:0") != nullptr);
     CHEQUEA(std::strlen(l0) == 16 && std::strlen(l1) == 16);
     p.formatear(6, d, l0, l1);
     CHEQUEA(std::strstr(l0, "PERFIL:") != nullptr);
