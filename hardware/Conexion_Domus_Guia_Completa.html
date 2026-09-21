@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOMUS v5 - Guia de Conexiones Completa</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0e1a; color: #e0e0e0; line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  h1 { color: #00d4ff; text-align: center; font-size: 2em; margin: 30px 0; text-shadow: 0 0 20px rgba(0,212,255,0.3); }
+  h2 { color: #ff6b35; margin: 30px 0 15px; border-bottom: 2px solid #ff6b35; padding-bottom: 8px; }
+  h3 { color: #00ff88; margin: 20px 0 10px; }
+  .warning { background: #2a1a00; border: 2px solid #ff6b35; border-radius: 8px; padding: 15px; margin: 15px 0; }
+  .warning::before { content: "⚠️ IMPORTANTE: "; color: #ff6b35; font-weight: bold; }
+  .info { background: #001a2a; border: 2px solid #00d4ff; border-radius: 8px; padding: 15px; margin: 15px 0; }
+  .success { background: #0a1a0a; border: 2px solid #00ff88; border-radius: 8px; padding: 15px; margin: 15px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+  th { background: #1a2a3a; color: #00d4ff; padding: 12px; text-align: left; border: 1px solid #2a3a4a; }
+  td { padding: 10px 12px; border: 1px solid #2a3a4a; }
+  tr:nth-child(even) { background: #0f1a2a; }
+  .pin { font-family: monospace; background: #1a2a3a; padding: 2px 8px; border-radius: 4px; color: #00ff88; }
+  .proto-board { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+  .proto { background: #1a1a2a; border: 2px solid #333; border-radius: 10px; padding: 20px; }
+  .proto-title { text-align: center; font-size: 1.3em; font-weight: bold; margin-bottom: 15px; padding: 10px; border-radius: 5px; }
+  .proto-esp32 { background: linear-gradient(135deg, #001a33, #003366); color: #00d4ff; }
+  .proto-power { background: linear-gradient(135deg, #331a00, #663300); color: #ff6b35; }
+  .connection-list { list-style: none; }
+  .connection-list li { padding: 8px 0; border-bottom: 1px solid #2a3a4a; }
+  .connection-list li:last-child { border-bottom: none; }
+  .wire { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .wire-red { background: #ff4444; }
+  .wire-black { background: #333; border: 1px solid #666; }
+  .wire-green { background: #00ff88; }
+  .wire-blue { background: #0088ff; }
+  .wire-yellow { background: #ffcc00; }
+  .wire-orange { background: #ff8800; }
+  .wire-purple { background: #aa00ff; }
+  .wire-white { background: #ffffff; border: 1px solid #999; }
+  .wire-brown { background: #884400; }
+  .wire-gray { background: #888; }
+  .step { background: #0f1a2a; border-left: 4px solid #00d4ff; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0; }
+  .step-num { display: inline-block; background: #00d4ff; color: #000; width: 30px; height: 30px; text-align: center; line-height: 30px; border-radius: 50%; font-weight: bold; margin-right: 10px; }
+  .diagram { background: #0a0e1a; border: 2px solid #333; border-radius: 10px; padding: 20px; margin: 20px 0; font-family: monospace; font-size: 14px; line-height: 1.8; overflow-x: auto; white-space: pre; }
+  .gpio-label { color: #00ff88; font-weight: bold; }
+  .component { color: #ffcc00; }
+  .power-line { color: #ff4444; }
+  .gnd-line { color: #888; }
+  .signal-line { color: #0088ff; }
+  .section { background: #0f1520; border: 1px solid #1a2a3a; border-radius: 10px; padding: 20px; margin: 20px 0; }
+  .tip { background: #1a2a1a; border: 1px solid #00ff88; border-radius: 8px; padding: 12px; margin: 10px 0; font-size: 0.95em; }
+  .tip::before { content: "💡 TIP: "; color: #00ff88; font-weight: bold; }
+  code { background: #1a2a3a; padding: 2px 6px; border-radius: 3px; font-family: monospace; color: #00ff88; }
+  .photo-placeholder { background: #1a1a2a; border: 2px dashed #333; border-radius: 10px; padding: 40px; text-align: center; color: #666; margin: 20px 0; }
+  @media (max-width: 768px) { .proto-board { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>DOMUS v5 - Guia de Conexiones Completa</h1>
+<p style="text-align:center; color:#888; margin-bottom:30px;">Para la feria de ciencias - Todo paso a paso, sin experiencia previa requerida</p>
+
+<!-- ============================================ -->
+<h2>1. COMPONENTES NECESARIOS</h2>
+<!-- ============================================ -->
+
+<div class="info">
+  <strong>Tenemos:</strong> 2 protoboards, 1 fuente 5V/2A, ESP32-S3 N16R8, cables, componentes listados en nota 74.
+</div>
+
+<table>
+  <tr><th>#</th><th>Componente</th><th>Cantidad</th><th>Para que sirve</th><th>Protoboard</th></tr>
+  <tr><td>1</td><td><strong>ESP32-S3 N16R8</strong></td><td>1</td><td>Cerebro del sistema</td><td>Protoboard 1 (logica)</td></tr>
+  <tr><td>2</td><td><strong>LCD1602 + I2C backpack</strong></td><td>1</td><td>Pantalla 16x2 caracteres</td><td>Protoboard 1</td></tr>
+  <tr><td>3</td><td><strong>DFPlayer Mini</strong></td><td>1</td><td>Reproductor MP3 (voz Jarvis)</td><td>Protoboard 2 (cargas)</td></tr>
+  <tr><td>4</td><td><strong>Parlante 4ohm 3W</strong></td><td>1</td><td>Audio principal</td><td>Protoboard 2</td></tr>
+  <tr><td>5</td><td><strong>Parlante 8ohm 1W</strong></td><td>1</td><td>Audio serie (opcional)</td><td>Protoboard 2</td></tr>
+  <tr><td>6</td><td><strong>VS1838B receptor IR</strong></td><td>1</td><td>Recibe mando remoto</td><td>Protoboard 1</td></tr>
+  <tr><td>7</td><td><strong>Mando IR 21 teclas</strong></td><td>1</td><td>Control remoto</td><td>Mano del usuario</td></tr>
+  <tr><td>8</td><td><strong>DHT11</strong></td><td>1</td><td>Temperatura y humedad aire</td><td>Protoboard 1</td></tr>
+  <tr><td>9</td><td><strong>Sensor suelo resistivo</strong></td><td>1</td><td>Humedad de la tierra</td><td>Protoboard 2</td></tr>
+  <tr><td>10</td><td><strong>Sensor nivel agua</strong></td><td>1</td><td>Nivel del deposito</td><td>Protoboard 2</td></tr>
+  <tr><td>11</td><td><strong>LDR</strong></td><td>1</td><td>Sensor de luz ambiental</td><td>Protoboard 1</td></tr>
+  <tr><td>12</td><td><strong>Mini bomba DC 3-6V</strong></td><td>1</td><td>Riego automatico</td><td>Protoboard 2</td></tr>
+  <tr><td>13</td><td><strong>S8050 transistor NPN</strong></td><td>2</td><td>Switch para bomba y LED VIVO</td><td>Protoboard 2 / 1</td></tr>
+  <tr><td>14</td><td><strong>LED sala + LED ducha</strong></td><td>2</td><td>Luces de casa (paralelo)</td><td>Protoboard 2</td></tr>
+  <tr><td>15</td><td><strong>LED porche</strong></td><td>1</td><td> luz exterior</td><td>Protoboard 2</td></tr>
+  <tr><td>16</td><td><strong>LED cultivo (x3)</strong></td><td>3</td><td>Luces de invernadero</td><td>Protoboard 2</td></tr>
+  <tr><td>17</td><td><strong>LED VIVO azul</strong></td><td>1</td><td>Indicador breathing</td><td>Protoboard 1</td></tr>
+  <tr><td>18</td><td><strong>Boton PARO</strong></td><td>1</td><td>Emergencia fisica</td><td>Protoboard 1</td></tr>
+  <tr><td>19</td><td><strong>1N4007 diodo</strong></td><td>1</td><td>Proteccion bomba (flyback)</td><td>Protoboard 2</td></tr>
+  <tr><td>20</td><td><strong>Fuente 5V/2A USB-C</strong></td><td>1</td><td>Alimenta bomba + LEDs + DFPlayer</td><td>Protoboard 2</td></tr>
+  <tr><td>21</td><td><strong>microSD 4-32GB</strong></td><td>1</td><td>Almacena audios Jarvis</td><td>Dentro del DFPlayer</td></tr>
+</table>
+
+<!-- ============================================ -->
+<h2>2. RESISTENCIAS NECESARIAS</h2>
+<!-- ============================================ -->
+
+<table>
+  <tr><th>Valor</th><th>Cantidad</th><th>Para que</th><th>Donde</th></tr>
+  <tr><td><span class="pin">330 ohm</span></td><td>2</td><td>Limitar corriente LED sala+ducha y LED porche</td><td>Protoboard 2</td></tr>
+  <tr><td><span class="pin">100 ohm</span></td><td>1</td><td>Limitar corriente 3xLED cultivo paralelo</td><td>Protoboard 2</td></tr>
+  <tr><td><span class="pin">1k ohm</span></td><td>2</td><td>Base S8050 (bomba + LED VIVO)</td><td>Protoboard 2 y 1</td></tr>
+  <tr><td><span class="pin">10k ohm</span></td><td>3</td><td>Pull-up DHT11, divisor LDR, bias S8050</td><td>Protoboard 1</td></tr>
+</table>
+
+<!-- ============================================ -->
+<h2>3. DISTRIBUCION EN PROTOBOARDS</h2>
+<!-- ============================================ -->
+
+<div class="warning">
+  GND COMUN: Ambos protoboards deben estar conectados por un cable GND. La tierra es la misma para todo.
+</div>
+
+<div class="proto-board">
+  <div class="proto proto-esp32">
+    <div class="proto-title proto-esp32">PROTOBOARD 1 - LOGICA (alimentada por USB del ESP32)</div>
+    <p style="margin-bottom:15px; color:#aaa;">Aqui van todos los componentes de <strong>señal y logica</strong>. Se alimentan del USB del ESP32 (3.3V y 5V del pin).</p>
+    <ul class="connection-list">
+      <li><span class="wire-green"></span> <strong>ESP32-S3</strong> - El cerebro, montado aqui</li>
+      <li><span class="wire-blue"></span> <strong>LCD1602 I2C</strong> - SDA→GPIO17, SCL→GPIO13</li>
+      <li><span class="wire-yellow"></span> <strong>VS1838B IR</strong> - DATA→GPIO12</li>
+      <li><span class="wire-orange"></span> <strong>DHT11</strong> - DATA→GPIO14 + pull-up 10k</li>
+      <li><span class="wire-purple"></span> <strong>LDR</strong> - Señal→GPIO3 + divisor 10k</li>
+      <li><span class="wire-white"></span> <strong>LED VIVO azul</strong> - Via S8050 → GPIO9</li>
+      <li><span class="wire-red"></span> <strong>Boton PARO</strong> - → GPIO10 → GND</li>
+    </ul>
+  </div>
+
+  <div class="proto proto-power">
+    <div class="proto-title proto-power">PROTOBOARD 2 - CARGAS (alimentada por 5V/2A)</div>
+    <p style="margin-bottom:15px; color:#aaa;">Aqui van todos los <strong>actuadores</strong> que consumen corriente. Se alimentan de la fuente externa 5V/2A.</p>
+    <ul class="connection-list">
+      <li><span class="wire-red"></span> <strong>Bomba DC</strong> - Via S8050 → GPIO4 (senal desde Proto 1)</li>
+      <li><span class="wire-yellow"></span> <strong>LED sala + ducha</strong> - Paralelo → GPIO5 (senal)</li>
+      <li><span class="wire-green"></span> <strong>LED porche</strong> - → GPIO8 (senal)</li>
+      <li><span class="wire-blue"></span> <strong>3xLED cultivo</strong> - Paralelo → GPIO7 (senal)</li>
+      <li><span class="wire-orange"></span> <strong>DFPlayer Mini</strong> - RX→GPIO11, TX→GPIO18 (senal)</li>
+      <li><span class="wire-purple"></span> <strong>Sensor suelo</strong> - AO→GPIO15 (senal)</li>
+      <li><span class="wire-brown"></span> <strong>Sensor nivel</strong> - S→GPIO16 (senal)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="tip">
+  Los cables de senal (GPIO) van del Proto 2 al Proto 1. Usa cables largos de colores para no perderlos. Cada cable GPIO necesita un cable GND comun.
+</div>
+
+<!-- ============================================ -->
+<h2>4. MAPA GPIO DEFINITIVO</h2>
+<!-- ============================================ -->
+
+<table>
+  <tr><th>GPIO</th><th>Funcion</th><th>Componente</th><th>Tipo</th><th>Protoboard</th><th>Color cable</th></tr>
+  <tr><td><span class="pin">3</span></td><td>LDR</td><td>Fotoresistor + divisor 10k</td><td>Entrada analogica</td><td>1</td><td><span class="wire-purple"></span>Morado</td></tr>
+  <tr><td><span class="pin">4</span></td><td>Bomba</td><td>S8050 base → colector bomba</td><td>Salida</td><td>2</td><td><span class="wire-red"></span>Rojo</td></tr>
+  <tr><td><span class="pin">5</span></td><td>Casa</td><td>2 LEDs paralelo + 330ohm</td><td>Salida</td><td>2</td><td><span class="wire-yellow"></span>Amarillo</td></tr>
+  <tr><td><span class="pin">7</span></td><td>Cultivo</td><td>3 LEDs paralelo + 100ohm</td><td>Salida</td><td>2</td><td><span class="wire-blue"></span>Azul</td></tr>
+  <tr><td><span class="pin">8</span></td><td>Porche</td><td>1 LED + 330ohm</td><td>Salida</td><td>2</td><td><span class="wire-green"></span>Verde</td></tr>
+  <tr><td><span class="pin">9</span></td><td>Jarvis VIVO</td><td>LED azul via S8050</td><td>Salida PWM</td><td>1</td><td><span class="wire-white"></span>Blanco</td></tr>
+  <tr><td><span class="pin">10</span></td><td>PARO</td><td>Boton → GND</td><td>Entrada Pull-up</td><td>1</td><td><span class="wire-gray"></span>Gris</td></tr>
+  <tr><td><span class="pin">11</span></td><td>DFPlayer RX</td><td>UART1 RX</td><td>Entrada</td><td>2</td><td><span class="wire-orange"></span>Naranja</td></tr>
+  <tr><td><span class="pin">12</span></td><td>IR</td><td>VS1838B DATA</td><td>Entrada</td><td>1</td><td><span class="wire-yellow"></span>Amarillo oscuro</td></tr>
+  <tr><td><span class="pin">13</span></td><td>LCD SCL</td><td>I2C clock</td><td>Bidireccional</td><td>1</td><td><span class="wire-blue"></span>Azul claro</td></tr>
+  <tr><td><span class="pin">14</span></td><td>DHT11</td><td>DATA + pull-up 10k</td><td>Entrada</td><td>1</td><td><span class="wire-orange"></span>Naranja</td></tr>
+  <tr><td><span class="pin">15</span></td><td>Suelo</td><td>Sensor resistivo AO</td><td>Entrada analogica</td><td>2</td><td><span class="wire-brown"></span>Marron</td></tr>
+  <tr><td><span class="pin">16</span></td><td>Nivel</td><td>Sensor analogico S</td><td>Entrada analogica</td><td>2</td><td><span class="wire-gray"></span>Gris oscuro</td></tr>
+  <tr><td><span class="pin">17</span></td><td>LCD SDA</td><td>I2C data</td><td>Bidireccional</td><td>1</td><td><span class="wire-green"></span>Verde</td></tr>
+  <tr><td><span class="pin">18</span></td><td>DFPlayer TX</td><td>UART1 TX</td><td>Salida</td><td>2</td><td><span class="wire-purple"></span>Morado</td></tr>
+</table>
+
+<!-- ============================================ -->
+<h2>5. DIAGRAMA DE CONEXIONES</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<h3>Protoboard 1 - Logica</h3>
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────────────┐
+│                    PROTOBOARD 1 - LOGICA                            │
+│                    (Alimentada por USB ESP32)                       │
+│                                                                     │
+│  ┌──────────────────────────────────────────┐                      │
+│  │         ESP32-S3 N16R8                   │                      │
+│  │                                          │                      │
+│  │  GPIO3  ──────── LDR (via 10k divider)  │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO4  ──────── → Proto 2 (bomba)      │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO5  ──────── → Proto 2 (casa LEDs)  │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO7  ──────── → Proto 2 (cultivo)    │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO8  ──────── → Proto 2 (porche)     │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO9  ──────── S8050 base → LED VIVO  │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO10 ──────── Botón PARO → GND       │←── <span class="gnd-line">GND</span>              │
+│  │  GPIO11 ──────── → Proto 2 (DFPlayer RX)│←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO12 ──────── VS1838B DATA           │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO13 ──────── LCD SCL                │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO14 ──────── DHT11 DATA + 10k pull  │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO15 ──────── → Proto 2 (suelo AO)   │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO16 ──────── → Proto 2 (nivel S)    │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO17 ──────── LCD SDA                │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO18 ──────── → Proto 2 (DFPlayer TX)│←── <span class="signal-line">SEÑAL</span>            │
+│  │                                          │                      │
+│  │  3V3 ──────── DHT11 VCC, LCD VCC, pull-ups                      │
+│  │  GND ──────── GND comun (→ Proto 2 GND) │←── <span class="gnd-line">GND</span>              │
+│  └──────────────────────────────────────────┘                      │
+│                                                                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐    │
+│  │ LCD1602 I2C     │  │ VS1838B IR      │  │ DHT11           │    │
+│  │ SDA→GPIO17      │  │ DATA→GPIO12     │  │ DATA→GPIO14     │    │
+│  │ SCL→GPIO13      │  │ VCC→3V3         │  │ VCC→3V3         │    │
+│  │ VCC→5V (USB)    │  │ GND→GND         │  │ GND→GND         │    │
+│  │ GND→GND         │  └─────────────────┘  └─────────────────┘    │
+│  └─────────────────┘                                               │
+│  ┌─────────────────┐  ┌─────────────────┐                         │
+│  │ LDR + 10k       │  │ Botón PARO      │                         │
+│  │ 1 terminal→3V3  │  │ 1 pin→GPIO10    │                         │
+│  │ 1 terminal→GPIO3│  │ 1 pin→GND       │                         │
+│  │ 1 terminal→GND  │  │ (usa INPUT_PULLUP)│                       │
+│  └─────────────────┘  └─────────────────┘                         │
+│                                                                     │
+│  ┌─────────────────────────────────────────┐                      │
+│  │ LED VIVO azul + S8050                   │                      │
+│  │ Base → 1k → GPIO9                       │                      │
+│  │ Colector → LED → 330ohm → 5V (USB)     │                      │
+│  │ Emisor → GND                            │                      │
+│  └─────────────────────────────────────────┘                      │
+│                                                                     │
+│  ═══════════════════════════════════════════════════════════════   │
+│  <span class="gnd-line">CABLE GND GRUESO → Proto 2 GND</span> (OBLIGATORIO)                   │
+│  <span class="signal-line">CABLES GPIO × 8 → Proto 2</span> (señales de control)                  │
+└─────────────────────────────────────────────────────────────────────┘
+</div>
+
+<h3>Protoboard 2 - Cargas</h3>
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────────────┐
+│                    PROTOBOARD 2 - CARGAS                            │
+│                    (Alimentada por Fuente 5V/2A)                    │
+│                                                                     │
+│  <span class="power-line">═══ 5V/2A ═══</span>  <span class="gnd-line">═══ GND ═══</span>                                    │
+│                                                                     │
+│  ┌─────────────────────────────────────────┐                      │
+│  │ BOMBA DC 3-6V + S8050 + 1N4007         │                      │
+│  │                                         │                      │
+│  │ GPIO4(Proto1) → 1k → Base S8050        │←── <span class="signal-line">SEÑAL GPIO4</span>      │
+│  │ Emisor S8050 → GND                      │                      │
+│  │ Colector S8050 → Bomba (-)              │                      │
+│  │ Bomba (+) → <span class="power-line">5V/2A</span>                      │                      │
+│  │ 1N4007 diodo en paralelo con bomba      │                      │
+│  │   (cátodo→Bomba+, ánodo→Bomba-)         │                      │
+│  └─────────────────────────────────────────┘                      │
+│                                                                     │
+│  ┌─────────────────────────────────────────┐                      │
+│  │ LED SALA + LED DUCHA (paralelo)         │                      │
+│  │                                         │                      │
+│  │ GPIO5(Proto1) → 330ohm → (Anodo LED1   │←── <span class="signal-line">SEÑAL GPIO5</span>      │
+│  │                       + Anodo LED2)     │                      │
+│  │ Cathodo LED1 + Cathodo LED2 → <span class="gnd-line">GND</span>      │                      │
+│  └─────────────────────────────────────────┘                      │
+│                                                                     │
+│  ┌─────────────────────────────────────────┐                      │
+│  │ LED PORCHE                              │                      │
+│  │                                         │                      │
+│  │ GPIO8(Proto1) → 330ohm → Anodo LED     │←── <span class="signal-line">SEÑAL GPIO8</span>      │
+│  │ Cathodo LED → <span class="gnd-line">GND</span>                       │                      │
+│  └─────────────────────────────────────────┘                      │
+│                                                                     │
+│  ┌─────────────────────────────────────────┐                      │
+│  │ 3x LED CULTIVO (paralelo)               │                      │
+│  │                                         │                      │
+│  │ GPIO7(Proto1) → 100ohm → (Anodo LED1   │←── <span class="signal-line">SEÑAL GPIO7</span>      │
+│  │                       + Anodo LED2      │                      │
+│  │                       + Anodo LED3)     │                      │
+│  │ Cathodos → <span class="gnd-line">GND</span>                          │                      │
+│  └─────────────────────────────────────────┘                      │
+│                                                                     │
+│  ┌─────────────────────────────────────────┐                      │
+│  │ DFPLAYER MINI                           │                      │
+│  │                                         │                      │
+│  │ VCC → <span class="power-line">5V/2A</span>                             │                      │
+│  │ GND → <span class="gnd-line">GND</span>                               │                      │
+│  │ RX → GPIO18(Proto1) TX ← <span class="signal-line">SEÑAL</span>         │←── <span class="signal-line">SEÑAL GPIO18</span>      │
+│  │ TX → GPIO11(Proto1) RX → <span class="signal-line">SEÑAL</span>         │←── <span class="signal-line">SEÑAL GPIO11</span>      │
+│  │ BUSY → (opcional, no conectado)         │                      │
+│  │ SPK_1 → Parlante 4ohm → SPK_2          │                      │
+│  │ ADKEY_1 → (no conectado)                │                      │
+│  └─────────────────────────────────────────┘                      │
+│                                                                     │
+│  ┌─────────────────────────────────────────┐                      │
+│  │ SENSOR SUELO RESISTIVO                  │                      │
+│  │ VCC → <span class="power-line">5V/2A</span>                             │                      │
+│  │ GND → <span class="gnd-line">GND</span>                               │                      │
+│  │ AO → GPIO15(Proto1) ← <span class="signal-line">SEÑAL</span>             │←── <span class="signal-line">SEÑAL GPIO15</span>      │
+│  └─────────────────────────────────────────┘                      │
+│                                                                     │
+│  ┌─────────────────────────────────────────┐                      │
+│  │ SENSOR NIVEL AGUA                       │                      │
+│  │ VCC → <span class="power-line">5V/2A</span>                             │                      │
+│  │ GND → <span class="gnd-line">GND</span>                               │                      │
+│  │ S → GPIO16(Proto1) ← <span class="signal-line">SEÑAL</span>              │←── <span class="signal-line">SEÑAL GPIO16</span>      │
+│  └─────────────────────────────────────────┘                      │
+│                                                                     │
+│  ═══════════════════════════════════════════════════════════════   │
+│  <span class="gnd-line">CABLE GND GRUESO ← Proto 1 GND</span> (OBLIGATORIO)                   │
+│  <span class="signal-line">CABLES GPIO × 8 ← Proto 1</span> (señales de control)                  │
+└─────────────────────────────────────────────────────────────────────┘
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2>6. PASOS DE CONEXION (sin experiencia)</h2>
+<!-- ============================================ -->
+
+<div class="section">
+
+<h3>Fase 1: Protoboard 1 - Logica (30 minutos)</h3>
+
+<div class="step">
+  <span class="step-num">1</span> <strong>Montar ESP32 en protoboard</strong><br>
+  Inserta el ESP32-S3 N16R8 en el protoboard, cruzando la ranura central. Los pines del lado izquierdo (GPIO 3-18) son los que usaremos.
+</div>
+
+<div class="step">
+  <span class="step-num">2</span> <strong>Conectar LCD1602 I2C</strong><br>
+  El LCD tiene 4 pines: VCC, GND, SDA, SCL.<br>
+  <table>
+    <tr><th>Pin LCD</th><th>Conectar a</th><th>Color</th></tr>
+    <tr><td>VCC</td><td>5V del ESP32 (pin 5V)</td><td><span class="wire-red"></span>Rojo</td></tr>
+    <tr><td>GND</td><td>GND del ESP32</td><td><span class="wire-black"></span>Negro</td></tr>
+    <tr><td>SDA</td><td>GPIO17 del ESP32</td><td><span class="wire-green"></span>Verde</td></tr>
+    <tr><td>SCL</td><td>GPIO13 del ESP32</td><td><span class="wire-blue"></span>Azul</td></tr>
+  </table>
+  <div class="tip">El LCD I2C tiene una resistencia que dice "I2C" o "PCF8574". Asegurate de que el address sea 0x27 (el más común).</div>
+</div>
+
+<div class="step">
+  <span class="step-num">3</span> <strong>Conectar receptor IR VS1838B</strong><br>
+  El VS1838B tiene 3 patas: OUT, GND, VCC.<br>
+  <table>
+    <tr><th>Pin VS1838B</th><th>Conectar a</th><th>Color</th></tr>
+    <tr><td>OUT</td><td>GPIO12 del ESP32</td><td><span class="wire-yellow"></span>Amarillo</td></tr>
+    <tr><td>GND</td><td>GND del ESP32</td><td><span class="wire-black"></span>Negro</td></tr>
+    <tr><td>VCC</td><td>3V3 del ESP32</td><td><span class="wire-red"></span>Rojo</td></tr>
+  </table>
+  <div class="tip">El receptor IR tiene una malla metalica. Apuntalo hacia el mando a 1-2 metros de distancia.</div>
+</div>
+
+<div class="step">
+  <span class="step-num">4</span> <strong>Conectar DHT11</strong><br>
+  El DHT11 tiene 4 patas (mirandolo de frente, de izq a der): VCC, DATA, NC, GND.<br>
+  <table>
+    <tr><th>Pin DHT11</th><th>Conectar a</th><th>Color</th></tr>
+    <tr><td>VCC (pin 1)</td><td>3V3 del ESP32</td><td><span class="wire-red"></span>Rojo</td></tr>
+    <tr><td>DATA (pin 2)</td><td>GPIO14 + resistor 10k a 3V3</td><td><span class="wire-orange"></span>Naranja</td></tr>
+    <tr><td>NC (pin 3)</td><td>No conectar</td><td>-</td></tr>
+    <tr><td>GND (pin 4)</td><td>GND del ESP32</td><td><span class="wire-black"></span>Negro</td></tr>
+  </table>
+  <div class="warning">El resistor de pull-up de 10k entre DATA y 3V3 es OBLIGATORIO. Sin él, el DHT11 no responde.</div>
+</div>
+
+<div class="step">
+  <span class="step-num">5</span> <strong>Conectar LDR (sensor de luz)</strong><br>
+  El LDR se conecta en divisor de voltaje:<br>
+  <code>3V3 ──→ LDR ──→ GPIO3 ──→ 10k ──→ GND</code><br>
+  <table>
+    <tr><th>Conexión</th><th>Donde</th></tr>
+    <tr><td>3V3 → 1 terminal del LDR</td><td>Protoboard</td></tr>
+    <tr><td>Otro terminal del LDR → GPIO3</td><td>Protoboard</td></tr>
+    <tr><td>GPIO3 → resistor 10k → GND</td><td>Protoboard</td></tr>
+  </table>
+  <div class="tip">El LDR cambia de resistencia segun la luz. En oscuridad ~100kohm, en luz solar ~1kohm.</div>
+</div>
+
+<div class="step">
+  <span class="step-num">6</span> <strong>Conectar LED VIVO (breathing)</strong><br>
+  LED azul via transistor S8050:<br>
+  <code>GPIO9 → 1k → Base S8050</code><br>
+  <code>Colector S8050 → LED → 330ohm → 5V (USB)</code><br>
+  <code>Emisor S8050 → GND</code>
+</div>
+
+<div class="step">
+  <span class="step-num">7</span> <strong>Conectar boton PARO</strong><br>
+  Un pin del boton → GPIO10, otro pin → GND.<br>
+  <div class="warning">El firmware usa INPUT_PULLUP, asi que NO necesitas resistor externo. Solo conecta el boton entre GPIO10 y GND.</div>
+</div>
+
+<div class="step">
+  <span class="step-num">8</span> <strong>Conectar cables GPIO al Proto 2</strong><br>
+  Estos 8 cables van del Proto 1 al Proto 2 (largo ~30-50cm):<br>
+  <table>
+    <tr><th>GPIO</th><th>Para que</th><th>Color sugerido</th></tr>
+    <tr><td>GPIO4</td><td>Bomba (senal)</td><td><span class="wire-red"></span>Rojo</td></tr>
+    <tr><td>GPIO5</td><td>Casa LEDs (senal)</td><td><span class="wire-yellow"></span>Amarillo</td></tr>
+    <tr><td>GPIO7</td><td>Cultivo LEDs (senal)</td><td><span class="wire-blue"></span>Azul</td></tr>
+    <tr><td>GPIO8</td><td>Porche LED (senal)</td><td><span class="wire-green"></span>Verde</td></tr>
+    <tr><td>GPIO11</td><td>DFPlayer RX (senal)</td><td><span class="wire-orange"></span>Naranja</td></tr>
+    <tr><td>GPIO15</td><td>Sensor suelo (senal)</td><td><span class="wire-brown"></span>Marron</td></tr>
+    <tr><td>GPIO16</td><td>Sensor nivel (senal)</td><td><span class="wire-gray"></span>Gris</td></tr>
+    <tr><td>GPIO18</td><td>DFPlayer TX (senal)</td><td><span class="wire-purple"></span>Morado</td></tr>
+  </table>
+</div>
+
+<div class="step">
+  <span class="step-num">9</span> <strong>Cable GND comun</strong><br>
+  <span style="color:#ff4444; font-weight:bold;">CRITICO:</span> Conecta un cable grueso del GND del Proto 1 al GND del Proto 2. Sin esto, nada funciona.
+</div>
+
+<h3>Fase 2: Protoboard 2 - Cargas (45 minutos)</h3>
+
+<div class="step">
+  <span class="step-num">10</span> <strong>Alimentacion 5V/2A</strong><br>
+  Conecta la fuente USB-C 5V/2A a las rieles del protoboard: rojo a 5V, negro a GND.
+</div>
+
+<div class="step">
+  <span class="step-num">11</span> <strong>Conectar bomba DC + S8050</strong><br>
+  <code>GPIO4(Proto1) → 1k → Base S8050</code><br>
+  <code>Emisor S8050 → GND</code><br>
+  <code>Colector S8050 → Bomba(-)</code><br>
+  <code>Bomba(+) → 5V/2A</code><br>
+  <code>1N4007 diodo: cátodo→Bomba(+), ánodo→Bomba(-)</code>
+  <div class="warning">El diodo 1N4007 es OBLIGATORIO. Sin él, el motor de la bomba puede dañar el transistor al apagarse (fenómeno de retroEMF).</div>
+</div>
+
+<div class="step">
+  <span class="step-num">12</span> <strong>Conectar LEDs de casa (sala+ducha)</strong><br>
+  <code>GPIO5(Proto1) → 330ohm → Anodo LED sala + Anodo LED ducha</code><br>
+  <code>Cathodo LED sala + Cathodo LED ducha → GND</code><br>
+  Los dos LEDs van en paralelo, compartiendo la misma resistencia.
+</div>
+
+<div class="step">
+  <span class="step-num">13</span> <strong>Conectar LED porche</strong><br>
+  <code>GPIO8(Proto1) → 330ohm → Anodo LED porche</code><br>
+  <code>Cathodo LED porche → GND</code>
+</div>
+
+<div class="step">
+  <span class="step-num">14</span> <strong>Conectar 3x LED cultivo</strong><br>
+  <code>GPIO7(Proto1) → 100ohm → (Anodo LED1 + Anodo LED2 + Anodo LED3)</code><br>
+  <code>Cathodo LED1 + Cathodo LED2 + Cathodo LED3 → GND</code><br>
+  Los 3 LEDs van en paralelo. La resistencia es menor (100ohm) porque hay 3 LEDs compartiendo.
+</div>
+
+<div class="step">
+  <span class="step-num">15</span> <strong>Conectar DFPlayer Mini</strong><br>
+  <table>
+    <tr><th>Pin DFPlayer</th><th>Conectar a</th><th>Color</th></tr>
+    <tr><td>VCC</td><td>5V/2A</td><td><span class="wire-red"></span>Rojo</td></tr>
+    <tr><td>GND</td><td>GND</td><td><span class="wire-black"></span>Negro</td></tr>
+    <tr><td>RX</td><td>GPIO18(Proto1) TX</td><td><span class="wire-purple"></span>Morado</td></tr>
+    <tr><td>TX</td><td>GPIO11(Proto1) RX</td><td><span class="wire-orange"></span>Naranja</td></tr>
+    <tr><td>SPK_1</td><td>Parlante 4ohm</td><td>Parlante</td></tr>
+    <tr><td>SPK_2</td><td>Parlante 4ohm</td><td>Parlante</td></tr>
+  </table>
+  <div class="warning">IMPORTANTE: RX del DFPlayer va al TX del ESP32, y TX del DFPlayer va al RX del ESP32. Estan cruzados.</div>
+</div>
+
+<div class="step">
+  <span class="step-num">16</span> <strong>Conectar sensor suelo</strong><br>
+  <table>
+    <tr><th>Pin Sensor</th><th>Conectar a</th></tr>
+    <tr><td>VCC</td><td>5V/2A</td></tr>
+    <tr><td>GND</td><td>GND</td></tr>
+    <tr><td>AO</td><td>GPIO15(Proto1)</td></tr>
+  </table>
+</div>
+
+<div class="step">
+  <span class="step-num">17</span> <strong>Conectar sensor nivel agua</strong><br>
+  <table>
+    <tr><th>Pin Sensor</th><th>Conectar a</th></tr>
+    <tr><td>VCC</td><td>5V/2A</td></tr>
+    <tr><td>GND</td><td>GND</td></tr>
+    <tr><td>S</td><td>GPIO16(Proto1)</td></tr>
+  </table>
+</div>
+
+<div class="step">
+  <span class="step-num">18</span> <strong>Insertar microSD en DFPlayer</strong><br>
+  La microSD debe estar formateada FAT32, 4-32GB. Los audios van en carpetas 01-21 y 51-71.
+</div>
+
+</div>
+
+<!-- ============================================ -->
+<h2>7. ALIMENTACION DUAL</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────────────┐
+│                     ALIMENTACION DUAL                               │
+│                                                                     │
+│   ┌──────────────┐         ┌──────────────┐                       │
+│   │  USB-C       │         │  5V/2A       │                       │
+│   │  ESP32       │         │  USB-C       │                       │
+│   └──────┬───────┘         └──────┬───────┘                       │
+│          │                        │                                │
+│          ▼                        ▼                                │
+│   ┌──────────────┐         ┌──────────────┐                       │
+│   │  PROTO 1     │         │  PROTO 2     │                       │
+│   │  Logica      │         │  Cargas      │                       │
+│   │              │         │              │                       │
+│   │  • ESP32     │         │  • Bomba     │                       │
+│   │  • LCD       │         │  • LEDs      │                       │
+│   │  • Sensores  │         │  • DFPlayer  │                       │
+│   │  • IR        │         │  • Sensores  │                       │
+│   │  • PARO      │         │              │                       │
+│   └──────┬───────┘         └──────┬───────┘                       │
+│          │                        │                                │
+│          └──────────┬─────────────┘                                │
+│                     │                                              │
+│              <span class="gnd-line">═══ GND COMUN ═══</span>                                     │
+│              (cable grueso obligatorio)                            │
+│                                                                     │
+│   Consumo estimado:                                                │
+│   • Bomba: 0.5-0.6A (pico al arrancar)                           │
+│   • DFPlayer: 0.2A                                                 │
+│   • LEDs: 0.1A total                                               │
+│   • ESP32 + sensores: 0.15A                                        │
+│   ─────────────────────                                            │
+│   Total max: ~1.05A  ← La fuente 2A sobra con margen             │
+└─────────────────────────────────────────────────────────────────────┘
+</div>
+
+<div class="info">
+  <strong>Por que dual?</strong><br>
+  • El ESP32 se alimenta por USB (su propio cable USB del ordenador)<br>
+  • Las cargas (bomba, LEDs, DFPlayer) se alimentan de la fuente externa 5V/2A<br>
+  • GND comun es OBLIGATORIO para que las señales GPIO funcionen
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2>8. FUNCIONES DEL FIRMWARE</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<table>
+  <tr><th>Funcion</th><th>Que hace</th><th>Cuando se ejecuta</th></tr>
+  <tr><td><code>ejecutarModoInteligente()</code></td><td>Coordina riego, luces, limites diarios</td><td>Cada 5s en loop()</td></tr>
+  <tr><td><code>verificarRiegoAutomatico()</code></td><td>Enciende bomba si suelo seco</td><td>Cada 5s</td></tr>
+  <tr><td><code>verificarRiegoAutomaticoCombinado()</code></td><td>Riego con temp + humedad</td><td>Cada 5s</td></tr>
+  <tr><td><code>verificarLucesCombinadas()</code></td><td>Luces por LDR + PIR + hora</td><td>Cada 5s</td></tr>
+  <tr><td><code>verificarLimiteBomba()</code></td><td>Apaga bomba a los 5 min continuos</td><td>Cada ciclo</td></tr>
+  <tr><td><code>verificarAutomacionesRelativas()</code></td><td>Timeout manual bomba/luces</td><td>Cada ciclo</td></tr>
+  <tr><td><code>diagnosticarSensores()</code></td><td>Lee 7 sensores, muestra en LCD, audio</td><td>Tecla EQ</td></tr>
+  <tr><td><code>ejecutarTeclaIRCasa()</code></td><td>Procesa cada tecla del mando IR</td><td>Al recibir IR</td></tr>
+  <tr><td><code>revisarControlesFisicos()</code></td><td>Boton PARO fisico</td><td>Cada ciclo</td></tr>
+  <tr><td><code>revisarComandosSerial()</code></td><td>Comandos USB para debug</td><td>Cada ciclo</td></tr>
+  <tr><td><code>refrescarPantallaFinal()</code></td><td>Actualiza LCD con estado</td><td>Cada 500ms</td></tr>
+  <tr><td><code>demoSecuenciaActualizar()</code></td><td>Secuencia demo luces</td><td>Si esta activa</td></tr>
+</table>
+</div>
+
+<!-- ============================================ -->
+<h2>9. MAPA TECLAS IR</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<table>
+  <tr><th>Tecla</th><th>Funcion</th><th>Audio Jarvis</th><th>Variante</th></tr>
+  <tr><td>CH-</td><td>Modo manual (todos OFF auto)</td><td>"Entendido"</td><td>1-4 aleatoria</td></tr>
+  <tr><td>CH</td><td>Pantalla siguiente</td><td>"Orden confirmada"</td><td>1-4 aleatoria</td></tr>
+  <tr><td>CH+</td><td>Modo automatico</td><td>"Ejecutando"</td><td>1-4 aleatoria</td></tr>
+  <tr><td>ANTERIOR</td><td>Casa ON/OFF</td><td>"Iluminacion activada/desactivada"</td><td>1=ON, 2=OFF</td></tr>
+  <tr><td>PLAY</td><td>Silencio audio ON/OFF</td><td>Confirmacion</td><td>ON/OFF</td></tr>
+  <tr><td>SIGUIENTE</td><td>Porche ON/OFF</td><td>"Porche iluminado/apagado"</td><td>1=ON, 2=OFF</td></tr>
+  <tr><td>VOL-</td><td>Bajar volumen</td><td>Feedback</td><td>1-4</td></tr>
+  <tr><td>VOL+</td><td>Subir volumen</td><td>Feedback</td><td>1-4</td></tr>
+  <tr><td>EQ</td><td><strong>Diagnostico robusto</strong></td><td>Segun resultado (OK/FAIL/TODO FAIL)</td><td>1-2 OK, 3-4 FAIL</td></tr>
+  <tr><td>0</td><td>Todo apagado</td><td>"Todas las salidas detenidas"</td><td>1-2</td></tr>
+  <tr><td>100+</td><td>Cambiar voz Carlos/Karla</td><td>"Sistemas en linea"</td><td>1=Carlos, 2=Karla</td></tr>
+  <tr><td>200+</td><td>Rearme seguro</td><td>"Rearme logrado/bloqueado"</td><td>1-2 OK, 3-4 FAIL</td></tr>
+  <tr><td>1</td><td>Casa ON/OFF</td><td>"Iluminacion activada/desactivada"</td><td>1=ON, 2=OFF</td></tr>
+  <tr><td>2</td><td>Porche ON/OFF</td><td>"Porche iluminado/apagado"</td><td>1=ON, 2=OFF</td></tr>
+  <tr><td>3</td><td>Cultivo ON/OFF</td><td>"Luces de cultivo activadas/off"</td><td>1=ON, 2=OFF</td></tr>
+  <tr><td>4</td><td><strong>Todas las luces ON/OFF</strong></td><td>"Iluminacion activada/desactivada"</td><td>1=ON, 2=OFF</td></tr>
+  <tr><td>5</td><td>Riego ON/OFF</td><td>"Iniciando riego/Riego detenido"</td><td>1=ON, 2=OFF</td></tr>
+  <tr><td>6</td><td>Temperatura (consulta)</td><td>"Temperatura elevada"</td><td>1-2</td></tr>
+  <tr><td>7</td><td>Humedad (consulta)</td><td>"Humedad adecuada"</td><td>1-4</td></tr>
+  <tr><td>8</td><td>Suelo + deposito (consulta)</td><td>"La tierra esta seca/humeda"</td><td>1-2</td></tr>
+  <tr><td>9</td><td>Estado completo</td><td>"Estado completo reportado"</td><td>1-4</td></tr>
+</table>
+
+<div class="info">
+  <strong>Voces:</strong> Carlos (carpetas 01-21) y Karla (carpetas 51-71). Cada carpeta tiene 4 variantes (pistas 001-004). La tecla 100+ alterna entre voces.
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2>10. MODO INTELIGENTE - COMO FUNCIONA</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<table>
+  <tr><th>Condicion</th><th>Accion</th><th>Limite</th><th>Audio</th></tr>
+  <tr><td>Tierra seca + agua OK</td><td>Bomba ON</td><td>30 min/dia, cooldown 5 min</td><td>"Iniciando riego"</td></tr>
+  <tr><td>Agua baja</td><td>Bomba OFF (interlock)</td><td>Siempre</td><td>"Riego detenido"</td></tr>
+  <tr><td>Oscuridad + presencia</td><td>Casa ON</td><td>Sin limite (PIR controla)</td><td>"Iluminacion activada"</td></tr>
+  <tr><td>Sin presencia</td><td>Casa OFF (ahorro)</td><td>Sin limite</td><td>"Iluminacion desactivada"</td></tr>
+  <tr><td>Oscuridad (cualquier cosa)</td><td>Cultivo ON (fotoperiodo)</td><td>16 horas/dia</td><td>"Luces de cultivo activadas"</td></tr>
+  <tr><td>Luz >= 40% + presencia reciente</td><td>Casa OFF</td><td>Sin limite</td><td>"Iluminacion desactivada"</td></tr>
+  <tr><td>DHT11 fallo > 5 min</td><td>Alerta (no apaga nada)</td><td>1 alerta/min</td><td>-</td></tr>
+  <tr><td>Limite bomba alcanzado</td><td>Bomba OFF</td><td>30 min/dia</td><td>"Riego detenido"</td></tr>
+  <tr><td>Limite cultivo alcanzado</td><td>Cultivo OFF</td><td>16 h/dia</td><td>"Cultivo off"</td></tr>
+</table>
+
+<div class="tip">
+  El modo inteligente NO reemplaza el control manual. Si prendes una luz con el mando, el modo inteligente la respeta y no la apaga.
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2>11. DIAGNOSTICO ROBUSTO (tecla EQ)</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<p>Cuando presionas EQ, el sistema:</p>
+<ol style="margin: 15px 0 15px 20px;">
+  <li>Lee el <strong>DHT11</strong> → muestra temperatura en LCD → audio "Temperatura..."</li>
+  <li>Lee el <strong>sensor de suelo</strong> → muestra % humedad → audio "Tierra seca/humeda"</li>
+  <li>Lee el <strong>sensor de nivel</strong> → muestra crudo → audio "Agua..."</li>
+  <li>Lee el <strong>LDR</strong> → muestra % luz → audio "Luz..."</li>
+  <li>Verifica <strong>PIR</strong> → lee dos veces con pausa → audio "Presencia..."</li>
+  <li>Verifica <strong>bomba</strong> (GPIO) → audio "Bomba..."</li>
+  <li>Verifica <strong>LCD</strong> (I2C) → audio "Display..."</li>
+  <li>Calcula OK/FAIL total → audio final: todos OK / algunos FAIL / todos FAIL</li>
+</ol>
+
+<div class="info">
+  <strong>Audio segun resultado:</strong><br>
+  • Todos OK → "Todos los sensores OK" (carpeta 9, voz 1-2)<br>
+  • Algunos FAIL → "Sensor sin respuesta" (carpeta 18, voz 3-4)<br>
+  • Todos FAIL → "Sistema bloqueado" (carpeta 12, voz 3-4)
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2>12. TROUBLESHOOTING</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<table>
+  <tr><th>Problema</th><th>Causa probable</th><th>Solucion</th></tr>
+  <tr><td>LCD no muestra nada</td><td>Falla I2C, address incorrecto</td><td>Verificar cables SDA/SCL, probar address 0x27 o 0x3F</td></tr>
+  <tr><td>DHT11 siempre NaN</td><td>Falta pull-up 10k</td><td>Conectar resistor 10k entre DATA y 3V3</td></tr>
+  <tr><td>IR no responde</td><td>Receptor mal conectado o sin power</td><td>Verificar VCC=3V3, GND, DATA→GPIO12</td></tr>
+  <tr><td>Bomba no arranca</td><td>S8050 mal conectado, falta diodo</td><td>Verificar base→GPIO4 via 1k, colector→bomba</td></tr>
+  <tr><td>DFPlayer no suena</td><td>RX/TX cruzados, SD no formateada</td><td>Verificar RX↔TX cruzados, formatear SD FAT32</td></tr>
+  <tr><td>LEDs no encienden</td><td>Resistencia incorrecta, polaridad invertida</td><td>Verificar anodo→resistencia→GPIO, cathodo→GND</td></tr>
+  <tr><td>Sensores dan valores raros</td><td>GND no comun entre protoboards</td><td>Conectar cable GND grueso entre protoboards</td></tr>
+  <tr><td>ESP32 se reinicia</td><td>Bomba causa pico de corriente</td><td>Usar fuente separada para bomba, cable GND grueso</td></tr>
+</table>
+</div>
+
+<!-- ============================================ -->
+<h2>13. CHECKLIST PRE-ENCENDIDO</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<div class="step">
+  <span class="step-num">✓</span> <strong>GND comun conectado</strong> entre ambos protoboards<br>
+</div>
+<div class="step">
+  <span class="step-num">✓</span> <strong>Alimentacion dual</strong>: USB ESP32 + Fuente 5V/2A en protoboard 2<br>
+</div>
+<div class="step">
+  <span class="step-num">✓</span> <strong>Resistencias correctas</strong>: 330ohm (LEDs), 100ohm (cultivo), 1k (S8050), 10k (DHT11, LDR)<br>
+</div>
+<div class="step">
+  <span class="step-num">✓</span> <strong>Diodo 1N4007</strong> en paralelo con bomba (cátodo a +)<br>
+</div>
+<div class="step">
+  <span class="step-num">✓</span> <strong>DFPlayer RX/TX cruzados</strong> (RX→TX, TX→RX)<br>
+</div>
+<div class="step">
+  <span class="step-num">✓</span> <strong>MicroSD formateada FAT32</strong> con carpetas 01-21 y 51-71<br>
+</div>
+<div class="step">
+  <span class="step-num">✓</span> <strong>S8050 orientacion correcta</strong>: mirando la cara plana, de izq a der: Collector, Base, Emitter<br>
+</div>
+<div class="step">
+  <span class="step-num">✓</span> <strong>LEDs polaridad correcta</strong>: anodo (+) mas largo, cathodo (-) mas corto<br>
+</div>
+<div class="step">
+  <span class="step-num">✓</span> <strong>Cables GPIO identificados</strong> por color entre protoboards<br>
+</div>
+</div>
+
+</div>
+</body>
+</html>

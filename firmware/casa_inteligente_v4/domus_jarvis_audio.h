@@ -2,6 +2,13 @@
 #include <Arduino.h>
 #include "domus_dfplayer.h"
 
+// Habilitación de audio: depende del perfil CASA_FINAL_DRV8833_DFPLAYER
+// y de que DOMUS_DRIVER_VALIDADO=1 (puerta F1).
+#ifndef AUDIO_CANDIDATO_HABILITADO
+// Fallback: verificar si el perfil es el final con DRV8833 validado
+#define AUDIO_CANDIDATO_HABILITADO (DOMUS_PERFIL_CASA == 4 && DOMUS_DRIVER_VALIDADO == 1)
+#endif
+
 // Catálogo Jarvis 1:1 con los 21 botones del mando CAR MP3.
 // Cada evento vive en su carpeta: voz 1 (Carlos) 01-21, voz 2 (Karla) 51-71
 // (desplazamiento +50). Códigos físicos capturados en la nota Obsidian 64
@@ -9,7 +16,7 @@
 // 01-99 con pistas 001-004 (nota 65).
 //
 // Convención de variantes (001-004) por carpeta:
-// - Conmutadores (sala, cuarto, cultivo, ventilador, riego): 1 = ON manual,
+// - Conmutadores (casa, porche, cultivo, todas_luces, riego): 1 = ON manual,
 //   2 = OFF manual, 3 = ON automático, 4 = OFF automático.
 // - Botón 0: 1-2 = apagado general; 3-4 = PARO de emergencia.
 // - EQ: 1-2 = diagnóstico manual; 3-4 = fallo de sensor (automático).
@@ -35,15 +42,33 @@ enum class EventoJarvis : uint8_t {
   TECLA_0 = 10,    // 0 0x16: todo apagado (+ PARO físico)
   TECLA_100 = 11,  // 100+ 0x19: alterna voz Carlos/Karla (un toque)
   TECLA_200 = 12,  // 200+ 0x0D: rearme seguro
-  TECLA_1 = 13,    // 1 0x0C: luz de sala
-  TECLA_2 = 14,    // 2 0x18: luz de cuarto
+  TECLA_1 = 13,    // 1 0x0C: luz de sala → Casa
+  TECLA_2 = 14,    // 2 0x18: luz de cuarto → Porche
   TECLA_3 = 15,    // 3 0x5E: luz de cultivo
-  TECLA_4 = 16,    // 4 0x08: ventilador
+  TECLA_4 = 16,    // 4 0x08: todas las luces ON/OFF
   TECLA_5 = 17,    // 5 0x1C: riego
   TECLA_6 = 18,    // 6 0x5A: consulta temperatura
   TECLA_7 = 19,    // 7 0x42: consulta humedad
   TECLA_8 = 20,    // 8 0x52: consulta suelo + depósito
-  TECLA_9 = 21     // 9 0x4A: estado completo (+ arranque)
+  TECLA_9 = 21,    // 9 0x4A: estado completo (+ arranque)
+
+  // Aliases semánticos para clarity en el código de automatización
+  CASA_ENCENDIDA = TECLA_1,       // Carpeta 13: "Iluminación activada"
+  CASA_APAGADA = TECLA_1,         // Carpeta 13: "Luz apagada"
+  PORCHE_ENCENDIDO = TECLA_2,     // Carpeta 14: "Porche iluminado"
+  PORCHE_APAGADO = TECLA_2,       // Carpeta 14: "Porche apagado"
+  CULTIVO_ENCENDIDO = TECLA_3,    // Carpeta 15: "Luces de cultivo activadas"
+  CULTIVO_APAGADO = TECLA_3,      // Carpeta 15: "Luces de cultivo off"
+  TODAS_LUCES_ON = TECLA_4,       // Carpeta 16: "Todas las luces on"
+  TODAS_LUCES_OFF = TECLA_4,      // Carpeta 16: "Todas las luces off"
+  RIEGO_INICIADO = TECLA_5,       // Carpeta 17: "Iniciando riego"
+  RIEGO_DETENIDO = TECLA_5,       // Carpeta 17: "Riego detenido"
+  TIERRA_SECA = TECLA_8,          // Carpeta 20: "La tierra está seca"
+  AGUA_BAJA = TECLA_8,            // Carpeta 20: "Nivel de agua bajo"
+  DIAG_TODOS_OK = EQ,             // Carpeta 9: "Diagnóstico completo"
+  DIAG_ALGUNOS_FAIL = TECLA_6,    // Carpeta 18: "Sensor sin respuesta"
+  DIAG_TODOS_FAIL = TECLA_200,    // Carpeta 12: "Sistema bloqueado"
+  SISTEMA_LISTO = TECLA_9,        // Carpeta 21: "Sistemas en línea"
 };
 
 // Política no bloqueante de Jarvis: variantes sin repetición inmediata.

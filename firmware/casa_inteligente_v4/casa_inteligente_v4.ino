@@ -1818,18 +1818,18 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
     // Anterior/Siguiente son atajos de las teclas 1/2.
     case ANTERIOR: case N_1:
       alternarSalidaIR(1, "LUZ1", "Casa");
-      anunciarJarvis(estadoSalidas[1] ? EventoJarvis::CASA_ENCENDIDA
-                                     : EventoJarvis::CASA_APAGADA);
+      anunciarJarvis(EventoJarvis::CASA_ENCENDIDA, false,
+                     estadoSalidas[1] ? 1 : 2);  // 1=ON, 2=OFF
       break;
     case SIGUIENTE: case N_2:
       alternarSalidaIR(2, "LUZ2", "Porche");
-      anunciarJarvis(estadoSalidas[2] ? EventoJarvis::PORCHE_ENCENDIDO
-                                     : EventoJarvis::PORCHE_APAGADO);
+      anunciarJarvis(EventoJarvis::PORCHE_ENCENDIDO, false,
+                     estadoSalidas[2] ? 1 : 2);
       break;
     case N_3:
       alternarSalidaIR(3, "INVER", "Cultivo");
-      anunciarJarvis(estadoSalidas[3] ? EventoJarvis::CULTIVO_ENCENDIDO
-                                     : EventoJarvis::CULTIVO_APAGADO);
+      anunciarJarvis(EventoJarvis::CULTIVO_ENCENDIDO, false,
+                     estadoSalidas[3] ? 1 : 2);
       break;
     case N_4: {
       // Todas las luces ON/OFF: alterna salidas 1 (casa), 2 (porche), 3 (cultivo)
@@ -1840,14 +1840,13 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
       char aviso[17];
       snprintf(aviso, sizeof(aviso), "Luces %s", encender ? "ON" : "OFF");
       pantallaFinal.mostrarMensaje(aviso, "Tecla 4");
-      anunciarJarvis(encender ? EventoJarvis::CASA_ENCENDIDA
-                              : EventoJarvis::CASA_APAGADA);
+      anunciarJarvis(EventoJarvis::TODAS_LUCES_ON, false, encender ? 1 : 2);
       break;
     }
     case N_5:
       alternarSalidaIR(0, "RIEGO", "Riego");
-      anunciarJarvis(estadoSalidas[0] ? EventoJarvis::RIEGO_INICIADO
-                                     : EventoJarvis::RIEGO_DETENIDO);
+      anunciarJarvis(EventoJarvis::RIEGO_INICIADO, false,
+                     estadoSalidas[0] ? 1 : 2);  // 1=ON, 2=OFF
       break;
     // Consultas: el LCD salta a la vista del dato para que acompañe a la voz.
     case N_6:
@@ -2507,6 +2506,8 @@ const unsigned long COOLDOWN_LUCES_MS = 30000UL;       // 30 s
 const unsigned long DURACION_DIA_MS = 86400000UL;      // 24 h
 const unsigned long TIMEOUT_SENSOR_DHT_MS = 300000UL;  // 5 min
 
+unsigned long ultimoCicloCheckMs = 0;
+
 void actualizarEstadoInteligente() {
   // Reset diario
   if (millis() - estadoInt.diaActualMs >= DURACION_DIA_MS) {
@@ -2523,7 +2524,7 @@ void actualizarEstadoInteligente() {
 
   int humCrudo = 0, humPct = 0;
   estadoInt.sueloOK = leerHumedad(humCrudo, humPct);
-  estadoInt.tierraSeca = estadoInt.sueloOK && humPct <= UMBRAL_HUMEDAD_BAJA_PCT;
+  estadoInt.tierraSeca = estadoInt.sueloOK && humPct <= UMBRAL_HUMEDAD_SECA_PCT;
 
   int nivelAgua = 0;
   estadoInt.nivelOK = leerNivelAgua(nivelAgua);
@@ -2548,8 +2549,6 @@ void actualizarEstadoInteligente() {
   }
 }
 
-unsigned long ultimoCicloCheckMs = 0;
-
 void ejecutarModoInteligente() {
   if (modoSeguroActivo) return;
   unsigned long ahora = millis();
@@ -2563,7 +2562,7 @@ void ejecutarModoInteligente() {
     OrdenActuador corte = {0, false, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_AGUA_BAJA"};
     if (ejecutarOrdenActuador(corte).exito) {
       emitirEventoLocal("EVENTO;INTELIGENTE_AGUA_BAJA;0");
-      anunciarJarvis(EventoJarvis::RIEGO_DETENIDO);
+      anunciarJarvis(EventoJarvis::RIEGO_DETENIDO, false, 4);  // OFF automatico
     }
   }
 
@@ -2576,7 +2575,7 @@ void ejecutarModoInteligente() {
     if (ejecutarOrdenActuador(orden).exito) {
       estadoInt.ultimoCicloBombaMs = ahora;
       emitirEventoLocal("EVENTO;INTELIGENTE_RIEGO_AUTO;1");
-      anunciarJarvis(EventoJarvis::RIEGO_INICIADO);
+      anunciarJarvis(EventoJarvis::RIEGO_INICIADO, false, 3);  // ON automatico
     }
   }
 
@@ -2589,7 +2588,7 @@ void ejecutarModoInteligente() {
     if (ejecutarOrdenActuador(orden).exito) {
       estadoInt.ultimoToggleLucesMs = ahora;
       emitirEventoLocal("EVENTO;INTELIGENTE_CULTIVO_ON;1");
-      anunciarJarvis(EventoJarvis::CULTIVO_ENCENDIDO);
+      anunciarJarvis(EventoJarvis::CULTIVO_ENCENDIDO, false, 3);  // ON auto
     }
   }
 
@@ -2601,7 +2600,7 @@ void ejecutarModoInteligente() {
     if (ejecutarOrdenActuador(orden).exito) {
       estadoInt.ultimoToggleLucesMs = ahora;
       emitirEventoLocal("EVENTO;INTELIGENTE_CASA_ON;1");
-      anunciarJarvis(EventoJarvis::CASA_ENCENDIDA);
+      anunciarJarvis(EventoJarvis::CASA_ENCENDIDA, false, 3);  // ON auto
     }
   }
 
@@ -2613,7 +2612,7 @@ void ejecutarModoInteligente() {
     if (ejecutarOrdenActuador(orden).exito) {
       estadoInt.ultimoToggleLucesMs = ahora;
       emitirEventoLocal("EVENTO;INTELIGENTE_CASA_OFF;0");
-      anunciarJarvis(EventoJarvis::CASA_APAGADA);
+      anunciarJarvis(EventoJarvis::CASA_APAGADA, false, 4);  // OFF auto
     }
   }
 
@@ -2635,7 +2634,7 @@ void ejecutarModoInteligente() {
     OrdenActuador corte = {0, false, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_LIMITE_DIA"};
     if (ejecutarOrdenActuador(corte).exito) {
       emitirEventoLocal("EVENTO;INTELIGENTE_LIMITE_DIA;BOMBA");
-      anunciarJarvis(EventoJarvis::RIEGO_DETENIDO);
+      anunciarJarvis(EventoJarvis::RIEGO_DETENIDO, false, 4);  // OFF auto
     }
   }
 
@@ -2645,7 +2644,7 @@ void ejecutarModoInteligente() {
     OrdenActuador corte = {3, false, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_LIMITE_CULTIVO"};
     if (ejecutarOrdenActuador(corte).exito) {
       emitirEventoLocal("EVENTO;INTELIGENTE_LIMITE_CULTIVO;0");
-      anunciarJarvis(EventoJarvis::CULTIVO_APAGADO);
+      anunciarJarvis(EventoJarvis::CULTIVO_APAGADO, false, 4);  // OFF auto
     }
   }
 }
@@ -2827,12 +2826,17 @@ ResultadoDiagnostico diagnosticarSensores() {
   emitirEventoLocal(r.ldr ? "DIAG;LDR;OK" : "DIAG;LDR;FAIL");
   delay(2000);
 
-  // 5. PIR
-  r.pir = digitalRead(MAPA_CASA.pir) != HIGH || digitalRead(MAPA_CASA.pir) == LOW;
-  // El PIR siempre lee HIGH/LOW, es "OK" si responde
-  r.pir = true;  // PIR no tiene feedback de fallo electrical
-  pantallaFinal.mostrarMensaje("PIR: OK", "Pin 9");
-  emitirEventoLocal("DIAG;PIR;OK");
+  // 5. PIR - leer dos veces con pausa para verificar que responde
+  int pirLectura1 = digitalRead(MAPA_CASA.pir);
+  delay(100);
+  int pirLectura2 = digitalRead(MAPA_CASA.pir);
+  // PIR es OK si ambas lecturas son validas (HIGH o LOW, no flotante)
+  r.pir = (pirLectura1 == HIGH || pirLectura1 == LOW) &&
+          (pirLectura2 == HIGH || pirLectura2 == LOW);
+  char pirMsg[17];
+  snprintf(pirMsg, sizeof(pirMsg), "PIR: %s", r.pir ? "OK" : "FAIL");
+  pantallaFinal.mostrarMensaje(pirMsg, r.pir ? "Pin 9" : "Cable suelto");
+  emitirEventoLocal(r.pir ? "DIAG;PIR;OK" : "DIAG;PIR;FAIL");
   delay(2000);
 
   // 6. Bomba (solo verificar que GPIO responde)
@@ -2862,14 +2866,14 @@ ResultadoDiagnostico diagnosticarSensores() {
   // Audio Jarvis según resultado
   if (jarvisAudio.habilitado()) {
     if (r.totalFAIL == 0) {
-      // Todos OK: carpeta 20 (diagnostico)
-      anunciarJarvisGrupo(EventoJarvis::EQ, false, 1, 2);
+      // Todos OK: carpeta 9 (diagnóstico) variantes 1-2
+      anunciarJarvisGrupo(EventoJarvis::DIAG_TODOS_OK, false, 1, 2);
     } else if (r.totalFAIL < 7) {
-      // Algunos FAIL: carpeta 16 (error sensor)
-      anunciarJarvisGrupo(EventoJarvis::TECLA_6, false, 3, 4);
+      // Algunos FAIL: carpeta 18 (error sensor) variantes 3-4
+      anunciarJarvisGrupo(EventoJarvis::DIAG_ALGUNOS_FAIL, false, 3, 4);
     } else {
-      // Todos FAIL: carpeta 15 (emergencia)
-      anunciarJarvisGrupo(EventoJarvis::N_200_MAS, false, 3, 4);
+      // Todos FAIL: carpeta 12 (emergencia/rearme bloqueado) variantes 3-4
+      anunciarJarvisGrupo(EventoJarvis::DIAG_TODOS_FAIL, false, 3, 4);
     }
   }
 
