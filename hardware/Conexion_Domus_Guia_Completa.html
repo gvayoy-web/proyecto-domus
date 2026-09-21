@@ -161,14 +161,14 @@
   <tr><td><span class="pin">8</span></td><td>Porche</td><td>1 LED + 330ohm</td><td>Salida</td><td>2</td><td><span class="wire-green"></span>Verde</td></tr>
   <tr><td><span class="pin">9</span></td><td>Jarvis VIVO</td><td>LED azul via S8050</td><td>Salida PWM</td><td>1</td><td><span class="wire-white"></span>Blanco</td></tr>
   <tr><td><span class="pin">10</span></td><td>PARO</td><td>Boton → GND</td><td>Entrada Pull-up</td><td>1</td><td><span class="wire-gray"></span>Gris</td></tr>
-  <tr><td><span class="pin">11</span></td><td>DFPlayer RX</td><td>UART1 RX</td><td>Entrada</td><td>2</td><td><span class="wire-orange"></span>Naranja</td></tr>
+  <tr><td><span class="pin">11</span></td><td>ESP32 RX</td><td>DFPlayer TX recibe datos</td><td>Entrada</td><td>2</td><td><span class="wire-orange"></span>Naranja</td></tr>
   <tr><td><span class="pin">12</span></td><td>IR</td><td>VS1838B DATA</td><td>Entrada</td><td>1</td><td><span class="wire-yellow"></span>Amarillo oscuro</td></tr>
   <tr><td><span class="pin">13</span></td><td>LCD SCL</td><td>I2C clock</td><td>Bidireccional</td><td>1</td><td><span class="wire-blue"></span>Azul claro</td></tr>
   <tr><td><span class="pin">14</span></td><td>DHT11</td><td>DATA + pull-up 10k</td><td>Entrada</td><td>1</td><td><span class="wire-orange"></span>Naranja</td></tr>
   <tr><td><span class="pin">15</span></td><td>Suelo</td><td>Sensor resistivo AO</td><td>Entrada analogica</td><td>2</td><td><span class="wire-brown"></span>Marron</td></tr>
   <tr><td><span class="pin">16</span></td><td>Nivel</td><td>Sensor analogico S</td><td>Entrada analogica</td><td>2</td><td><span class="wire-gray"></span>Gris oscuro</td></tr>
   <tr><td><span class="pin">17</span></td><td>LCD SDA</td><td>I2C data</td><td>Bidireccional</td><td>1</td><td><span class="wire-green"></span>Verde</td></tr>
-  <tr><td><span class="pin">18</span></td><td>DFPlayer TX</td><td>UART1 TX</td><td>Salida</td><td>2</td><td><span class="wire-purple"></span>Morado</td></tr>
+  <tr><td><span class="pin">18</span></td><td>ESP32 TX</td><td>DFPlayer RX envia comandos</td><td>Salida</td><td>2</td><td><span class="wire-purple"></span>Morado</td></tr>
 </table>
 
 <!-- ============================================ -->
@@ -190,16 +190,16 @@
 │  │  GPIO5  ──────── → Proto 2 (casa LEDs)  │←── <span class="signal-line">SEÑAL</span>            │
 │  │  GPIO7  ──────── → Proto 2 (cultivo)    │←── <span class="signal-line">SEÑAL</span>            │
 │  │  GPIO8  ──────── → Proto 2 (porche)     │←── <span class="signal-line">SEÑAL</span>            │
-│  │  GPIO9  ──────── S8050 base → LED VIVO  │←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO9  ──────── LED VIVO (S8050)      │←── <span class="signal-line">SEÑAL</span>            │
 │  │  GPIO10 ──────── Botón PARO → GND       │←── <span class="gnd-line">GND</span>              │
-│  │  GPIO11 ──────── → Proto 2 (DFPlayer RX)│←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO11 ──────── RX ← DFPlayer TX      │←── <span class="signal-line">SEÑAL</span>            │
 │  │  GPIO12 ──────── VS1838B DATA           │←── <span class="signal-line">SEÑAL</span>            │
 │  │  GPIO13 ──────── LCD SCL                │←── <span class="signal-line">SEÑAL</span>            │
 │  │  GPIO14 ──────── DHT11 DATA + 10k pull  │←── <span class="signal-line">SEÑAL</span>            │
 │  │  GPIO15 ──────── → Proto 2 (suelo AO)   │←── <span class="signal-line">SEÑAL</span>            │
 │  │  GPIO16 ──────── → Proto 2 (nivel S)    │←── <span class="signal-line">SEÑAL</span>            │
 │  │  GPIO17 ──────── LCD SDA                │←── <span class="signal-line">SEÑAL</span>            │
-│  │  GPIO18 ──────── → Proto 2 (DFPlayer TX)│←── <span class="signal-line">SEÑAL</span>            │
+│  │  GPIO18 ──────── TX → DFPlayer RX       │←── <span class="signal-line">SEÑAL</span>            │
 │  │                                          │                      │
 │  │  3V3 ──────── DHT11 VCC, LCD VCC, pull-ups                      │
 │  │  GND ──────── GND comun (→ Proto 2 GND) │←── <span class="gnd-line">GND</span>              │
@@ -280,8 +280,8 @@
 │  │                                         │                      │
 │  │ VCC → <span class="power-line">5V/2A</span>                             │                      │
 │  │ GND → <span class="gnd-line">GND</span>                               │                      │
-│  │ RX → GPIO18(Proto1) TX ← <span class="signal-line">SEÑAL</span>         │←── <span class="signal-line">SEÑAL GPIO18</span>      │
-│  │ TX → GPIO11(Proto1) RX → <span class="signal-line">SEÑAL</span>         │←── <span class="signal-line">SEÑAL GPIO11</span>      │
+│  │ RX ← GPIO18(Proto1) TX  <span class="signal-line">← ESP32 envia</span>  │←── <span class="signal-line">SEÑAL GPIO18</span>      │
+│  │ TX → GPIO11(Proto1) RX  <span class="signal-line">→ ESP32 recibe</span> │←── <span class="signal-line">SEÑAL GPIO11</span>      │
 │  │ BUSY → (opcional, no conectado)         │                      │
 │  │ SPK_1 → Parlante 4ohm → SPK_2          │                      │
 │  │ ADKEY_1 → (no conectado)                │                      │
@@ -332,6 +332,7 @@
     <tr><td>SCL</td><td>GPIO13 del ESP32</td><td><span class="wire-blue"></span>Azul</td></tr>
   </table>
   <div class="tip">El LCD I2C tiene una resistencia que dice "I2C" o "PCF8574". Asegurate de que el address sea 0x27 (el más común).</div>
+  <div class="warning">ALGUNOS backpacks I2C tienen pull-ups de SDA/SCL hacia 5V. El ESP32-S3 usa logica de 3.3V. Si el backpack tiene pull-ups a 5V, necesitas un divisor de voltaje en SDA y SCL (1k + 2k) para bajar a 3.3V. La mayoria de backpacks baratos funcionan bien directo porque las lineas I2C son open-drain y el voltaje lo define el pull-up.</div>
 </div>
 
 <div class="step">
@@ -450,12 +451,12 @@
     <tr><th>Pin DFPlayer</th><th>Conectar a</th><th>Color</th></tr>
     <tr><td>VCC</td><td>5V/2A</td><td><span class="wire-red"></span>Rojo</td></tr>
     <tr><td>GND</td><td>GND</td><td><span class="wire-black"></span>Negro</td></tr>
-    <tr><td>RX</td><td>GPIO18(Proto1) TX</td><td><span class="wire-purple"></span>Morado</td></tr>
-    <tr><td>TX</td><td>GPIO11(Proto1) RX</td><td><span class="wire-orange"></span>Naranja</td></tr>
+    <tr><td>RX</td><td>GPIO18(Proto1) TX ← ESP32 envia</td><td><span class="wire-purple"></span>Morado</td></tr>
+    <tr><td>TX</td><td>GPIO11(Proto1) RX → ESP32 recibe</td><td><span class="wire-orange"></span>Naranja</td></tr>
     <tr><td>SPK_1</td><td>Parlante 4ohm</td><td>Parlante</td></tr>
     <tr><td>SPK_2</td><td>Parlante 4ohm</td><td>Parlante</td></tr>
   </table>
-  <div class="warning">IMPORTANTE: RX del DFPlayer va al TX del ESP32, y TX del DFPlayer va al RX del ESP32. Estan cruzados.</div>
+  <div class="warning">CRUZADOS: DFPlayer RX ← ESP32 TX (GPIO18), DFPlayer TX → ESP32 RX (GPIO11). RX del DFPlayer recibe del TX del ESP32.</div>
 </div>
 
 <div class="step">

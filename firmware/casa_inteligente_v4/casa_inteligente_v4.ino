@@ -215,13 +215,13 @@ enum class PerfilCasa : uint8_t {
 struct MapaPinesCasa {
   int suelo, nivel, ldr;
   int bomba, casa, porche, cultivo, spare;
-  int pir, paro, micOff, demo, scl, dht, sda, ir;
+  int paro, micOff, demo, scl, dht, sda, ir;
   int salidas[TOTAL_SALIDAS];
 };
 constexpr MapaPinesCasa MAPA_CASA = {
   15, 16, 3,
   4, 5, 8, 7, 8,
-  9, 10, 11, 18, 13, 14, 17, 12,
+  10, 11, 18, 13, 14, 17, 12,
   {4, 5, 8, 7, 8}
 };
 DHT dht(MAPA_CASA.dht, TIPO_DHT);
@@ -348,9 +348,9 @@ static_assert(!(BOMBA_DIRECTA_S8050 && SALIDA_FISICA_CASA[3]),
 // ampliación futura reutilice silenciosamente una señal ya ocupada.
 constexpr int PINES_RESERVADOS_DOMUS[] = {
   MAPA_CASA.suelo, MAPA_CASA.nivel, MAPA_CASA.ldr,
-  MAPA_CASA.bomba, MAPA_CASA.sala, MAPA_CASA.cuarto,
-  MAPA_CASA.vent, MAPA_CASA.inv,
-  MAPA_CASA.pir, MAPA_CASA.paro, MAPA_CASA.micOff, MAPA_CASA.ir, MAPA_CASA.demo,
+  MAPA_CASA.bomba, MAPA_CASA.casa, MAPA_CASA.porche,
+  MAPA_CASA.cultivo, MAPA_CASA.spare,
+  MAPA_CASA.paro, MAPA_CASA.micOff, MAPA_CASA.ir, MAPA_CASA.demo,
   MAPA_CASA.scl, MAPA_CASA.dht, MAPA_CASA.sda,
   SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN, SD_CS_PIN
 };
@@ -1557,8 +1557,9 @@ void verificarLucesCombinadas() {
 
   int ldrCrudo = 0, luzPct = 0;
   bool luzValida = leerLuz(ldrCrudo, luzPct);
-  ultimaPresenciaValida = digitalRead(MAPA_CASA.pir) == HIGH;
-  if (ultimaPresenciaValida) ultimaPresenciaMs = millis();
+  // Sin PIR fisico: presencia constante, automatizacion solo por LDR
+  ultimaPresenciaValida = true;
+  ultimaPresenciaMs = millis();
 
   if (!luzValida) {
     const int luces[] = {1, 4};
@@ -1622,7 +1623,7 @@ String construirReporteEstado() {
   static char buf[320];
   snprintf(buf, sizeof(buf),
     "ESTADO;%s=%d;%s=%d;%s=%d;%s=%d;%s=%d;"
-    "HUM=%d;HUM_PCT=%d;NIVEL_AGUA=%d;PIR=%d;"
+    "HUM=%d;HUM_PCT=%d;NIVEL_AGUA=%d;PRESENCIA=1;"
     "TEMP_C=%.1f;HUM_AIRE_PCT=%.1f;LUZ_PCT=%d;"
     "MIC=%s;SD=%s;EMERGENCIA=%s;MODO_SEGURO=%s;",
     NOMBRES_SALIDAS[0], estadoSalidas[0] ? 1 : 0,
@@ -1631,7 +1632,7 @@ String construirReporteEstado() {
     NOMBRES_SALIDAS[3], estadoSalidas[3] ? 1 : 0,
     NOMBRES_SALIDAS[4], estadoSalidas[4] ? 1 : 0,
     ultimaHumedadValida, ultimoHumedadPctValido,
-    ultimoNivelAguaValido, ultimaPresenciaValida ? 1 : 0,
+    ultimoNivelAguaValido,
     (double)ultimaTempCValida, (double)ultimaHumAireValida,
     ultimoLuzPctValido,
     micHabilitado ? "ON" : "OFF",
@@ -1649,7 +1650,7 @@ void emitirPruebaGuiada() {
     ";IR_ULTIMO=0x" + String(receptorIR.ultimoCodigo(), HEX));
   emitirEventoLocal(construirReporteEstado());
   emitirEventoLocal(construirReporteDiagnostico());
-  emitirEventoLocal("PRUEBA;ACCIONES=TAPA_LDR,MUEVE_PIR,PULSA_MODO,PRUEBA_IR,PULSA_STOP");
+  emitirEventoLocal("PRUEBA;ACCIONES=TAPA_LDR,PULSA_MODO,PRUEBA_IR,PULSA_STOP");
   emitirEventoLocal("PRUEBA;BOMBA=SUMERGIDA_Y_RIEGO_ON;AUTO=RIEGO_AUTO");
   emitirEventoLocal("PRUEBA;FIN");
 }
@@ -2418,7 +2419,6 @@ void setup() {
 
   analogReadResolution(12);
   analogSetAttenuation(ADC_11db);
-  pinMode(MAPA_CASA.pir, INPUT);
   inicializarMicroSD();
   if (watchdogActivo) esp_task_wdt_reset();
 
@@ -2534,11 +2534,11 @@ void actualizarEstadoInteligente() {
   estadoInt.ldrOK = leerLuz(ldrCrudo, luzPct);
   estadoInt.oscuridad = estadoInt.ldrOK && luzPct <= UMBRAL_LUZ_OSCURO_PCT;
 
-  // Presencia (PIR)
-  ultimaPresenciaValida = digitalRead(MAPA_CASA.pir) == HIGH;
-  if (ultimaPresenciaValida) ultimaPresenciaMs = millis();
-  estadoInt.presencia = ultimaPresenciaValida &&
-    (millis() - ultimaPresenciaMs <= PIR_RETENCION_MS);
+  // Presencia: sin PIR fisico, se asume presencia constante
+  // (las automatizaciones dependen solo de LDR para decidir luces)
+  ultimaPresenciaValida = true;
+  ultimaPresenciaMs = millis();
+  estadoInt.presencia = true;
 
   // Actualizar acumulados diarios
   if (estadoSalidas[0] && bombaEncendidaDesdeMs != 0) {
@@ -2763,10 +2763,9 @@ void emitirTelemetriaSensores() {
   char linea[160];
   snprintf(linea, sizeof(linea),
     "SENSORES;TEMP_C=%.1f;HUM_AIRE=%.1f;HUM_PCT=%d;NIVEL=%d;LUZ_PCT=%d;"
-    "PIR=%d;SALIDAS=%d%d%d%d%d;",
+    "PRESENCIA=1;SALIDAS=%d%d%d%d%d;",
     (double)ultimaTempCValida, (double)ultimaHumAireValida,
     ultimoHumedadPctValido, ultimoNivelAguaValido, ultimoLuzPctValido,
-    ultimaPresenciaValida ? 1 : 0,
     estadoSalidas[0] ? 1 : 0, estadoSalidas[1] ? 1 : 0,
     estadoSalidas[2] ? 1 : 0, estadoSalidas[3] ? 1 : 0,
     estadoSalidas[4] ? 1 : 0);
@@ -2826,17 +2825,10 @@ ResultadoDiagnostico diagnosticarSensores() {
   emitirEventoLocal(r.ldr ? "DIAG;LDR;OK" : "DIAG;LDR;FAIL");
   delay(2000);
 
-  // 5. PIR - leer dos veces con pausa para verificar que responde
-  int pirLectura1 = digitalRead(MAPA_CASA.pir);
-  delay(100);
-  int pirLectura2 = digitalRead(MAPA_CASA.pir);
-  // PIR es OK si ambas lecturas son validas (HIGH o LOW, no flotante)
-  r.pir = (pirLectura1 == HIGH || pirLectura1 == LOW) &&
-          (pirLectura2 == HIGH || pirLectura2 == LOW);
-  char pirMsg[17];
-  snprintf(pirMsg, sizeof(pirMsg), "PIR: %s", r.pir ? "OK" : "FAIL");
-  pantallaFinal.mostrarMensaje(pirMsg, r.pir ? "Pin 9" : "Cable suelto");
-  emitirEventoLocal(r.pir ? "DIAG;PIR;OK" : "DIAG;PIR;FAIL");
+  // 5. PIR - no instalado, saltar
+  r.pir = true;  // Siempre OK (sin hardware)
+  pantallaFinal.mostrarMensaje("PIR: SIN HW", "Sin PIR fisico");
+  emitirEventoLocal("DIAG;PIR;SIN_HW");
   delay(2000);
 
   // 6. Bomba (solo verificar que GPIO responde)
