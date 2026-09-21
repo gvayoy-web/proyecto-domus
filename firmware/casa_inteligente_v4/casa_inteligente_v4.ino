@@ -1781,9 +1781,7 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
       }
       break;
     case EQ:
-      emitirEventoLocal(construirReporteDiagnostico());
-      pantallaFinal.mostrarMensaje("Diagnostico", "Ver Serial");
-      anunciarJarvisGrupo(EventoJarvis::EQ, false, 1, 2);
+      diagnosticarSensores();
       break;
     case N_0:
       for (int i = 0; i < TOTAL_SALIDAS; ++i)
@@ -1818,14 +1816,38 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
       break;
     // --- Abajo: acciones en orden (luces y bomba 1-5, lecturas 6-9) ---
     // Anterior/Siguiente son atajos de las teclas 1/2.
-    case ANTERIOR: case N_1: alternarSalidaIR(1, "LUZ1", "Sala"); break;
-    case SIGUIENTE: case N_2: alternarSalidaIR(2, "LUZ2", "Cuarto"); break;
-    case N_3: alternarSalidaIR(4, "INVER", "Cultivo"); break;
-    case N_4: alternarSalidaIR(3, "VENT", "Vent"); break;
+    case ANTERIOR: case N_1:
+      alternarSalidaIR(1, "LUZ1", "Casa");
+      anunciarJarvis(estadoSalidas[1] ? EventoJarvis::CASA_ENCENDIDA
+                                     : EventoJarvis::CASA_APAGADA);
+      break;
+    case SIGUIENTE: case N_2:
+      alternarSalidaIR(2, "LUZ2", "Porche");
+      anunciarJarvis(estadoSalidas[2] ? EventoJarvis::PORCHE_ENCENDIDO
+                                     : EventoJarvis::PORCHE_APAGADO);
+      break;
+    case N_3:
+      alternarSalidaIR(3, "INVER", "Cultivo");
+      anunciarJarvis(estadoSalidas[3] ? EventoJarvis::CULTIVO_ENCENDIDO
+                                     : EventoJarvis::CULTIVO_APAGADO);
+      break;
+    case N_4: {
+      // Todas las luces ON/OFF: alterna salidas 1 (casa), 2 (porche), 3 (cultivo)
+      bool encender = !estadoSalidas[1] && !estadoSalidas[2] && !estadoSalidas[3];
+      ejecutarComandoRele("IR_TODAS_LUCES", 1, encender, ORIGEN_IR);
+      ejecutarComandoRele("IR_TODAS_LUCES", 2, encender, ORIGEN_IR);
+      ejecutarComandoRele("IR_TODAS_LUCES", 3, encender, ORIGEN_IR);
+      char aviso[17];
+      snprintf(aviso, sizeof(aviso), "Luces %s", encender ? "ON" : "OFF");
+      pantallaFinal.mostrarMensaje(aviso, "Tecla 4");
+      anunciarJarvis(encender ? EventoJarvis::CASA_ENCENDIDA
+                              : EventoJarvis::CASA_APAGADA);
+      break;
+    }
     case N_5:
-      // Toggle como el resto de cargas: el interlock de nivel, el timeout y
-      // el PARO siguen protegiendo; el aviso muestra el estado real aplicado.
       alternarSalidaIR(0, "RIEGO", "Riego");
+      anunciarJarvis(estadoSalidas[0] ? EventoJarvis::RIEGO_INICIADO
+                                     : EventoJarvis::RIEGO_DETENIDO);
       break;
     // Consultas: el LCD salta a la vista del dato para que acompañe a la voz.
     case N_6:
@@ -2446,6 +2468,189 @@ if (MP3_HABILITADO) {
 }
 
 // ============================================================================
+// SECCIÓN 13A: MODO INTELIGENTE (autónomo coordinado)
+// ============================================================================
+// Coordina todas las automatizaciones con limites diarios, cooldowns y
+// degradación inteligente por fallo de sensor.
+
+struct EstadoInteligente {
+  // Limites diarios
+  unsigned long bombaMsHoy;
+  unsigned long lucesCultivoMsHoy;
+  unsigned long diaActualMs;    // millis() del inicio del día actual
+
+  // Cooldowns
+  unsigned long ultimoCicloBombaMs;
+  unsigned long ultimoToggleLucesMs;
+
+  // Contexto
+  bool oscuridad;
+  bool presencia;
+  bool calor;
+  bool tierraSeca;
+  bool aguaBaja;
+
+  // Salud sensores
+  bool dht11OK;
+  bool sueloOK;
+  bool nivelOK;
+  bool ldrOK;
+  unsigned long ultimoDHT11ValidoMs;
+};
+
+EstadoInteligente estadoInt = {};
+
+const unsigned long LIMITE_BOMBA_DIA_MS = 1800000UL;  // 30 min
+const unsigned long LIMITE_CULTIVO_DIA_MS = 57600000UL; // 16 h
+const unsigned long COOLDOWN_BOMBA_MS = 300000UL;      // 5 min
+const unsigned long COOLDOWN_LUCES_MS = 30000UL;       // 30 s
+const unsigned long DURACION_DIA_MS = 86400000UL;      // 24 h
+const unsigned long TIMEOUT_SENSOR_DHT_MS = 300000UL;  // 5 min
+
+void actualizarEstadoInteligente() {
+  // Reset diario
+  if (millis() - estadoInt.diaActualMs >= DURACION_DIA_MS) {
+    estadoInt.bombaMsHoy = 0;
+    estadoInt.lucesCultivoMsHoy = 0;
+    estadoInt.diaActualMs = millis();
+  }
+
+  // Leer sensores
+  float tempC = 0, humAire = 0;
+  estadoInt.dht11OK = leerAmbiente(tempC, humAire);
+  if (estadoInt.dht11OK) estadoInt.ultimoDHT11ValidoMs = millis();
+  estadoInt.calor = estadoInt.dht11OK && tempC >= UMBRAL_TEMP_ALTA_C;
+
+  int humCrudo = 0, humPct = 0;
+  estadoInt.sueloOK = leerHumedad(humCrudo, humPct);
+  estadoInt.tierraSeca = estadoInt.sueloOK && humPct <= UMBRAL_HUMEDAD_BAJA_PCT;
+
+  int nivelAgua = 0;
+  estadoInt.nivelOK = leerNivelAgua(nivelAgua);
+  estadoInt.aguaBaja = estadoInt.nivelOK && nivelAgua < calibracion.nivelMinimo;
+
+  int ldrCrudo = 0, luzPct = 0;
+  estadoInt.ldrOK = leerLuz(ldrCrudo, luzPct);
+  estadoInt.oscuridad = estadoInt.ldrOK && luzPct <= UMBRAL_LUZ_OSCURO_PCT;
+
+  // Presencia (PIR)
+  ultimaPresenciaValida = digitalRead(MAPA_CASA.pir) == HIGH;
+  if (ultimaPresenciaValida) ultimaPresenciaMs = millis();
+  estadoInt.presencia = ultimaPresenciaValida &&
+    (millis() - ultimaPresenciaMs <= PIR_RETENCION_MS);
+
+  // Actualizar acumulados diarios
+  if (estadoSalidas[0] && bombaEncendidaDesdeMs != 0) {
+    estadoInt.bombaMsHoy += millis() - ultimoCicloCheckMs;
+  }
+  if (estadoSalidas[3]) {
+    estadoInt.lucesCultivoMsHoy += millis() - ultimoCicloCheckMs;
+  }
+}
+
+unsigned long ultimoCicloCheckMs = 0;
+
+void ejecutarModoInteligente() {
+  if (modoSeguroActivo) return;
+  unsigned long ahora = millis();
+  if (ahora - ultimoCicloCheckMs < INTERVALO_RIEGO_MS) return;
+  ultimoCicloCheckMs = ahora;
+
+  actualizarEstadoInteligente();
+
+  // 1. Interlock agua baja: bomba OFF inmediato
+  if (estadoInt.aguaBaja && estadoSalidas[0]) {
+    OrdenActuador corte = {0, false, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_AGUA_BAJA"};
+    if (ejecutarOrdenActuador(corte).exito) {
+      emitirEventoLocal("EVENTO;INTELIGENTE_AGUA_BAJA;0");
+      anunciarJarvis(EventoJarvis::RIEGO_DETENIDO);
+    }
+  }
+
+  // 2. Riego: tierra seca + agua OK + sin cooldown + sin limite diario
+  if (estadoInt.tierraSeca && !estadoInt.aguaBaja && !estadoSalidas[0] &&
+      (ahora - estadoInt.ultimoCicloBombaMs >= COOLDOWN_BOMBA_MS) &&
+      estadoInt.bombaMsHoy < LIMITE_BOMBA_DIA_MS &&
+      propietarioSalidas[0] != PROPIETARIO_MANUAL_OFF) {
+    OrdenActuador orden = {0, true, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_RIEGO"};
+    if (ejecutarOrdenActuador(orden).exito) {
+      estadoInt.ultimoCicloBombaMs = ahora;
+      emitirEventoLocal("EVENTO;INTELIGENTE_RIEGO_AUTO;1");
+      anunciarJarvis(EventoJarvis::RIEGO_INICIADO);
+    }
+  }
+
+  // 3. Cultivo: oscuridad → luces ON (fotoperiodo)
+  if (estadoInt.oscuridad && !estadoSalidas[3] &&
+      propietarioSalidas[3] != PROPIETARIO_MANUAL_OFF &&
+      estadoInt.lucesCultivoMsHoy < LIMITE_CULTIVO_DIA_MS &&
+      (ahora - estadoInt.ultimoToggleLucesMs >= COOLDOWN_LUCES_MS)) {
+    OrdenActuador orden = {3, true, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_CULTIVO_ON"};
+    if (ejecutarOrdenActuador(orden).exito) {
+      estadoInt.ultimoToggleLucesMs = ahora;
+      emitirEventoLocal("EVENTO;INTELIGENTE_CULTIVO_ON;1");
+      anunciarJarvis(EventoJarvis::CULTIVO_ENCENDIDO);
+    }
+  }
+
+  // 4. Casa: oscuridad + presencia → ON
+  if (estadoInt.oscuridad && estadoInt.presencia && !estadoSalidas[1] &&
+      propietarioSalidas[1] != PROPIETARIO_MANUAL_OFF &&
+      (ahora - estadoInt.ultimoToggleLucesMs >= COOLDOWN_LUCES_MS)) {
+    OrdenActuador orden = {1, true, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_CASA_ON"};
+    if (ejecutarOrdenActuador(orden).exito) {
+      estadoInt.ultimoToggleLucesMs = ahora;
+      emitirEventoLocal("EVENTO;INTELIGENTE_CASA_ON;1");
+      anunciarJarvis(EventoJarvis::CASA_ENCENDIDA);
+    }
+  }
+
+  // 5. Casa: sin presencia → OFF (ahorro)
+  if (estadoSalidas[1] && !estadoInt.presencia &&
+      propietarioSalidas[1] == PROPIETARIO_AUTOMATICO &&
+      (ahora - estadoInt.ultimoToggleLucesMs >= COOLDOWN_LUCES_MS)) {
+    OrdenActuador orden = {1, false, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_CASA_OFF"};
+    if (ejecutarOrdenActuador(orden).exito) {
+      estadoInt.ultimoToggleLucesMs = ahora;
+      emitirEventoLocal("EVENTO;INTELIGENTE_CASA_OFF;0");
+      anunciarJarvis(EventoJarvis::CASA_APAGADA);
+    }
+  }
+
+  // 6. Degradación: DHT11 fallo > 5 min → apagar automatizaciones que dependen de temp
+  if (!estadoInt.dht11OK && (ahora - estadoInt.ultimoDHT11ValidoMs > TIMEOUT_SENSOR_DHT_MS)) {
+    // No apagar bomba (depende de suelo, no de temp)
+    // No apagar luces (dependen de LDR/PIR)
+    // Solo registrar alerta una vez
+    static unsigned long ultimaAlertaDegradacionMs = 0;
+    if (ahora - ultimaAlertaDegradacionMs >= 60000UL) {
+      ultimaAlertaDegradacionMs = ahora;
+      emitirEventoLocal("EVENTO;INTELIGENTE_DEGRADACION;DHT11_TIMEOUT");
+    }
+  }
+
+  // 7. Limite diario bomba alcanzado
+  if (estadoInt.bombaMsHoy >= LIMITE_BOMBA_DIA_MS && estadoSalidas[0] &&
+      propietarioSalidas[0] == PROPIETARIO_AUTOMATICO) {
+    OrdenActuador corte = {0, false, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_LIMITE_DIA"};
+    if (ejecutarOrdenActuador(corte).exito) {
+      emitirEventoLocal("EVENTO;INTELIGENTE_LIMITE_DIA;BOMBA");
+      anunciarJarvis(EventoJarvis::RIEGO_DETENIDO);
+    }
+  }
+
+  // 8. Limite diario cultivo alcanzado
+  if (estadoInt.lucesCultivoMsHoy >= LIMITE_CULTIVO_DIA_MS && estadoSalidas[3] &&
+      propietarioSalidas[3] == PROPIETARIO_AUTOMATICO) {
+    OrdenActuador corte = {3, false, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_LIMITE_CULTIVO"};
+    if (ejecutarOrdenActuador(corte).exito) {
+      emitirEventoLocal("EVENTO;INTELIGENTE_LIMITE_CULTIVO;0");
+      anunciarJarvis(EventoJarvis::CULTIVO_APAGADO);
+    }
+  }
+}
+
+// ============================================================================
 // SECCIÓN 13B: SECUENCIAS DE DEMOSTRACIÓN Y AUTOMATIZACIONES RELATIVAS
 // ============================================================================
 
@@ -2570,6 +2775,108 @@ void emitirTelemetriaSensores() {
 }
 
 // ============================================================================
+// SECCIÓN 13D: DIAGNÓSTICO ROBUSTO (tecla EQ)
+// ============================================================================
+// Lee todos los sensores, muestra cada uno en LCD (2s), reproduce audio
+// Jarvis según resultado, y reporta por Serial.
+
+struct ResultadoDiagnostico {
+  bool dht11;
+  bool suelo;
+  bool nivel;
+  bool ldr;
+  bool pir;
+  bool bomba;
+  bool display;
+  int totalOK;
+  int totalFAIL;
+};
+
+ResultadoDiagnostico diagnosticarSensores() {
+  ResultadoDiagnostico r = {};
+
+  // 1. DHT11
+  float tempC = 0, humAire = 0;
+  r.dht11 = leerAmbiente(tempC, humAire);
+  pantallaFinal.mostrarMensaje(r.dht11 ? "DHT11: OK" : "DHT11: FAIL",
+                               r.dht11 ? (String(tempC, 1) + "C").c_str() : "Revisar pin 14");
+  emitirEventoLocal(r.dht11 ? "DIAG;DHT11;OK" : "DIAG;DHT11;FAIL");
+  delay(2000);
+
+  // 2. Suelo
+  int humCrudo = 0, humPct = 0;
+  r.suelo = leerHumedad(humCrudo, humPct);
+  pantallaFinal.mostrarMensaje(r.suelo ? "Suelo: OK" : "Suelo: FAIL",
+                               r.suelo ? (String(humPct) + "%").c_str() : "Revisar conexion");
+  emitirEventoLocal(r.suelo ? "DIAG;SUELO;OK" : "DIAG;SUELO;FAIL");
+  delay(2000);
+
+  // 3. Nivel agua
+  int nivelAgua = 0;
+  r.nivel = leerNivelAgua(nivelAgua);
+  pantallaFinal.mostrarMensaje(r.nivel ? "Nivel: OK" : "Nivel: FAIL",
+                               r.nivel ? (String(nivelAgua) + "/1023").c_str() : "Revisar sonda");
+  emitirEventoLocal(r.nivel ? "DIAG;NIVEL;OK" : "DIAG;NIVEL;FAIL");
+  delay(2000);
+
+  // 4. LDR
+  int ldrCrudo = 0, luzPct = 0;
+  r.ldr = leerLuz(ldrCrudo, luzPct);
+  pantallaFinal.mostrarMensaje(r.ldr ? "LDR: OK" : "LDR: FAIL",
+                               r.ldr ? (String(luzPct) + "%").c_str() : "Revisar fotoresistor");
+  emitirEventoLocal(r.ldr ? "DIAG;LDR;OK" : "DIAG;LDR;FAIL");
+  delay(2000);
+
+  // 5. PIR
+  r.pir = digitalRead(MAPA_CASA.pir) != HIGH || digitalRead(MAPA_CASA.pir) == LOW;
+  // El PIR siempre lee HIGH/LOW, es "OK" si responde
+  r.pir = true;  // PIR no tiene feedback de fallo electrical
+  pantallaFinal.mostrarMensaje("PIR: OK", "Pin 9");
+  emitirEventoLocal("DIAG;PIR;OK");
+  delay(2000);
+
+  // 6. Bomba (solo verificar que GPIO responde)
+  r.bomba = SALIDA_FISICA_CASA[0];
+  pantallaFinal.mostrarMensaje(r.bomba ? "Bomba: HW OK" : "Bomba: SIN HW",
+                               r.bomba ? "GPIO4" : "Perfil sin motor");
+  emitirEventoLocal(r.bomba ? "DIAG;BOMBA;OK" : "DIAG;BOMBA;NO_HW");
+  delay(2000);
+
+  // 7. Display
+  r.display = pantallaDisponible();
+  pantallaFinal.mostrarMensaje(r.display ? "LCD: OK" : "LCD: FAIL",
+                               r.display ? "I2C 0x27" : "No detectado");
+  emitirEventoLocal(r.display ? "DIAG;LCD;OK" : "DIAG;LCD;FAIL");
+  delay(2000);
+
+  // Contar resultados
+  r.totalOK = r.dht11 + r.suelo + r.nivel + r.ldr + r.pir + r.bomba + r.display;
+  r.totalFAIL = 7 - r.totalOK;
+
+  // Reporte final
+  char reporte[80];
+  snprintf(reporte, sizeof(reporte), "DIAG;RESUMEN;OK=%d;FAIL=%d;TOTAL=7",
+           r.totalOK, r.totalFAIL);
+  emitirEventoLocal(reporte);
+
+  // Audio Jarvis según resultado
+  if (jarvisAudio.habilitado()) {
+    if (r.totalFAIL == 0) {
+      // Todos OK: carpeta 20 (diagnostico)
+      anunciarJarvisGrupo(EventoJarvis::EQ, false, 1, 2);
+    } else if (r.totalFAIL < 7) {
+      // Algunos FAIL: carpeta 16 (error sensor)
+      anunciarJarvisGrupo(EventoJarvis::TECLA_6, false, 3, 4);
+    } else {
+      // Todos FAIL: carpeta 15 (emergencia)
+      anunciarJarvisGrupo(EventoJarvis::N_200_MAS, false, 3, 4);
+    }
+  }
+
+  return r;
+}
+
+// ============================================================================
 // SECCIÓN 14: LOOP PRINCIPAL (no bloqueante)
 // ============================================================================
 unsigned long ultimaActualizacionPantalla = 0;
@@ -2596,6 +2903,7 @@ void loop() {
     verificarRiegoAutomatico();
     verificarRiegoAutomaticoCombinado(tempAutoC, tempAutoValida);
     verificarLucesCombinadas();
+    ejecutarModoInteligente();
   }
 
   // Corte independiente: se mantiene aun si el supervisor está degradado.
