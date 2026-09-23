@@ -1,9 +1,9 @@
 /*
- * PROJECT DOMUS — esqueleto del banco actual.
- * Compila literalmente el firmware de producto con el hardware disponible:
- * sensores, LCD, botones, LED, IR y una bomba mediante S8050.
+ * PROJECT DOMUS — esqueleto perfil final.
+ * Compila el firmware con DRV8833 para motores, 74HC595 para luces,
+ * y DFPlayer Mini para audio (perfil CASA_FINAL_DRV8833_DFPLAYER).
  */
-#define DOMUS_PERFIL_CASA 3
+#define DOMUS_PERFIL_CASA 4
 #define DOMUS_SALIDAS_ECONOMICAS 0
 #define MICROSD_HABILITADA false
 
@@ -13,5 +13,8 @@
 bool leerHumedad(int &crudoSalida, int &pctSalida);
 bool leerLuz(int &crudoSalida, int &pctSalida);
 bool leerAmbiente(float &tempCSalida, float &humAireSalida);
+
+// Funciones de hardware del perfil final
+void actualizarLuces74HC595(bool salaEncendida, bool cuartoEncendida, bool cultivoEncendida);
 
 #include "../casa_inteligente_v4/casa_inteligente_v4.ino"

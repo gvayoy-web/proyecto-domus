@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 class EsqueletoUnicoYDiagnosticoTests(unittest.TestCase):
     def test_esqueleto_incluye_literalmente_el_producto_con_perfil_actual(self):
         source = (ROOT / "firmware/domus_esqueleto/domus_esqueleto.ino").read_text(encoding="utf-8")
-        self.assertIn("#define DOMUS_PERFIL_CASA 3", source)
+        self.assertIn("#define DOMUS_PERFIL_CASA 4", source)
         self.assertIn('#include "../casa_inteligente_v4/casa_inteligente_v4.ino"', source)
         for prototype in (
             "bool leerHumedad(int &crudoSalida, int &pctSalida);",

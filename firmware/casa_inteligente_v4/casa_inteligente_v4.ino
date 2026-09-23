@@ -122,6 +122,20 @@
 // ---- Sensor de temperatura/humedad ambiental ----
 #include <DHT.h>                    // "DHT sensor library" de Adafruit (DHT11/DHT22)
 
+// Forward declaration: resultado del diagnostico robusto (tecla EQ).
+// Debe ir antes de los includes de funciones que lo usan.
+struct ResultadoDiagnostico {
+  bool dht11;
+  bool suelo;
+  bool nivel;
+  bool ldr;
+  bool pir;
+  bool bomba;
+  bool display;
+  int totalOK;
+  int totalFAIL;
+};
+
 // ============================================================================
 // SECCIÓN 1: MAPA DE PINES - REVISAR/CALIBRAR A MANO
 // ============================================================================
@@ -220,13 +234,13 @@ struct MapaPinesCasa {
 };
 constexpr MapaPinesCasa MAPA_CASA = {
   15, 16, 3,
-  4, 5, 8, 7, 8,
+  4, 5, 8, 7, 6,
   10, 11, 18, 13, 14, 17, 12,
-  {4, 5, 8, 7, 8}
+  {4, 5, 8, 7, 6}
 };
 DHT dht(MAPA_CASA.dht, TIPO_DHT);
 static_assert(MAPA_CASA.bomba == 4 && MAPA_CASA.casa == 5 && MAPA_CASA.porche == 8 &&
-              MAPA_CASA.cultivo == 7 && MAPA_CASA.spare == 8, "Mapa de salidas del candidato");
+              MAPA_CASA.cultivo == 7 && MAPA_CASA.spare == 6, "Mapa de salidas del candidato");
 static_assert(MAPA_CASA.suelo == 15 && MAPA_CASA.nivel == 16 && MAPA_CASA.sda == 17 &&
               MAPA_CASA.demo == 18 && MAPA_CASA.scl == 13 && MAPA_CASA.ir == 12,
               "Costado accesible autorizado");
@@ -588,9 +602,8 @@ bool driverMotoresAplicarFinal(uint8_t canal, bool activar) {
     digitalWrite(DRV8833_PIN_AIN1, activar ? HIGH : LOW);
     digitalWrite(DRV8833_PIN_AIN2, activar ? LOW : HIGH);
   } else {
-    // Ventilador: BIN1=GPIO5, BIN2=GPIO6
-    digitalWrite(DRV8833_PIN_BIN1, activar ? HIGH : LOW);
-    digitalWrite(DRV8833_PIN_BIN2, activar ? LOW : HIGH);
+    // Canal 1: ventilador eliminado, sin accion
+    return false;
   }
   return true;
 }
@@ -2434,17 +2447,13 @@ if (BOMBA_DIRECTA_S8050)
 
   // Perfil final: inicializar DRV8833
   if (PERFIL_CON_DRV8833) {
-    // DRV8833: AIN1=GPIO4, AIN2=GPIO7, BIN1=GPIO5, BIN2=GPIO6
-    // nSLEEP → VCC
+    // DRV8833: AIN1=GPIO4, AIN2=GPIO7 (bomba canal A)
+    // Canal B (ventilador) eliminado
     pinMode(DRV8833_PIN_AIN1, OUTPUT);
     pinMode(DRV8833_PIN_AIN2, OUTPUT);
-    pinMode(DRV8833_PIN_BIN1, OUTPUT);
-    pinMode(DRV8833_PIN_BIN2, OUTPUT);
     digitalWrite(DRV8833_PIN_AIN1, LOW);
     digitalWrite(DRV8833_PIN_AIN2, LOW);
-    digitalWrite(DRV8833_PIN_BIN1, LOW);
-    digitalWrite(DRV8833_PIN_BIN2, LOW);
-    log("DRV8833", "DRV8833 inicializado (luces directas GPIO)");
+    log("DRV8833", "DRV8833 inicializado (bomba canal A, canal B eliminado)");
   }
 
 if (MP3_HABILITADO) {
@@ -2777,18 +2786,6 @@ void emitirTelemetriaSensores() {
 // ============================================================================
 // Lee todos los sensores, muestra cada uno en LCD (2s), reproduce audio
 // Jarvis según resultado, y reporta por Serial.
-
-struct ResultadoDiagnostico {
-  bool dht11;
-  bool suelo;
-  bool nivel;
-  bool ldr;
-  bool pir;
-  bool bomba;
-  bool display;
-  int totalOK;
-  int totalFAIL;
-};
 
 ResultadoDiagnostico diagnosticarSensores() {
   ResultadoDiagnostico r = {};

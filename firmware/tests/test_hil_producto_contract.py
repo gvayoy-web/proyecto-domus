@@ -13,7 +13,7 @@ class HilProductoContractTests(unittest.TestCase):
         cls.source = HIL.read_text(encoding="utf-8")
 
     def test_apunta_al_perfil_de_producto_vigente(self):
-        self.assertIn('PROFILE = "BANCO_COMPLETO_S8050_IR"', self.source)
+        self.assertIn('PROFILE = "CASA_FINAL_DRV8833_DFPLAYER"', self.source)
         self.assertIn('DOMUS_PORT', self.source)
 
     def test_no_ordena_encender_motores(self):

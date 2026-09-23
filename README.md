@@ -5,7 +5,7 @@
 [![Platform](https://img.shields.io/badge/Platform-ESP32--S3-ff69b4.svg)](https://www.espressif.com/en/products/socs/esp32-s3)
 [![Framework](https://img.shields.io/badge/Arduino%20ESP32-3.3.10-004422.svg)](https://github.com/espressif/arduino-esp32)
 [![Tests](https://img.shields.io/badge/Tests-102_passed_0_failed-brightgreen.svg)](firmware/tests)
-[![Profile](https://img.shields.io/badge/Profile-BANCO--COMPLETO--S8050_IR-blue.svg)](obsidian/proyect%20domus/63%20-%20Auditoria%20total%20de%20Obsidian%20y%20estado%20real.md)
+[![Profile](https://img.shields.io/badge/Profile-CASA_FINAL_DRV8833_DFPLAYER-green.svg)](obsidian/proyect%20domus/71%20-%20Perfil%20CASA_FINAL_DRV8833_DFPLAYER.md)
 [![Version](https://img.shields.io/badge/Version-v4.0-4A90E2.svg)](https://github.com/Isaac/casa_inteligente_v4/commits/proyecdomus)
 [![Lines](https://img.shields.io/badge/Code-1.9K-orange.svg)](firmware/casa_inteligente_v4/casa_inteligente_v4.ino)
 [![Obsidian](https://img.shields.io/badge/Docs-Obsidian-9944FF.svg)](obsidian/proyect%20domus)
@@ -18,13 +18,19 @@ Casa inteligente local para una maqueta con **ESP32-S3 N16R8** (16MB Flash / 8MB
 
 | Métrica | Valor |
 |---|---|
-| **Tests pasando** | 102 passed, 0 failed ✅ |
-| **Tests contrato** | 26/26 ⭐ |
-| **Tests audio** | 12/12 ⭐ |
-| **Líneas de firmware** | ~1,918 |
+| **Tests pasando** | 49+ passed, 0 failed ✅ (contract, HIL, audio, pantalla) |
+| **Tests contrato** | 27/27 ⭐ |
+| **Tests audio** | 13/13 ⭐ |
+| **Tests pantalla** | 5/5 ⭐ |
+| **Líneas de firmware** | ~2,700 |
 | **Firmware Flash** | 14% |
 | **Firmware RAM** | 8% |
-| **Perfil actual** | `BANCO_COMPLETO_S8050_IR` |
+| **Perfil actual** | `CASA_FINAL_DRV8833_DFPLAYER` (perfil 4) |
+| **Firmware en COM9** | Perfil 4 code listo, pendiente compilar/upload |
+
+> **Nota 70**: Mejoras de firmware 2026-09-18: DIAGNOSTICO ampliado, `PINTEST_ALL`, optimización de automatizaciones combinadas, corrección de indentación y tests. Ver [[70 - Mejoras firmware 2026-09-18]].
+
+> **Nota 71**: Perfil `CASA_FINAL_DRV8833_DFPLAYER` implementado con DRV8833, 74HC595 y DFPlayer. Ver [[71 - Perfil CASA_FINAL_DRV8833_DFPLAYER]].
 
 ## ✨ Características Implementadas
 
@@ -86,14 +92,17 @@ La compilación de producto para ESP32-S3 usa Arduino-ESP32 3.3.10 y las bibliot
 
 | Test Suite | Resultados |
 |---|---|
-| `test_firmware_contract.py` | 26/26 ⭐ |
-| `test_hil_producto_contract.py` | 3/3 ⭐ |
-| `test_jarvis_audio.py` | 12/12 ⭐ |
-| `test_pantalla_final.py` | 5/5 (incluye nativo g++) |
+| `test_firmware_contract.py` | 27/27 ⭐ |
+| `test_hil_producto_contract.py` | 4/4 ⭐ |
+| `test_jarvis_audio.py` | 13/13 ⭐ |
+| `test_pantalla_final.py` | 5/5 ⭐ (incluye nativo g++) |
 | `test_casa_candidato.py` + `test_native_safety.py` | nativos en verde |
-| **Total** | **102 passed, 0 failed** 🟢 |
+| `test_native_firmware.py` | nativos en verde |
+| **Total** | **49+ passed, 0 failed** 🟢 |
 
 _(8 skipped = HIL, requiere placa física conectada)_
+
+**Mejoras 2026-09-18**: `PINTEST_ALL` añadido, DIAGNOSTICO con ADC crudos y calibración, optimización de automatizaciones combinadas (una sola lectura DHT), corrección de indentación en `domus_pantalla.h`, corrección de import en `test_pantalla_final.py`.
 
 ## 📄 Licencia
 

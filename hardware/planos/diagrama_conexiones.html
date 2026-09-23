@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DOMUS Perfil 4 · Diagrama de Conexiones Eléctricas Completo</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Consolas','Segoe UI',monospace;background:#050a12;color:#b8c8d8;overflow-x:hidden}header{background:linear-gradient(180deg,#0c1525,#050a12);padding:16px 24px;border-bottom:2px solid #1a3a5c;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}h1{font-size:18px;background:linear-gradient(90deg,#00d4ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}h2{color:#00d4ff;font-size:14px;margin:24px 0 8px;border-bottom:2px solid #1a3a5c;padding-bottom:4px;text-transform:uppercase;letter-spacing:.05em}.badge{background:#0f1a28;color:#00d4ff;padding:4px 14px;border-radius:12px;font-size:11px;border:1px solid #1a3a5c;font-weight:600}.container{max-width:1400px;margin:0 auto;padding:12px 16px}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}th{background:#0a1520;color:#00d4ff;padding:8px 10px;text-align:left;border:1px solid #1a3a5c;font-size:11px;text-transform:uppercase;letter-spacing:.03em}td{padding:6px 10px;border:1px solid #152030;color:#8ab4d8;font-size:11px}tr:hover{background:#0f1a28}td:first-child{color:#00d4ff;font-weight:700;white-space:nowrap}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}section{background:#0a1018;border:1px solid #152030;border-radius:8px;padding:16px;margin:12px 0}.warn{background:#1a0810;border-left:4px solid #ff4466;padding:10px 14px;margin:8px 0;font-size:11px;color:#ff8899;border-radius:0 4px 4px 0}.ok{background:#081a0f;border-left:4px solid #44ff66;padding:10px 14px;margin:8px 0;font-size:11px;color:#88ffaa;border-radius:0 4px 4px 0}.info{background:#081018;border-left:4px solid #00d4ff;padding:10px 14px;margin:8px 0;font-size:11px;color:#8ab4d8;border-radius:0 4px 4px 0}.diagram-svg{width:100%;height:auto;margin:8px 0}svg text{font-family:'Consolas',monospace;font-size:10px}svg .wire{stroke:#3a7aaa;stroke-width:1.5;fill:none;stroke-dasharray:4,2}svg .wire-power{stroke:#ff6644;stroke-width:2;fill:none}svg .wire-data{stroke:#00ff88;stroke-width:1.5;fill:none}svg .pin{fill:#00d4ff;stroke:#00d4ff;stroke-width:1}svg .label{fill:#8ab4d8;font-size:9px}svg .module-name{fill:#00d4ff;font-size:11px;font-weight:700}code{color:#ffaa44;font-size:11px}.pin-indicator{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}.pin-in{background:#00ff88}.pin-out{background:#ff6644}.pin-uart{background:#aa66ff}.pin-i2c{background:#00aaff}.pin-adc{background:#ffaa00}.pin-gpio{background:#00d4ff}footer{text-align:center;padding:20px;color:#2a3a4a;font-size:10px;border-top:1px solid #152030;margin-top:20px}</style></head><body><header><h1>🏠 DOMUS Perfil 4 — Diagrama de Conexiones Completo</h1><div class="badge">✅ Firmware subido a COM9 · ESP32-S3 N16R8 · Perfil 4 · 2026-09-18</div></header><div class="container">
+
+<section><h2>1. Esquema de Conexiones Eléctricas (SVG)</h2>
+<svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+<!-- Power bus -->
+<line x1="50" y1="60" x2="850" y2="60" stroke="#ff6644" stroke-width="3" stroke-dasharray="8,4"/>
+<text x="60" y="55" fill="#ff6644" font-size="11" font-weight="700">5V/2A POWER BUS</text>
+<line x1="50" y1="460" x2="850" y2="460" stroke="#446688" stroke-width="3"/>
+<text x="60" y="455" fill="#446688" font-size="11" font-weight="700">GND COMMON</text>
+
+<!-- ESP32 -->
+<rect x="380" y="140" width="120" height="60" rx="8" fill="#0a1a2a" stroke="#1a7a4a" stroke-width="2"/>
+<text x="440" y="165" fill="#00ff88" font-size="12" font-weight="700" text-anchor="middle">ESP32-S3</text>
+<text x="440" y="185" fill="#5a8aaa" font-size="9" text-anchor="middle">N16R8 · COM9</text>
+
+<!-- DRV8833 -->
+<rect x="100" y="200" width="100" height="70" rx="6" fill="#1a0a0a" stroke="#a01818" stroke-width="2"/>
+<text x="150" y="225" fill="#a01818" font-size="11" font-weight="700" text-anchor="middle">DRV8833</text>
+<text x="150" y="250" fill="#5a8aaa" font-size="9" text-anchor="middle">H-Bridge Dual</text>
+
+<!-- 74HC595 -->
+<rect x="580" y="200" width="100" height="70" rx="6" fill="#0a0a1a" stroke="#18a0a0" stroke-width="2"/>
+<text x="630" y="225" fill="#18a0a0" font-size="11" font-weight="700" text-anchor="middle">74HC595</text>
+<text x="630" y="250" fill="#5a8aaa" font-size="9" text-anchor="middle">Shift Register</text>
+
+<!-- DFPlayer -->
+<rect x="680" y="320" width="100" height="70" rx="6" fill="#1a0a1a" stroke="#aa66ff" stroke-width="2"/>
+<text x="730" y="345" fill="#aa66ff" font-size="11" font-weight="700" text-anchor="middle">DFPlayer</text>
+<text x="730" y="370" fill="#5a8aaa" font-size="9" text-anchor="middle">UART1 MP3</text>
+
+<!-- Source -->
+<rect x="100" y="60" width="100" height="40" rx="6" fill="#1a1a0a" stroke="#ff6644" stroke-width="2"/>
+<text x="150" y="78" fill="#ff6644" font-size="11" font-weight="700" text-anchor="middle">5V/2A</text>
+<text x="150" y="96" fill="#5a8aaa" font-size="9" text-anchor="middle">Fuente</text>
+
+<!-- Wires from ESP32 -->
+<line x1="400" y1="170" x2="200" y2="230" class="wire"/>
+<text x="300" y="200" fill="#3a7aaa" font-size="8" transform="rotate(-20,300,200)">GPIO4/5/6/7</text>
+<line x1="440" y1="180" x2="660" y2="230" class="wire"/>
+<text x="550" y="205" fill="#3a7aaa" font-size="8" transform="rotate(-20,550,205)">GPIO8/11/18</text>
+<line x1="460" y1="190" x2="720" y2="350" class="wire" stroke="#aa66ff" stroke-dasharray="4,2"/>
+<text x="590" y="270" fill="#aa66ff" font-size="8" transform="rotate(-20,590,270)">UART1</text>
+
+<!-- LEDs -->
+<rect x="250" y="350" width="30" height="20" rx="3" fill="#1a1a0a" stroke="#c0b018" stroke-width="1.5"/>
+<text x="265" y="364" fill="#c0b018" font-size="8" text-anchor="middle">LED</text>
+<rect x="390" y="350" width="30" height="20" rx="3" fill="#1a1a0a" stroke="#c0b018" stroke-width="1.5"/>
+<text x="405" y="364" fill="#c0b018" font-size="8" text-anchor="middle">LED</text>
+<rect x="520" y="350" width="30" height="20" rx="3" fill="#1a1a0a" stroke="#c0b018" stroke-width="1.5"/>
+<text x="535" y="364" fill="#c0b018" font-size="8" text-anchor="middle">LED</text>
+
+<!-- Power distribution -->
+<line x1="150" y1="100" x2="440" y2="140" class="wire-power"/>
+<text x="290" y="118" fill="#ff6644" font-size="8">VCC 3.3V/5V</text>
+<line x1="150" y1="100" x2="680" y2="350" class="wire-power" stroke-dasharray="2,2"/>
+<text x="410" y="225" fill="#ff6644" font-size="8">VCC</text>
+<line x1="850" y1="460" x2="150" y2="460" class="wire" stroke="#446688"/>
+<line x1="440" y1="200" x2="440" y2="460" class="wire" stroke="#446688"/>
+</svg>
+</section>
+
+<section><h2>2. Tabla Maestra de Pines del ESP32-S3</h2>
+<table><tr><th>#</th><th>GPIO</th><th>Función Principal</th><th>Tipo</th><th>Módulo</th><th>Estado</th></tr>
+<tr><td>1</td><td>GPIO3</td><td>LDR Fotoresistor (divisor 3V3/R=10k)</td><td><span class="pin-indicator pin-adc">ADC</span></td><td>Sensor luz</td><td>✅ Activo</td></tr>
+<tr><td>2</td><td>GPIO4</td><td>DRV8833 AIN1 (bomba) + UART1 RX (DFPlayer)</td><td><span class="pin-indicator pin-out">OUT</span><span class="pin-indicator pin-uart">UART</span></td><td>Bomba + Audio</td><td>✅ Activo</td></tr>
+<tr><td>3</td><td>GPIO5</td><td>DRV8833 BIN1 (ventilador)</td><td><span class="pin-indicator pin-out">OUT</span></td><td>Ventilador</td><td>✅ Activo</td></tr>
+<tr><td>4</td><td>GPIO6</td><td>DRV8833 BIN2 (ventilador)</td><td><span class="pin-indicator pin-out">OUT</span></td><td>Ventilador</td><td>✅ Activo</td></tr>
+<tr><td>5</td><td>GPIO7</td><td>DRV8833 AIN2 (bomba) + UART1 TX (DFPlayer)</td><td><span class="pin-indicator pin-out">OUT</span><span class="pin-indicator pin-uart">UART</span></td><td>Bomba + Audio</td><td>✅ Activo</td></tr>
+<tr><td>6</td><td>GPIO8</td><td>74HC595 DS (data shift) + Relé salidas</td><td><span class="pin-indicator pin-gpio">GPIO</span></td><td>Luces + Relés</td><td>✅ Activo</td></tr>
+<tr><td>7</td><td>GPIO9</td><td>PIR HC-SR501 (detección movimiento)</td><td><span class="pin-indicator pin-in">IN</span></td><td>Seguridad</td><td>✅ Activo</td></tr>
+<tr><td>8</td><td>GPIO10</td><td>Botón PARO emergencia (INPUT_PULLUP)</td><td><span class="pin-indicator pin-in">IN</span></td><td>Seguridad</td><td>✅ Activo</td></tr>
+<tr><td>9</td><td>GPIO11</td><td>74HC595 SHCP (shift clock) — sacrifica botón SILENCIO</td><td><span class="pin-indicator pin-out">OUT</span></td><td>Luces</td><td>✅ Activo</td></tr>
+<tr><td>10</td><td>GPIO12</td><td>IR Receiver VS1838B (recepción 21 teclas)</td><td><span class="pin-indicator pin-in">IN</span></td><td>Control IR</td><td>✅ Activo</td></tr>
+<tr><td>11</td><td>GPIO13</td><td>LCD 1602 I2C SCL</td><td><span class="pin-indicator pin-i2c">I2C</span></td><td>Pantalla</td><td>✅ Activo</td></tr>
+<tr><td>12</td><td>GPIO14</td><td>DHT11 DATA (temp/humedad ambiental)</td><td><span class="pin-indicator pin-in">IN</span></td><td>Sensor clima</td><td>✅ Activo</td></tr>
+<tr><td>13</td><td>GPIO15</td><td>Sensor humedad suelo (ADC1)</td><td><span class="pin-indicator pin-adc">ADC</span></td><td>Riego</td><td>✅ Activo</td></tr>
+<tr><td>14</td><td>GPIO16</td><td>Sensor nivel agua tanque (ADC1)</td><td><span class="pin-indicator pin-adc">ADC</span></td><td>Riego</td><td>✅ Activo</td></tr>
+<tr><td>15</td><td>GPIO17</td><td>LCD 1602 I2C SDA</td><td><span class="pin-indicator pin-i2c">I2C</span></td><td>Pantalla</td><td>✅ Activo</td></tr>
+<tr><td>16</td><td>GPIO18</td><td>74HC595 STCP (storage clock) — sacrifica botón MODO</td><td><span class="pin-indicator pin-out">OUT</span></td><td>Luces</td><td>✅ Activo</td></tr>
+</table>
+</section>
+
+<section><h2>3. DRV8833 — Driver Dual H-Bridge (Motores)</h2>
+<div class="grid2">
+<table><tr><th>ESP32</th><th>DRV8833</th><th>Función</th><th>Lógica</th></tr>
+<tr><td>GPIO4</td><td>AIN1</td><td>Bomba — Canal A Entrada 1</td><td>HIGH → forward</td></tr>
+<tr><td>GPIO7</td><td>AIN2</td><td>Bomba — Canal A Entrada 2</td><td>HIGH → reverse</td></tr>
+<tr><td>GPIO5</td><td>BIN1</td><td>Ventilador — Canal B Entrada 1</td><td>HIGH → forward</td></tr>
+<tr><td>GPIO6</td><td>BIN2</td><td>Ventilador — Canal B Entrada 2</td><td>HIGH → reverse</td></tr>
+<tr><td>3V3</td><td>nSLEEP</td><td>Habilitación del driver</td><td>→ VCC (HIGH)</td></tr>
+<tr><td>GND</td><td>GND</td><td>Tierra común</td><td>Compartida</td></tr>
+</table>
+<div class="info"><b>🪫 Alimentación motores:</b> Fuente externa <b>5V/2A</b> → pin Vms del DRV8833. <b>GND de la fuente → GND del ESP32 (tierra común obligatoria)</b>. El DRV8833 consume hasta 1.8A/A (bomba + ventilador en simultáneo).</div>
+<div class="warn"><b>⚠️ Pin compartido:</b> GPIO4 y GPIO7 están dualmente asignados a DRV8833 <b>y</b> UART1 (DFPlayer). El DRV8833 escribe directamente en GPIO. El DFPlayer solo usa UART. No usar GPIO4/GPIO7 como salidas digitales adicionales.</div>
+</div>
+</section>
+
+<section><h2>4. 74HC595 — Shift Register para 3 LEDs</h2>
+<div class="grid2">
+<table><tr><th>ESP32</th><th>74HC595</th><th>Pin</th><th>Función</th></tr>
+<tr><td>GPIO8</td><td>DS</td><td>14</td><td>Datos serie entrada</td></tr>
+<tr><td>GPIO11</td><td>SH_CP</td><td>11</td><td>Reloj de desplazamiento</td></tr>
+<tr><td>GPIO18</td><td>ST_CP</td><td>12</td><td>Reloj de almacenamiento</td></tr>
+<tr><td>3V3</td><td>OE</td><td>13</td><td>Habilitado (LOW = activo)</td></tr>
+<tr><td>3V3</td><td>MR</td><td>10</td><td>Reset (HIGH)</td></tr>
+<tr><td>GND</td><td>GND</td><td>8</td><td>Tierra</td></tr>
+<tr><td>VCC</td><td>Q0-Q7</td><td>1-7,15</td><td>8 salidas paralelo</td></tr>
+</table>
+<div class="info"><b>💡 Salidas:</b> <b>Q0→LED Luz Sala</b> · <b>Q1→LED Luz Cuarto</b> · <b>Q2→LED Luz Cultivo</b>. Cada LED con resistencia limitadora <b>220Ω-470Ω</b>. Los pines SHCP (GPIO11) y STCP (GPIO18) sacrifican los botones físicos SILENCIO y MODO. Secuencia: shift 8 bits → latch → salidas actualizadas.</div>
+</div>
+</section>
+
+<section><h2>5. DFPlayer Mini — Reproductor MP3 por UART1</h2>
+<table><tr><th>ESP32</th><th>DFPlayer</th><th>Función</th><th>Nota</th></tr>
+<tr><td>GPIO4 (UART1 RX)</td><td>TX</td><td>Datos ESP32 → DFPlayer</td><td>Compartido con DRV8833 AIN1</td></tr>
+<tr><td>GPIO7 (UART1 TX)</td><td>RX</td><td>Datos DFPlayer → ESP32</td><td>Compartido con DRV8833 AIN2</td></tr>
+<tr><td>5V</td><td>VCC</td><td>Alimentación</td><td>Desde fuente 5V/2A</td></tr>
+<tr><td>GND</td><td>GND</td><td>Tierra común</td><td>Compartida</td></tr>
+<tr><td>—</td><td>SPK1/SPK2</td><td>Salida altavoz</td><td>Parlante 4Ω/3W</td></tr>
+<tr><td>—</td><td>BUSY</td><td>Detección reproducción</td><td>Conectado a GPIO (-1 si no usa)</td></tr>
+</table>
+<div class="info"><b>🔊 Especificaciones:</b> 168 archivos MP3 (1 por tecla IR) en carpeta <code>/mp3</code> de MicroSD. Puerto: <code>transporteDFPlayer.begin(4, 7, MP3_BUSY_PIN)</code>. Baud rate: 9600. Audio actualmente <b>APLAZADO</b> — espera módulo MAX98306 compatible.</div>
+<div class="warn"><b>⚠️ Audio APLAZADO:</b> El firmware tiene el audio deshabilitado por defecto. Se necesita un altavoz compatible MAX98306 y los 168 archivos MP3. El código está preparado (domus_dfplayer.h, domus_jarvis_audio.h) pero sin activar.</div>
+</section>
+
+<section><h2>6. Sensor DHT11 — Temperatura/Humedad Ambiental</h2>
+<table><tr><th>ESP32</th><th>DHT11</th><th>Tipo</th><th>Nota</th></tr>
+<tr><td>GPIO14</td><td>DATA</td><td>Digital IN</td><td>+ R=4.7k pull-up a VCC</td></tr>
+<tr><td>3V3</td><td>VCC</td><td>Alimentación</td><td>3.3V</td></tr>
+<tr><td>GND</td><td>GND</td><td>Tierra</td><td>—</td></tr>
+</table>
+<div class="info"><b>🌡️ Especificaciones:</b> Rango: 0-50°C · Humedad: 20-90%HR · Precisión: ±2°C, ±5%HR · Actualización: ~1 lectura/segundo. <b>DISTINTO del sensor de humedad de suelo</b> (GPIO15). El DHT11 mide el <b>aire</b> alrededor de la maceta, no la tierra. Backoff: reintento cada 60s si suspendido.</div>
+</section>
+
+<section><h2>7. LCD 1602 con Módulo I2C (PCF8574)</h2>
+<table><tr><th>ESP32</th><th>LCD I2C</th><th>Tipo</th><th>Nota</th></tr>
+<tr><td>GPIO13</td><td>SCL</td><td>I2C Clock</td><td>Reloj I2C</td></tr>
+<tr><td>GPIO17</td><td>SDA</td><td>I2C Data</td><td>Datos I2C</td></tr>
+<tr><td>3V3</td><td>VCC</td><td>Alimentación</td><td>Dirección 0x27 o 0x3F</td></tr>
+<tr><td>GND</td><td>GND</td><td>Tierra</td><td>—</td></tr>
+</table>
+<div class="info"><b>📺 Pantalla:</b> LCD 16×2 caracteres con módulo backlight PCF8574. Dirección I2C: <code>0x27</code> (más común) o <code>0x3F</code>. Se detecta automáticamente en setup(). Librería: <code>LiquidCrystal_I2C</code>. Muestra configuración, estado y valores de sensores.</div>
+</section>
+
+<section><h2>8. LDR + PIR + IR + Botón PARO</h2>
+<table><tr><th>ESP32</th><th>Dispositivo</th><th>Tipo</th><th>Especificación</th></tr>
+<tr><td>GPIO3</td><td>LDR Fotoresistor</td><td>Divisor</td><td>3V3 → R=10k → GPIO3 → LDR → GND. Calibrado como LUZ_PCT (0-100%)</td></tr>
+<tr><td>GPIO9</td><td>PIR HC-SR501</td><td>Digital IN</td><td>Alcance ~7m, ángulo ~120°, tiempo de detección ~5s</td></tr>
+<tr><td>GPIO10</td><td>Botón PARO</td><td>INPUT_PULLUP</td><td>LOW = paro emergencia activo. Con resistencia pull-up interna</td></tr>
+<tr><td>GPIO12</td><td>IR Receiver VS1838B</td><td>Digital IN</td><td>Protocolo NEC. 21 teclas mapeadas. Rango ~3-5m</td></tr>
+</table>
+</section>
+
+<section><h2>9. Sensores de Suelo y Nivel de Agua</h2>
+<table><tr><th>ESP32</th><th>Sensor</th><th>Tipo</th><th>Calibración</th><th>Uso</th></tr>
+<tr><td>GPIO15</td><td>Sensor humedad suelo</td><td>ADC1 (12-bit)</td><td>Seco=2800, Húmedo=1200</td><td>HUM_PCT (0-100%) · Riego automático</td></tr>
+<tr><td>GPIO16</td><td>Sensor nivel agua</td><td>ADC1 (12-bit)</td><td>0-4095 rango</td><td>VerificarLimiteBomba() · Nivel tanque</td></tr>
+</table>
+</section>
+
+<section><h2>10. Flujo de Control del Firmware</h2>
+<pre>
+┌─────────────────────────────────────────────────────────────────┐
+│                    FUENTES DE COMANDO                           │
+│  IR Remote · Serial USB · Botón PARO · Automatismo local        │
+└──────────────────────────┬──────────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    DESPACHADOR (revisarControlesFisicos)         │
+│                                                                 │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
+│  │ Seguridad   │  │ MODO_SEGURO  │  │ DRIVER_MOTORES_LISTO │   │
+│  │ EMERGENCIA  │  │ Validación   │  │ F1 acreditada +      │   │
+│  │ → PARO      │  │ Perfil 4     │  │ PERFIL_CON_DRV8833  │   │
+│  └─────────────┘  └──────────────┘  └──────────────────────┘   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  ejecutarOrdenActuador()                        │
+│                                                                 │
+│  if (salida_no_instalada) → NACK                                │
+│  if (driver_no_listo) → NACK                                    │
+│  if (DRIVER_MOTORES_LISTO) → driverMotoresAplicarFinal()       │
+└──────────────────────────┬──────────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  SALIDAS FÍSICAS                                  │
+│                                                                 │
+│  DRV8833:  Bomba (GPIO4/7) · Ventilador (GPIO5/6)               │
+│  74HC595:  LED Sala (Q0) · LED Cuarto (Q1) · LED Cultivo (Q2)   │
+│  Relés:    Salida lógica GPIO8 (HIGH activo)                    │
+└──────────────────────────┬──────────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  TELEMETRÍA SENSORES (SENSORES;)                │
+│                                                                 │
+│  ┌────────────────┐ ┌────────────────┐ ┌──────────────────┐   │
+│  │ HUM_PCT        │ │ TEMP_C         │ │ LUZ_PCT          │   │
+│  │ Suelo (GPIO15) │ │ Aire (GPIO14) │ │ LDR (GPIO3)     │   │
+│  └────────────────┘ └────────────────┘ └──────────────────┘   │
+│  ┌────────────────┐ ┌────────────────┐                        │
+│  │ NIVEL_AGUA     │ │ EMERGENCIA     │                        │
+│  │ (GPIO16)       │ │ · MODO_SEGURO  │                        │
+│  └────────────────┘ └────────────────┘                        │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+</section>
+
+<section><h2>11. Distribución de Alimentación</h2>
+<table><tr><th>Componente</th><th>Voltaje</th><th>Corriente</th><th>Fuente</th><th>Nota</th></tr>
+<tr><td>ESP32-S3</td><td>3.3V</td><td>~240mA</td><td>USB CH343</td><td>Consumo base</td></tr>
+<tr><td>DRV8833 (Vms)</td><td>5V</td><td>Hasta 2A</td><td>Fuente 5V/2A</td><td>Bomba + ventilador</td></tr>
+<tr><td>DFPlayer Mini</td><td>5V</td><td>~100mA</td><td>Fuente 5V/2A</td><td>MP3 + altavoz</td></tr>
+<tr><td>LCD 1602 I2C</td><td>5V</td><td>~100mA</td><td>Fuente 5V/2A</td><td>Con backlight</td></tr>
+<tr><td>Relés (×2)</td><td>3.3V</td><td>~40mA</td><td>ESP32 GPIO</td><td>Salida lógica</td></tr>
+<tr><td>74HC595</td><td>3.3V</td><td>~20mA</td><td>ESP32 GPIO</td><td>Shift register</td></tr>
+<tr><td>Sensores (×6)</td><td>3.3V</td><td>~1-20mA</td><td>ESP32 GPIO VCC</td><td>LDR, PIR, DHT11, IR, suelo, nivel</td></tr>
+<tr><td>LEDs (×3)</td><td>3.3V</td><td>~20mA</td><td>74HC595 Q0-Q2</td><td>Con resistencias 220Ω</td></tr>
+</table>
+<div class="warn"><b>⚠️ TIERRA COMÚN OBLIGATORIA:</b> El GND del ESP32, el GND de la fuente 5V/2A, y el GND de TODOS los módulos deben estar conectados al MISMO punto de referencia. Una tierra flotante causa lecturas erráticas de ADC y comportamiento inestable del DRV8833.</div>
+</section>
+
+<section><h2>12. Estado Actual del Sistema</h2>
+<table><tr><th>Aspecto</th><th>Valor</th><th>Estado</th></tr>
+<tr><td>Compilación</td><td>422,873 bytes flash (32%)</td><td><span class="pin-indicator pin-out">✅</span></td></tr>
+<tr><td>RAM</td><td>28,904 bytes (8%)</td><td><span class="pin-indicator pin-out">✅</span></td></tr>
+<tr><td>Subida</td><td>COM9 · ESP32-S3 QFN56</td><td><span class="pin-indicator pin-out">✅</span></td></tr>
+<tr><td>Perfil</td><td>CASA_FINAL_DRV8833_DFPLAYER</td><td><span class="pin-indicator pin-out">✅</span></td></tr>
+<tr><td>Tests</td><td>106/106 pasando</td><td><span class="pin-indicator pin-out">✅</span></td></tr>
+<tr><td>F1 Validación</td><td>DOMUS_DRIVER_VALIDADO=0</td><td><span class="pin-indicator pin-in">⚠️</span></td></tr>
+<tr><td>Audio DFPlayer</td><td>APLAZADO</td><td><span class="pin-indicator pin-in">⏳</span></td></tr>
+<tr><td>HIL test_05</td><td>Fallas comando LUZ1_ON</td><td><span class="pin-indicator pin-in">⏳</span></td></tr>
+</table>
+<div class="ok"><b>✅ RESUMEN:</b> Firmware perfil 4 completamente compilado y subido al ESP32-S3 en COM9. DRV8833, 74HC595, y DFPlayer configurados en el código. Motores y luces funcionales una vez validada la puerta F1 (verificación física del módulo DRV8833). Audio pendiente de recepción del altavoz MAX98306 y los 168 archivos MP3.</div>
+</section>
+
+<footer><p>DOMUS Proyecto de Feria de Ciencias — Isaac · Perfil 4 CASA_FINAL_DRV8833_DFPLAYER · Documento generado 2026-09-18</p></footer>
+</div></body></html>

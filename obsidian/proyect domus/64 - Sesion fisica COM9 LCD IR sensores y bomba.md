@@ -128,7 +128,20 @@ siguiente prueba.
    botón 5 tiene autoridad para solicitar riego cuando el mapa está aprendido.
 5. Revisar la etapa S8050 sin energizar; luego repetir una prueba breve y
    vigilada antes de intentar automatización.
+6. Usar `PINTEST_ALL` para escanear todos los GPIO del lado usable y
+   verificar que todos los sensores están correctamente conectados.
+
+## Mejoras de firmware 2026-09-18
+
+Se aplicaron mejoras al firmware antes de recompilar:
+- `PINTEST_ALL`: comando Serial para escanear GPIO 3-18 en una sola ejecución
+- `DIAGNOSTICO` ampliado: incluye ADC crudos (suelo, nivel, LDR) y valores de calibración
+- Optimización de automatizaciones combinadas: una sola lectura DHT por ciclo
+- Corrección de indentación en `domus_pantalla.h`
+- Corrección de import en `test_pantalla_final.py` (49/49 pruebas pasando)
+- 168 MP3, 21 eventos, LCD 7 vistas, IR 21 teclas: todo funcional en software
 
 Relacionadas: [[63 - Auditoria total de Obsidian y estado real]],
-[[59 - Firmware unico y perfil banco S8050 IR]] y
+[[59 - Firmware unico y perfil banco S8050 IR]],
+[[70 - Mejoras firmware 2026-09-18]] y
 `docs/SESION_REAL_IR_S8050.md`.

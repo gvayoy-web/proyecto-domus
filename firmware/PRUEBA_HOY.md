@@ -2,10 +2,11 @@
 
 ## Qué cargar
 
-Carga `firmware/domus_esqueleto/domus_esqueleto.ino`: este archivo define el
-perfil 3 `BANCO_COMPLETO_S8050_IR` e incluye literalmente
-`firmware/casa_inteligente_v4/casa_inteligente_v4.ino`. El esqueleto anterior
-de regresión está en `firmware/legacy/domus_esqueleto`.
+Para el perfil final `CASA_FINAL_DRV8833_DFPLAYER` (perfil 4), carga
+`firmware/domus_esqueleto/domus_esqueleto.ino`. Este archivo define el
+perfil 4 e incluye literalmente `firmware/casa_inteligente_v4/casa_inteligente_v4.ino`.
+
+El esqueleto del banco (perfil 3) está en `firmware/legacy/domus_esqueleto`.
 
 Para aprender las 21 teclas y probar sensores y bomba por etapas, sigue la
 [sesión real IR + S8050](../docs/SESION_REAL_IR_S8050.md).

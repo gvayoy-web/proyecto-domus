@@ -1,8 +1,9 @@
-"""HIL seguro para el banco actual de DOMUS (firmware de producto, perfil 3).
+"""HIL seguro para DOMUS (firmware de producto, perfil 4).
 
 No flashea la placa ni enciende motores. Prueba protocolo serie, sensores,
-LCD/IR detectados, LEDs y enclavamientos. El operador debe indicar DOMUS_PORT
-si hay cero o varios puertos candidatos. Sin placa o sin pyserial: SKIP claro.
+LCD/IR detectados, luces via 74HC595 y DRV8833, y audio DFPlayer.
+El operador debe indicar DOMUS_PORT si hay cero o varios puertos candidatos.
+Sin placa o sin pyserial: SKIP claro.
 """
 import os
 import time
@@ -16,8 +17,9 @@ except ImportError:  # pragma: no cover - dependencia exclusiva de HIL
     list_ports = None
 
 BAUD = 115200
-PROFILE = "BANCO_COMPLETO_S8050_IR"
-LED_COMMANDS = (("LUZ1", "Luz Sala"), ("LUZ2", "Luz Cuarto"), ("INVER", "Luz Inv."))
+PROFILE = "CASA_FINAL_DRV8833_DFPLAYER"
+LED_COMMANDS = (("LUZ1", "Casa"), ("LUZ2", "Porche"), ("INVER", "Cultivo"))
+MOTOR_COMMANDS = (("RIEGO_ON", "Bomba"), ("VENT_ON", "Spare"))
 
 
 def resolve_port():
@@ -83,7 +85,7 @@ class HilProductoBancoTests(unittest.TestCase):
         if f"PERFIL_CANDIDATO={PROFILE};" not in diagnostic:
             cls.board.close()
             raise unittest.SkipTest(
-                f"{port} no ejecuta el perfil 3 vigente: {diagnostic or 'sin respuesta'}"
+                f"{port} no ejecuta el perfil vigente: {diagnostic or 'sin respuesta'}"
             )
         cls.port = port
 
@@ -99,14 +101,14 @@ class HilProductoBancoTests(unittest.TestCase):
     def test_01_identidad_y_diagnostico(self):
         line = first(self.board.cmd("DIAGNOSTICO", wait=2.0), "DIAGNOSTICO;")
         self.assertIn(f"PERFIL_CANDIDATO={PROFILE};", line)
-        for field in ("WATCHDOG=", "PANTALLA=", "IR=ON", "BOMBA_ETAPA=S8050_GPIO4"):
+        for field in ("WATCHDOG=", "PANTALLA=", "IR=ON", "BOMBA_ETAPA=DRV"):
             self.assertIn(field, line)
 
     def test_02_estado_contiene_sensores_y_seguridad(self):
         line = first(self.board.cmd("ESTADO"), "ESTADO;")
         for field in (
-            "Bomba=", "Luz Sala=", "Luz Cuarto=", "Ventilador=", "Luz Inv.=",
-            "HUM_PCT=", "NIVEL_AGUA=", "PIR=", "TEMP_C=", "HUM_AIRE_PCT=",
+            "Bomba=", "Casa=", "Porche=", "Cultivo=", "Spare=",
+            "HUM_PCT=", "NIVEL_AGUA=", "TEMP_C=", "HUM_AIRE_PCT=",
             "LUZ_PCT=", "EMERGENCIA=", "MODO_SEGURO=",
         ):
             self.assertIn(field, line)
@@ -151,7 +153,7 @@ class HilProductoBancoTests(unittest.TestCase):
         self.assertTrue(any("NACK;LUZ1_ON;" in x and "paro" in x.lower() for x in blocked), blocked)
         self.assertTrue(first(self.board.cmd("REARMAR"), "ACK;REARMAR;SEGURO"))
         final = first(self.board.cmd("ESTADO"), "ESTADO;")
-        for name in ("Bomba", "Luz Sala", "Luz Cuarto", "Ventilador", "Luz Inv."):
+        for name in ("Bomba", "Casa", "Porche", "Cultivo"):
             self.assertIn(f"{name}=0;", final)
 
 

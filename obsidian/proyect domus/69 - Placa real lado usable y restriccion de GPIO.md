@@ -54,5 +54,15 @@ marca 495/2727/425. Con la restricción de esta nota, el sospechoso pasa a ser
 la fila compartida de la protoboard o el propio devkit, no el chip en general.
 Test guardián: `test_lado_usable` (solo GPIO 3–18 en `MAPA_CASA`).
 
+## Comando PINTEST_ALL (mejora firmware 2026-09-18)
+
+Nuevo comando Serial `PINTEST_ALL` que escanea todos los GPIO del lado usable (3-18)
+en una sola ejecución. Muestra para cada pin: crudo, pull-up, pull-down y estado
+FLOTANTE/CONECTADO. Útil para diagnóstico rápido de todo el costado accesible.
+
+Comando: `PINTEST_ALL` (por Serial, 115200)
+Salida esperada: líneas `PINTEST;GPIO=N;CRUDO=X;PULLUP=Y;PULLDOWN=Z;ESTADO`
+
 Relacionadas: [[55 - Correccion auditoria 5 mapa fuente driver]],
-[[64 - Sesion fisica COM9 LCD IR sensores y bomba]].
+[[64 - Sesion fisica COM9 LCD IR sensores y bomba]],
+[[70 - Mejoras firmware 2026-09-18]].

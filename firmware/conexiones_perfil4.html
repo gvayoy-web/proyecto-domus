@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOMUS Perfil 4 — Diagrama de Conexiones</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #1a1a2e; color: #eee; }
+  .header { text-align: center; padding: 20px; background: #16213e; border-bottom: 2px solid #0f3460; }
+  .header h1 { color: #e94560; font-size: 1.6em; }
+  .header p { color: #aaa; font-size: 0.9em; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .board { background: #0f3460; border: 3px solid #e94560; border-radius: 12px; padding: 20px; margin-bottom: 30px; position: relative; }
+  .board-title { text-align: center; color: #e94560; font-size: 1.3em; margin-bottom: 15px; font-weight: bold; }
+  .gpio-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .gpio-pin { padding: 8px 4px; border-radius: 6px; text-align: center; font-size: 0.72em; font-weight: bold; position: relative; }
+  .gpio-pin.out { background: #2d6a4f; border: 1px solid #40916c; color: #b7e4c7; }
+  .gpio-pin.in { background: #1d3557; border: 1px solid #457b9d; color: #a8dadc; }
+  .gpio-pin.analog { background: #4a1942; border: 1px solid #7b2d8e; color: #e0b0ff; }
+  .gpio-pin .pin-num { color: #fff; font-size: 0.9em; }
+  .gpio-pin .pin-fn { color: #ccc; font-size: 0.6em; margin-top: 2px; }
+  .module { background: #16213e; border: 2px solid #533483; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+  .module h3 { color: #c77dff; font-size: 1em; margin-bottom: 10px; }
+  .module-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+  .module-table th { background: #533483; color: #fff; padding: 6px; text-align: left; }
+  .module-table td { padding: 5px 8px; border-bottom: 1px solid #2a2a4a; }
+  .module-table tr:hover { background: #1a1a3e; }
+  .pin-badge { display: inline-block; background: #e94560; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; }
+  .power-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-bottom: 15px; }
+  .power-table th { background: #2d6a4f; color: #fff; padding: 6px; text-align: left; }
+  .power-table td { padding: 5px 8px; border-bottom: 1px solid #2a4a2a; }
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8em; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .dot-out { background: #2d6a4f; }
+  .dot-in { background: #1d3557; }
+  .dot-analog { background: #4a1942; }
+  .dot-shared { background: #e94560; }
+  .footer { text-align: center; padding: 20px; color: #666; font-size: 0.8em; }
+  .section-title { color: #e94560; font-size: 1.2em; margin: 20px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
+  .diagram-area { background: #0a0a1a; border: 1px solid #333; border-radius: 8px; padding: 20px; margin: 15px 0; overflow-x: auto; }
+  .flow-box { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 10px 15px; margin: 5px 0; font-size: 0.85em; }
+  .flow-box .label { color: #e94560; font-weight: bold; }
+  .flow-arrow { color: #533483; text-align: center; font-size: 1.2em; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } .gpio-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏠 DOMUS — Perfil 4: CASA_FINAL_DRV8833_DFPLAYER</h1>
+  <p>Diagrama de Conexiones ESP32-S3 N16R8 | Firmware subido a COM9 | 2026-09-18</p>
+</div>
+
+<div class="container">
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot dot-out"></div> Salida Digital (GPIO out)</div>
+  <div class="legend-item"><div class="legend-dot dot-in"></div> Entrada Digital (GPIO in)</div>
+  <div class="legend-item"><div class="legend-dot dot-analog"></div> Entrada Analógica (ADC)</div>
+  <div class="legend-item"><div class="legend-dot dot-shared"></div> Pin compartido</div>
+</div>
+
+<!-- ESP32 BOARD -->
+<div class="board">
+  <div class="board-title">🟢 ESP32-S3-WROOM-1 N16R8 (COM9 — USB CH343)</div>
+  <div class="gpio-grid">
+    <div class="gpio-pin analog"><div class="pin-num">GPIO3</div><div class="pin-fn">LDR (ADC1)</div></div>
+    <div class="gpio-pin out"><div class="pin-num">GPIO4</div><div class="pin-fn">DRV8833 AIN1 ⚡UART1 RX</div></div>
+    <div class="gpio-pin out"><div class="pin-num">GPIO5</div><div class="pin-fn">DRV8833 BIN1</div></div>
+    <div class="gpio-pin out"><div class="pin-num">GPIO6</div><div class="pin-fn">DRV8833 BIN2</div></div>
+    <div class="gpio-pin out"><div class="pin-num">GPIO7</div><div class="pin-fn">DRV8833 AIN2 ⚡UART1 TX</div></div>
+    <div class="gpio-pin out"><div class="pin-num">GPIO8</div><div class="pin-fn">74HC595 DS (Q0=LUZ SALA)</div></div>
+    <div class="gpio-pin in"><div class="pin-num">GPIO9</div><div class="pin-fn">PIR</div></div>
+    <div class="gpio-pin in"><div class="pin-num">GPIO10</div><div class="pin-fn">PARO EMERGENCIA</div></div>
+    <div class="gpio-pin out"><div class="pin-num">GPIO11</div><div class="pin-fn">74HC595 SHCP ⚡SILENCIO</div></div>
+    <div class="gpio-pin in"><div class="pin-num">GPIO12</div><div class="pin-fn">IR Receiver</div></div>
+    <div class="gpio-pin out"><div class="pin-num">GPIO13</div><div class="pin-fn">LCD SCL (I2C)</div></div>
+    <div class="gpio-pin analog"><div class="pin-num">GPIO14</div><div class="pin-fn">DHT11 DATA</div></div>
+    <div class="gpio-pin analog"><div class="pin-num">GPIO15</div><div class="pin-fn">Suelo (ADC1)</div></div>
+    <div class="gpio-pin analog"><div class="pin-num">GPIO16</div><div class="pin-fn">Nivel Agua (ADC1)</div></div>
+    <div class="gpio-pin out"><div class="pin-num">GPIO17</div><div class="pin-fn">LCD SDA (I2C)</div></div>
+    <div class="gpio-pin out"><div class="pin-num">GPIO18</div><div class="pin-fn">74HC595 STCP ⚡MODO</div></div>
+  </div>
+</div>
+
+<!-- MODULES -->
+<h2 class="section-title">📦 Módulos Conectados</h2>
+
+<div class="module">
+  <h3>🔴 DRV8833 — Driver Dual H-Bridge (Bomba + Ventilador)</h3>
+  <table class="module-table">
+    <tr><th>Pin ESP32</th><th>Pin DRV8833</th><th>Función</th><th>Señal</th></tr>
+    <tr><td><span class="pin-badge">GPIO4</span></td><td>AIN1</td><td>Bomba — Sentido 1</td><td>Salida Digital</td></tr>
+    <tr><td><span class="pin-badge">GPIO7</span></td><td>AIN2</td><td>Bomba — Sentido 2</td><td>Salida Digital (compartido UART)</td></tr>
+    <tr><td><span class="pin-badge">GPIO5</span></td><td>BIN1</td><td>Ventilador — Sentido 1</td><td>Salida Digital</td></tr>
+    <tr><td><span class="pin-badge">GPIO6</span></td><td>BIN2</td><td>Ventilador — Sentido 2</td><td>Salida Digital</td></tr>
+    <tr><td><span class="pin-badge">3V3</span></td><td>nSLEEP</td><td>Habilitación (HIGH)</td><td>Conectado a VCC</td></tr>
+    <tr><td><span class="pin-badge">GND</span></td><td>GND</td><td>Tierra común</td><td>Compartida</td></tr>
+  </table>
+  <p style="margin-top:8px; font-size:0.8em; color:#aaa;">🪫 Alimentación motores: Fuente 5V/2A → Vms del DRV8833. GND común con ESP32.</p>
+</div>
+
+<div class="module">
+  <h3>🔵 74HC595 — Shift Register (3 LEDs de Luz)</h3>
+  <table class="module-table">
+    <tr><th>Pin ESP32</th><th>Pin 74HC595</th><th>Función</th></tr>
+    <tr><td><span class="pin-badge">GPIO8</span></td><td>DS (14)</td><td>Datos de entrada</td></tr>
+    <tr><td><span class="pin-badge">GPIO11</span></td><td>SH_CP (11)</td><td>Reloj de desplazamiento</td></tr>
+    <tr><td><span class="pin-badge">GPIO18</span></td><td>ST_CP (12)</td><td>Reloj de almacenamiento</td></tr>
+    <tr><td><span class="pin-badge">3V3</span></td><td>OE (13)</td><td>Habilitado (LOW)</td></tr>
+    <tr><td><span class="pin-badge">3V3</span></td><td>MR (10)</td><td>Reset (HIGH)</td></tr>
+  </table>
+  <p style="margin-top:8px; font-size:0.8em; color:#aaa;">💡 Q0 → LED Luz Sala · Q1 → LED Luz Cuarto · Q2 → LED Luz Cultivo (con resistencias 220Ω)</p>
+  <p style="margin-top:4px; font-size:0.75em; color:#e94560;">⚠️ GPIO11 y GPIO18 sacrifican los botones físicos SILENCIO y MODO.</p>
+</div>
+
+<div class="module">
+  <h3>🎵 DFPlayer Mini — Reproductor MP3 por UART</h3>
+  <table class="module-table">
+    <tr><th>Pin ESP32</th><th>Pin DFPlayer</th><th>Función</th></tr>
+    <tr><td><span class="pin-badge">GPIO4</span></td><td>TX</td><td>UART1 RX (recibe del ESP32)</td></tr>
+    <tr><td><span class="pin-badge">GPIO7</span></td><td>RX</td><td>UART1 TX (envía al ESP32)</td></tr>
+    <tr><td><span class="pin-badge">5V</span></td><td>VCC</td><td>Alimentación</td></tr>
+    <tr><td><span class="pin-badge">GND</span></td><td>GND</td><td>Tierra común</td></tr>
+    <tr><td><span class="pin-badge">SPK1/SPK2</span></td><td>Salida altavoz</td><td>Parlante 4Ω/3W</td></tr>
+  </table>
+  <p style="margin-top:8px; font-size:0.8em; color:#aaa;">🔊 168 archivos MP3 en tarjeta MicroSD. Audio actualmente aplazado, espera MAX98306.</p>
+</div>
+
+<div class="two-col">
+  <div class="module">
+    <h3>🌡️ DHT11 — Temperatura/Humedad Ambiental</h3>
+    <table class="module-table">
+      <tr><th>Pin</th><th>Función</th></tr>
+      <tr><td><span class="pin-badge">GPIO14</span></td><td>DATA</td></tr>
+      <tr><td><span class="pin-badge">3V3</span></td><td>VCC</td></tr>
+      <tr><td><span class="pin-badge">GND</span></td><td>GND (+ R=4.7k pull-up)</td></tr>
+    </table>
+  </div>
+  <div class="module">
+    <h3>📺 LCD 1602 — Pantalla I2C</h3>
+    <table class="module-table">
+      <tr><th>Pin</th><th>Función</th></tr>
+      <tr><td><span class="pin-badge">GPIO13</span></td><td>SCL</td></tr>
+      <tr><td><span class="pin-badge">GPIO17</span></td><td>SDA</td></tr>
+      <tr><td><span class="pin-badge">0x27/0x3F</span></td><td>Dirección I2C</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="module">
+    <h3>☀️ LDR — Sensor de Luz</h3>
+    <table class="module-table">
+      <tr><th>Pin</th><th>Función</th></tr>
+      <tr><td><span class="pin-badge">GPIO3</span></td><td>ADC1 (divisor)</td></tr>
+    </table>
+    <p style="font-size:0.75em; color:#aaa;">Divisor: 3V3 → R=10k → GPIO3 → LDR → GND</p>
+  </div>
+  <div class="module">
+    <h3>📡 IR Receiver — Mando Infrarrojo</h3>
+    <table class="module-table">
+      <tr><th>Pin</th><th>Función</th></tr>
+      <tr><td><span class="pin-badge">GPIO12</span></td><td>OUT</td></tr>
+      <tr><td><span class="pin-badge">3V3</span></td><td>VCC</td></tr>
+      <tr><td><span class="pin-badge">GND</span></td><td>GND</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="module">
+    <h3>🏃 PIR — Detector de Movimiento</h3>
+    <table class="module-table">
+      <tr><th>Pin</th><th>Función</th></tr>
+      <tr><td><span class="pin-badge">GPIO9</span></td><td>OUT</td></tr>
+      <tr><td><span class="pin-badge">3V3/5V</span></td><td>VCC</td></tr>
+      <tr><td><span class="pin-badge">GND</span></td><td>GND</td></tr>
+    </table>
+  </div>
+  <div class="module">
+    <h3>🚨 Botón PARO Emergencia</h3>
+    <table class="module-table">
+      <tr><th>Pin</th><th>Función</th></tr>
+      <tr><td><span class="pin-badge">GPIO10</span></td><td>INPUT_PULLUP</td></tr>
+      <tr><td><span class="pin-badge">GND</span></td><td>Botón → GND</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="module">
+    <h3>🪚 Sensor Suelo (Humedad de Tierra)</h3>
+    <table class="module-table">
+      <tr><th>Pin</th><th>Función</th></tr>
+      <tr><td><span class="pin-badge">GPIO15</span></td><td>ADC1</td></tr>
+    </table>
+    <p style="font-size:0.75em; color:#aaa;">Calibración: seco=2800, húmedo=1200</p>
+  </div>
+  <div class="module">
+    <h3>💧 Sensor Nivel de Agua</h3>
+    <table class="module-table">
+      <tr><th>Pin</th><th>Función</th></tr>
+      <tr><td><span class="pin-badge">GPIO16</span></td><td>ADC1</td></tr>
+    </table>
+    <p style="font-size:0.75em; color:#aaa;">Rango: 0–4095</p>
+  </div>
+</div>
+
+<!-- POWER -->
+<h2 class="section-title">🔋 Fuente de Alimentación</h2>
+<table class="power-table">
+  <tr><th>Componente</th><th>Voltaje</th><th>Corriente</th><th>Conexión</th></tr>
+  <tr><td>ESP32-S3</td><td>3.3V</td><td>~240mA</td><td>USB CH343 (COM9)</td></tr>
+  <tr><td>DRV8833 (Vms)</td><td>5V</td><td>Hasta 2A</td><td>Fuente externa 5V/2A</td></tr>
+  <tr><td>DFPlayer Mini</td><td>5V</td><td>~100mA</td><td>Fuente 5V/2A</td></tr>
+  <tr><td>LCD I2C</td><td>5V</td><td>~100mA</td><td>Fuente 5V/2A</td></tr>
+  <tr><td>Motores (bomba + ventilador)</td><td>5V</td><td>Hasta 2A</td><td>Vía DRV8833 desde fuente 5V</td></tr>
+  <tr><td>Todos los sensores</td><td>3.3V</td><td>~1–20mA</td><td>GPIO VCC del ESP32</td></tr>
+</table>
+<p style="margin-top:10px; font-size:0.8em; color:#e94560;">⚠️ ¡GND común obligatorio entre ESP32, fuente 5V y todos los módulos!</p>
+
+<!-- FLOW -->
+<h2 class="section-title">🔄 Flujo de Control</h2>
+<div class="diagram-area">
+  <div class="flow-box"><span class="label">1. COMANDO</span> → IR / Serial / Botón / Automático</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box"><span class="label">2. DESPACHADOR</span> → verificarSeguridad() → revisarControlesFisicos()</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box"><span class="label">3. EJECUCIÓN</span> → ejecutarOrdenActuador() → driverMotoresAplicarFinal()</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box"><span class="label">4. SALIDAS</span> → DRV8833 (motores) / 74HC595 (luces) / Relés</div>
+  <div class="flow-arrow">▼</div>
+  <div class="flow-box"><span class="label">5. TELEMETRÍA</span> → SENSORES; (estado, humedad, luz, temp) → Serial</div>
+</div>
+
+<!-- COMPILATION INFO -->
+<h2 class="section-title">📊 Estado de Compilación y Subida</h2>
+<table class="module-table">
+  <tr><th>Parámetro</th><th>Valor</th></tr>
+  <tr><td>Sketch</td><td>casa_inteligente_v4.ino</td></tr>
+  <tr><td>Perfil</td><td>CASA_FINAL_DRV8833_DFPLAYER (DOMUS_PERFIL_CASA=4)</td></tr>
+  <tr><td>Compilación</td><td>✅ Exitosa — 422,873 bytes flash (32%), 28,904 bytes RAM (8%)</td></tr>
+  <tr><td>Subida</td><td>✅ Exitosa — COM9, ESP32-S3, FQBN esp32:esp32:esp32s3</td></tr>
+  <tr><td>Partición</td><td>app3M_fat9M_16MB</td></tr>
+  <tr><td>Herramienta</td><td>arduino-cli v1.5.1 + esptool v5.3.1</td></tr>
+  <tr><td>Tests</td><td>✅ 106/106 pasando (8 HIL skip)</td></tr>
+</table>
+
+</div>
+
+<div class="footer">
+  <p>DOMUS Proyecto de Feria de Ciencias — Isaac | Firmware Perfil 4 | Conexiones verificadas 2026-09-18</p>
+</div>
+
+</body>
+</html>

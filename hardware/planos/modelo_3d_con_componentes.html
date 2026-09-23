@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale:1"><title>DOMUS Perfil 4 · Gemelo Digital con Componentes</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',system-ui,sans-serif;background:#050a12;color:#d0dce8;overflow:hidden;height:100vh}.app{display:grid;grid-template:52px 1fr 68px/230px 1fr 220px;height:100vh}.top{grid-column:1/-1;background:linear-gradient(180deg,#0c1525,#050a12);border-bottom:1px solid #1a3a5c;padding:6px 14px;display:flex;align-items:center;gap:8px}.top .logo{font-size:15px;font-weight:800;background:linear-gradient(90deg,#00d4ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.pill{background:#0f1a28;color:#5a8aaa;padding:3px 10px;border-radius:12px;font-size:10px;border:1px solid #1a3a5c;font-weight:600}.pill.on{border-color:#00ff88;color:#00ff88}.pill.warn{border-color:#ffaa00;color:#ffaa00}.side{background:#0a0f1a;padding:8px;overflow-y:auto;border-right:1px solid #152030}.side.right{border-left:1px solid #152030;border-right:none}.section{margin-bottom:10px}.section-title{color:#00d4ff;font-size:10px;letter-spacing:.08em;font-weight:700;margin-bottom:4px;border-bottom:1px solid #1a3a5c;padding-bottom:3px;text-transform:uppercase}.btn{background:#0f1a28;color:#5a8aaa;border:1px solid #1a3a5c;border-radius:4px;padding:5px 8px;font-size:10px;cursor:pointer;width:100%;margin-bottom:2px;text-align:left;transition:all .15s}.btn:hover{background:#1a3a5c;color:#a0c0d8}.btn.active{background:#0a4a7c;border-color:#00d4ff;color:#00d4ff}.view-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}.layer-item{display:flex;align-items:center;gap:6px;padding:4px 6px;font-size:10px;border-radius:3px;cursor:pointer;transition:background .15s}.layer-item:hover{background:#1a2a3c}.layer-item input{accent-color:#00d4ff}.legend-item{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:10px}.legend-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}.detail-box{background:#0a0f1a;border:1px solid #1a3a5c;border-radius:6px;padding:10px;font-size:10px;color:#6a8aaa}.detail-box .name{color:#00d4ff;font-weight:700;font-size:12px}.detail-box .desc{color:#8ab4d8;margin-top:4px;line-height:1.4}.detail-box .meta{color:#4a6a8a;font-size:9px;margin-top:6px}.vp{position:relative;background:#040810;overflow:hidden}canvas{display:block;width:100%;height:100%}.hud{position:absolute;top:6px;left:6px;background:rgba(12,21,37,.9);border:1px solid #1a3a5c;border-radius:4px;padding:4px 10px;font-size:10px;color:#00d4ff;pointer-events:none}.footer{background:#0a0f1a;border-top:1px solid #152030;padding:5px 12px;display:flex;gap:18px;font-size:10px}.footer b{color:#00d4ff}.footer .sep{color:#1a3a5c}</style></head><body><div class="app"><header class="top"><div class="logo">🏠 DOMUS Perfil 4</div><div class="pill on">● ESP32-S3</div><div class="pill on">● Firmware</div><div class="pill warn">● F1 PENDIENTE</div><div style="margin-left:auto;font-size:9px;color:#4a6a8a">COM9 · 422,873B</div></header><aside class="side left"><div class="section"><div class="section-title">Vistas</div><div class="view-grid" id="views"><button class="btn active" data-view="iso">◉ Isométrica</button><button class="btn" data-view="front">⊡ Frontal</button><button class="btn" data-view="top">△ Planta</button><button class="btn" data-view="inside">◻ Interior</button><button class="btn" data-view="systems">◈ Sistemas</button><button class="btn" data-view="wiring">⟶ Cableado</button><button class="btn" data-view="explode">✱ Explodida</button></div></div><div class="section"><div class="section-title">Capas</div><div id="layers"></div><input id="search" class="btn" placeholder="🔍 Buscar…" style="margin-top:4px"></div><div class="section"><div class="section-title">Especificaciones</div><div class="detail-box" style="margin-bottom:6px"><div class="name">Baquelita PCB 120×100mm</div><div class="desc">ESP32-S3 + distribución VCC/GND principal. Pistas de cobre. Fusible 2A entrada. GND común.</div><div class="meta">ESP32-S3-WROOM-1 · 240MHz · 8MB PSRAM · USB CH343 · COM9</div></div><div class="detail-box" style="margin-bottom:6px"><div class="name">ProtoBoard 1 — INTERIOR casa</div><div class="desc">74HC595, LCD 1602 I2C, DHT11, botones PARO/MODO/SILENCIO, relés lógica</div><div class="meta">Dentro de la vivienda</div></div><div class="detail-box"><div class="name">ProtoBoard 2 — TRASERA casa</div><div class="desc">DRV8833, 2 relés potencia, fuente 5V/2A, cableado casa/invernadero</div><div class="meta">Detrás de la vivienda</div></div></aside><section class="vp" id="viewport"><canvas id="canvas"></canvas><div class="hud" id="hud">◉ ISOMÉTRICA · <span id="counter">0</span></div></section><aside class="side right"><div class="section"><div class="section-title">Herramientas</div><button class="btn" id="measure">📏 Cotas 3D</button><button class="btn" id="labels">🏷 Etiquetas</button><button class="btn" id="spin">⟳ Giro Auto</button><button class="btn" id="tour">▶ Recorrido</button><button class="btn" id="png">💾 PNG</button><label style="display:block;margin-top:5px;font-size:10px;color:#5a8aaa">Explosión: <input type="range" id="explode" min="0" max="1" step="0.05" value="0" style="width:100%"></label><label style="display:block;font-size:10px;color:#5a8aaa">Opacidad: <input type="range" id="opacity" min="0.1" max="1" step="0.05" value="1" style="width:100%"></label></div><div class="section"><div class="section-title">Leyenda</div><div id="legend"></div></div><div class="section"><div class="section-title">Ficha</div><div id="detail" class="detail-box">Toca una pieza para ver info</div></div></aside><footer class="footer"><span>BASE: <b>800×520mm</b></span><span>ESCALA: <b>20%</b></span><span class="sep">|</span><span>PCB: <b>120×100mm</b></span><span class="sep">|</span><span>PERFIL: <b>CASA_FINAL_DRV8833_DFPLAYER</b></span></footer></div><script>
+const parts=[
+// ====== BASE Y ESTRUCTURA CASA ======
+{name:"Base MDF 800×520×12mm",x:0,y:0,z:0,w:800,d:520,h:12,material:"base",layer:"struct",note:"MDF negro mate 12mm. Plataforma universal. Casa centrada en (400,260).",rx:0,ry:0,rz:0},
+{name:"Muro posterior",x:240,y:500,z:19,w:344,d:3,h:225,material:"wood",layer:"struct",note:"Pared trasera MDF 3mm. Detrás está ProtoBoard 2.",rx:0,ry:0,rz:0},
+{name:"Muro izquierdo",x:240,y:240,z:19,w:3,d:260,h:225,material:"wood",layer:"struct",note:"Pared izquierda. ProtoBoard 1 adentro.",rx:0,ry:0,rz:0},
+{name:"Muro derecho",x:581.6,y:240,z:19,w:3,d:260,h:225,material:"wood",layer:"struct",note:"Pared derecha.",rx:0,ry:0,rz:0},
+{name:"Techo removible",x:233.6,y:233.6,z:244,w:356.8,d:272.8,h:10,material:"roof",layer:"struct",note:"Techo desmontable para mantenimiento.",rx:0,ry:0,rz:0},
+// ====== BAQUELITA PCB 120×100 ======
+{name:"Baquelita PCB 120×100",x:310,y:235,z:18,w:120,d:100,h:2.5,material:"fiberglass",layer:"comp",note:"PCB 120×100mm. Montaje ESP32-S3 + distribución VCC/GND principal. Fusible 2A en entrada. GND común a toda la instalación. Pistas de cobre para alimentación.",rx:0,ry:0,rz:0},
+// ====== PROTOSHOCK 1 — INTERIOR CASA ======
+{name:"ProtoBoard 1 (Interior)",x:340,y:330,z:100,w:70,d:45,h:1.5,material:"green",layer:"comp",note:"ProtoBoard 70×45mm. DENTRO de la casa. LCD 1602 I2C, DHT11, botones PARO/MODO/SILENCIO, relés de lógica. Luces LED directas a GPIO. Alimentación desde baquelita.",rx:0,ry:0,rz:0},
+// ====== PROTOSHOCK 2 — TRASERA CASA ======
+{name:"ProtoBoard 2 (Trasera)",x:570,y:520,z:30,w:70,d:45,h:1.5,material:"red",layer:"comp",note:"ProtoBoard 70×45mm. DETRÁS de la casa. DRV8833, 2 relés potencia, fuente 5V/2A, cableado casa/invernadero, conectores motores. Alimentación desde fuente externa.",rx:0,ry:0,rz:0},
+// ====== COMPONENTES INTERIORES (dentro de la casa) ======
+{name:"ESP32-S3 N16R8",x:370,y:265,z:20,w:42,d:32,h:9,material:"green",layer:"comp",note:"Placa principal montada en baquelita 120×100. 240MHz, 8MB PSRAM. GPIO 3-18. USB CH343 COM9. Firmware perfil 4 cargado.",rx:0,ry:0,rz:0},
+{name:"LCD 1602 I2C PCF8574",x:360,y:280,z:108,w:52,d:12,h:24,material:"cyan",layer:"comp",note:"LCD 16×2 visible por frente de casa. Dirección I2C 0x27/0x3F. SDA=GPIO17, SCL=GPIO13. Montada en ProtoBoard 1 interior.",rx:0,ry:0,rz:0},
+{name:"DHT11 Ambiental",x:340,y:360,z:108,w:9,d:9,h:9,material:"cyan",layer:"comp",note:"Sensor temp/humedad AIR INTERIOR. GPIO14. Rango: 0-50°C, 20-90%HR. Dentro de casa. Backoff 60s.",rx:0,ry:0,rz:0},
+{name:"Botón PARO emergencia",x:400,y:280,z:108,w:10,d:8,h:8,material:"magenta",layer:"comp",note:"Botón PARO sobre ProtoBoard 1. GPIO10 INPUT_PULLUP. LOW=paro emergencia activo.",rx:0,ry:0,rz:0},
+{name:"Botón MODO",x:400,y:295,z:108,w:10,d:8,h:8,material:"magenta",layer:"comp",note:"Botón MODO. GPIO18 disponible.",rx:0,ry:0,rz:0},
+{name:"Botón SILENCIO",x:400,y:310,z:108,w:10,d:8,h:8,material:"magenta",layer:"comp",note:"Botón SILENCIO. GPIO11 disponible.",rx:0,ry:0,rz:0},
+// ====== COMPONENTES EN PARED / EXTERIOR ======
+{name:"PIR HC-SR501",x:400,y:210,z:58,w:12,d:10,h:10,material:"magenta",layer:"comp",note:"Detector movimiento PIR. Frente casa. GPIO9. Alcance ~7m, ~120°.",rx:0,ry:0,rz:0},
+{name:"IR Receiver VS1838B",x:400,y:225,z:58,w:8,d:8,h:8,material:"magenta",layer:"comp",note:"Recepción IR. Frente casa. GPIO12. 21 teclas mapeadas. NEC.",rx:0,ry:0,rz:0},
+{name:"LDR Fotoresistor",x:560,y:250,z:210,w:9,d:7,h:7,material:"yellow",layer:"comp",note:"Sensor luz en pared exterior. Divisor 3V3/R:10k en GPIO3. Calibrado como LUZ_PCT (0-100%).",rx:0,ry:0,rz:0},
+{name:"LED Luz Sala",x:360,y:410,z:215,w:9,d:9,h:7,material:"yellow",layer:"comp",note:"LED sala → GPIO5 → resistencia 220Ω → GND. En pared interior.",rx:0,ry:0,rz:0},
+{name:"LED Luz Cuarto",x:490,y:410,z:215,w:9,d:9,h:7,material:"yellow",layer:"comp",note:"LED cuarto → GPIO6 → resistencia 220Ω → GND. En pared interior.",rx:0,ry:0,rz:0},
+{name:"LED Luz Cultivo",x:130,y:340,z:218,w:9,d:9,h:7,material:"yellow",layer:"comp",note:"LED cultivo → GPIO8 → resistencia 220Ω → GND. En invernadero.",rx:0,ry:0,rz:0},
+{name:"Relé Sala",x:360,y:410,z:225,w:7,d:7,h:9,material:"orange",layer:"comp",note:"Salida lógica relé sala. GPIO8 activo HIGH.",rx:0,ry:0,rz:0},
+{name:"Relé Cuarto",x:490,y:410,z:225,w:7,d:7,h:9,material:"orange",layer:"comp",note:"Salida lógica relé cuarto. GPIO8 activo HIGH.",rx:0,ry:0,rz:0},
+// ====== COMPONENTES TRASEROS / TRAS CASA ======
+{name:"DRV8833 Dual H-Bridge",x:575,y:530,z:35,w:30,d:22,h:11,material:"red",layer:"comp",note:"Driver motores sobre ProtoBoard 2 trasera. AIN1=GPIO4 bomba, AIN2=GPIO7 bomba, BIN1=GPIO5 ventilador, BIN2=GPIO6 ventilador. nSLEEP→VCC. 1.8A/A.",rx:0,ry:0,rz:0},
+{name:"Fuente 5V/2A",x:580,y:555,z:32,w:24,d:20,h:28,material:"orange",layer:"comp",note:"Fuente 5V/2A sobre ProtoBoard 2. Alimenta DRV8833 Vms + relés potencia. Fusible 2A entrada. GND a tierra común.",rx:0,ry:0,rz:0},
+{name:"Bomba Sumergible",x:150,y:555,z:11,w:22,d:18,h:18,material:"red",layer:"comp",note:"Bomba sobre base trasera. DRV8833 AIN1/AIN2. GPIO4=HIGH+GPIO7=LOW → forward. Bloqueada sin validación F1.",rx:0,ry:0,rz:0},
+{name:"Ventilador DC",x:250,y:475,z:30,w:32,d:22,h:22,material:"red",layer:"comp",note:"Ventilador tras casa. DRV8833 BIN1/BIN2. GPIO5=HIGH+GPIO6=LOW → forward.",rx:0,ry:0,rz:0},
+// ====== SENSORES CASA E INVERNADERO (ProtoBoard 2 zona) ======
+{name:"Sensor Suelo (Humedad)",x:100,y:350,z:16,w:10,d:10,h:10,material:"cyan",layer:"comp",note:"Sensor humedad suelo invernadero. GPIO15 ADC1. Calibración: seco:2800, húmedo:1200.",rx:0,ry:0,rz:0},
+{name:"Sensor Nivel Agua",x:180,y:530,z:11,w:10,d:10,h:10,material:"cyan",layer:"comp",note:"Sensor nivel tanque. GPIO16 ADC1. Rango 0-4095. Detrás casa.",rx:0,ry:0,rz:0},
+// ====== RESERVAS VISUALES ======
+{name:"Reserva PIR entrada",x:400,y:210,z:58,w:14,d:12,h:4,material:"acrylic",layer:"reserve",note:"RESERVA: PIR.",rx:0,ry:0,rz:0},
+{name:"Reserva pantalla LCD",x:360,y:280,z:108,w:55,d:14,h:4,material:"acrylic",layer:"reserve",note:"RESERVA: LCD.",rx:0,ry:0,rz:0},
+{name:"Reserva LDR",x:560,y:250,z:210,w:12,d:10,h:4,material:"acrylic",layer:"reserve",note:"RESERVA: LDR.",rx:0,ry:0,rz:0},
+{name:"Reserva depósito",x:20,y:52,z:11,w:95,d:95,h:4,material:"acrylic",layer:"reserve",note:"RESERVA: Depósito agua.",rx:0,ry:0,rz:0},
+{name:"Reserva bomba",x:150,y:555,z:11,w:50,d:36,h:4,material:"acrylic",layer:"reserve",note:"RESERVA: Bomba.",rx:0,ry:0,rz:0},
+];
+
+const COLORS={base:[0.10,0.08,0.04],wood:[0.55,0.44,0.31],roof:[0.29,0.27,0.35],fiberglass:[0.53,0.60,0.67],green:[0.10,0.48,0.29],blue:[0.10,0.29,0.48],red:[0.63,0.09,0.09],purple:[0.38,0.16,0.63],orange:[0.75,0.41,0.09],cyan:[0.09,0.63,0.63],yellow:[0.75,0.69,0.09],magenta:[0.63,0.09,0.50],gray:[0.33,0.33,0.33],wire:[0.23,0.48,0.67],acrylic:[0.61,0.32,0.88]};
+const canvas=document.querySelector('#canvas'),ctx=canvas.getContext('2d');
+const faces=[[0,1,2,3],[4,7,6,5],[0,4,5,1],[1,5,6,2],[2,6,7,3],[4,0,3,7]];
+const SWATCHES={struct:'#8b6f4e',comp:'#1a7a4a',wire:'#3a7aaa',reserve:'#9b51e0',gray:'#555555',fiberglass:'#8899aa'};
+const LAYER_LABELS={struct:'Estructura',comp:'Placas + Componentes',wire:'Cableado',reserve:'Reservas'};
+const ORDER=['struct','comp','wire','reserve'];
+let visible={};ORDER.forEach(l=>visible[l]=true);
+let rot=150,elev=29,zoom=.85,explode=0,opacity=1,spin=false,showDims=true,showLabels=true;
+let current='iso',selected=null,centers=[],drag=false,moved=false,lastX=0,lastY=0,tourIdx=0;
+let lastFrame=0;
+
+// ====== CABLES (coordenadas reales entre componentes) ======
+const CABLES=[
+// Baquelita → ProtoBoard 1 (interior)
+[370,268,22, 340,335,102,'vcc','Baq→PB1 VCC'],
+[370,272,22, 340,340,102,'gnd','Baq→PB1 GND'],
+[370,270,22, 360,282,109,'i2c','GPIO17→LCD SDA'],
+[370,272,22, 360,284,109,'i2c','GPIO13→LCD SCL'],
+[370,276,22, 340,362,109,'gpio','GPIO14→DHT11 DATA'],
+[370,274,22, 400,282,108,'gpio','GPIO10→BOTÓN PARO'],
+// Baquelita → Luces directas (GPIO5, GPIO6, GPIO8)
+[370,266,22, 360,412,216,'gpio','GPIO5→LED Sala'],
+[370,268,22, 490,412,216,'gpio','GPIO6→LED Cuarto'],
+[370,270,22, 130,342,218,'gpio','GPIO8→LED Cultivo'],
+// Baquelita → ProtoBoard 2 (trasera) - potencia
+[370,268,22, 575,532,36,'vcc','Baq→PB2 VCC 5V'],
+[370,272,22, 575,533,36,'gnd','Baq→PB2 GND'],
+[370,270,22, 575,534,36,'gpio','GPIO4→DRV AIN1'],
+[370,272,22, 575,535,36,'gpio','GPIO7→DRV AIN2'],
+[370,274,22, 575,536,36,'gpio','GPIO5→DRV BIN1'],
+[370,276,22, 575,537,36,'gpio','GPIO6→DRV BIN2'],
+[370,280,22, 575,538,36,'gpio','GPIO8→Relés potencia'],
+// ProtoBoard 2 → Motores
+[575,540,37, 150,558,11,'power','Bomba +'],
+[575,542,37, 150,572,11,'power','Bomba -'],
+[575,544,37, 250,477,30,'power','Ventilador +'],
+[575,546,37, 250,497,30,'power','Ventilador -'],
+// Baquelita → Sensores suelo/nivel (vía ProtoBoard 2 zona)
+[370,278,22, 100,352,16,'gpio','GPIO15→Sensor Suelo'],
+[370,280,22, 180,532,11,'gpio','GPIO16→Sensor Nivel'],
+// ProtoBoard 1 → DHT11 interior
+[340,348,103, 365,362,117,'gpio','GPIO14→DHT11 DATA'],
+// Fuente 5V→DRV8833 en ProtoBoard 2
+[580,557,33, 575,533,36,'vcc','Fuente→DRV Vms'],
+[580,559,33, 575,534,36,'gnd','Fuente→DRV GND'],
+];
+
+// ====== RENDERING ======
+function offset(p){let x=p.x,y=p.y,z=p.z;if(explode){if(['struct'].includes(p.layer))z+=60*explode;if(p.layer==='comp')x+=40*explode;if(p.layer==='wire')y+=20*explode}return{x,y,z}}
+function verts(p){let o=offset(p),cx=o.x+p.w/2,cy=o.y+p.d/2,cz=o.z+p.h/2;return[[o.x,o.y,o.z],[o.x+p.w,o.y,o.z],[o.x+p.w,o.y+p.d,o.z],[o.x,o.y+p.d,o.z],[o.x,o.y,o.z+p.h],[o.x+p.w,o.y,o.z+p.h],[o.x+p.w,o.y+p.d,o.z+p.h],[o.x,o.y+p.d,o.z+p.h]]}
+function project(v){let a=rot*Math.PI/180,e=elev*Math.PI/180,x=v[0]-400,y=v[1]-260,z=v[2]-135,xr=x*Math.cos(a)-y*Math.sin(a),yr=x*Math.sin(a)+y*Math.cos(a),yy=yr*Math.sin(e)-z*Math.cos(e),dep=yr*Math.cos(e)+z*Math.sin(e),s=Math.min(canvas.clientWidth/900,canvas.clientHeight/500)*zoom;return[canvas.clientWidth/2-xr*s,canvas.clientHeight/2+yy*s,dep]}
+function grid(){ctx.strokeStyle='rgba(40,70,100,.06)';ctx.lineWidth=1;for(let x=0;x<canvas.clientWidth;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.clientHeight);ctx.stroke()}for(let y=0;y<canvas.clientHeight;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.clientWidth,y);ctx.stroke()}}
+function drawPoly(pts,color,alpha){let rgb=COLORS[color]||[.5,.5,.5],shade=.55;ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();ctx.fillStyle=`rgba(${rgb.map(v=>Math.round(v*255*shade)).join(',')},${alpha})`;ctx.fill();ctx.strokeStyle='rgba(10,20,30,.5)';ctx.lineWidth=.6;ctx.stroke()}
+function draw(){ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);ctx.fillStyle='#040810';ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight);grid();let polys=[];centers=[];
+parts.filter(p=>visible[p.layer]).forEach(p=>{let vv=verts(p).map(project),o=offset(p);faces.forEach((f,fi)=>{let pts=f.map(i=>vv[i]);let depth=pts.reduce((s,q)=>s+q[2],0)/4;polys.push({pts,depth,p,fi})});let c=project([o.x+p.w/2,o.y+p.d/2,o.z+p.h/2]);centers.push({x:c[0],y:c[1],p})});
+// Dibujar cables
+const showWires=visible.wire||current==='wiring';
+CABLES.forEach(c=>{if(!showWires&&!visible.wire)return;let p1=[c[0],c[1],c[2]],p2=[c[3],c[4],c[5]];let a=project(p1),b=project(p2);let rgb=c[6]==='vcc'?'#ff6644':c[6]==='gnd'?'#446688':c[6]==='gpio'?'#00d4ff':c[6]==='i2c'?'#00aaff':c[6]==='power'?'#ffaa00':'#3a7aaa';ctx.save();ctx.strokeStyle=rgb;ctx.lineWidth=2;ctx.globalAlpha=.7;ctx.setLineDash(c[6]==='vcc'||c[6]==='power'?[]:[4,2]);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;ctx.restore()});
+polys.sort((a,b)=>a.depth-b.depth);
+polys.forEach(o=>{let rgb=COLORS[o.p.material]||[.5,.5,.5],shade=.55+o.fi*.04,struct=['struct'].includes(o.p.layer),alpha=o.p.material==='acrylic'?0.2:(o.p.material==='wire'?1:(struct?opacity:0.92));drawPoly(o.pts,o.p.material,alpha)});
+drawTags();document.querySelector('#counter').textContent=parts.filter(p=>visible[p.layer]).length+' piezas / '+CABLES.length+' cables'}
+function drawTags(){if(!showLabels)return;let list=centers.filter(c=>c.p.layer==='comp').slice(0,30);ctx.font='700 8px Segoe UI';list.forEach((o,i)=>{let tx=Math.max(4,Math.min(canvas.clientWidth-100,o.x+14));let ty=Math.max(16,Math.min(canvas.clientHeight-8,o.y-8-i*14));ctx.fillStyle='rgba(10,20,30,.85)';ctx.fillRect(tx,ty-10,92,12);ctx.fillStyle='#00d4ff';ctx.fillText(o.p.name.slice(0,14),tx+2,ty-1);});}
+function size(){let d=devicePixelRatio||1,r=canvas.getBoundingClientRect();canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));ctx.setTransform(d,0,0,d,0,0);draw()}
+function select(p){selected=p;let d=document.querySelector('#detail');if(p){d.innerHTML=`<div class="name">${p.name}</div><div class="desc">${p.note||''}</div><div class="meta">Capa: ${p.layer} · Material: ${p.material} · ${p.w}×${p.d}×${p.h}mm · Pos: (${p.x},${p.y},${p.z})</div>`}else{d.innerHTML='<div class="name">Ninguna pieza</div><div class="desc">Toca una pieza para ver su ficha</div>'}draw()}
+const presets={iso:[150,29,.85,0,1],front:[180,16,1.02,0,1],top:[180,80,.84,0,1],inside:[155,34,1.02,0,1],systems:[150,31,.96,0,.2],wiring:[150,31,.92,0,.15],explode:[150,28,.76,1,1]};
+const titles={iso:'◉ ISOMÉTRICA',front:'⊡ FRONTAL',top:'△ PLANTA SUPERIOR',inside:'◻ INTERIOR',systems:'◈ SISTEMAS',wiring:'⟶ CABLEADO',explode:'✱ EXPLODIDA'};
+function setView(name){current=name;[rot,elev,zoom,explode,opacity]=presets[name];document.querySelector('#explode').value=explode;document.querySelector('#opacity').value=opacity;document.querySelector('#hud').textContent=titles[name];document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));sync();draw()}
+const viewsEl=document.querySelector('#views');if(viewsEl)viewsEl.onclick=e=>{let b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)};
+const allEl=document.querySelector('#all');if(allEl)allEl.onclick=()=>{Object.keys(visible).forEach(k=>visible[k]=true);sync();draw()};
+const resetEl=document.querySelector('#reset');if(resetEl)resetEl.onclick=()=>{select(null);setView('iso')};
+document.querySelector('#explode').oninput=e=>{explode=+e.target.value;draw()};
+document.querySelector('#opacity').oninput=e=>{opacity=+e.target.value;draw()};
+document.querySelector('#measure').onclick=e=>{showDims=!showDims;e.currentTarget.setAttribute('aria-pressed',showDims)};
+document.querySelector('#labels').onclick=e=>{showLabels=!showLabels;e.currentTarget.setAttribute('aria-pressed',showLabels)};
+document.querySelector('#spin').onclick=e=>{spin=!spin;e.currentTarget.setAttribute('aria-pressed',spin)};
+document.querySelector('#tour').onclick=()=>{let t=['iso','inside','systems','wiring','explode'];setView(t[tourIdx++%t.length])};
+document.querySelector('#png').onclick=()=>{draw();let a=document.createElement('a');a.download='domus-perfil4-componentes.png';a.href=canvas.toDataURL('image/png');a.click()};
+document.querySelector('#search').oninput=e=>{let q=e.target.value.toLowerCase().trim(),p=q&&parts.find(x=>x.name.toLowerCase().includes(q));if(p){visible[p.layer]=true;sync();select(p)}};
+canvas.onpointerdown=e=>{drag=true;moved=false;lastX=e.clientX;lastY=e.clientY};canvas.onpointermove=e=>{if(!drag)return;let dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;rot+=dx*.35;elev=Math.max(7,Math.min(82,elev-dy*.25));lastX=e.clientX;lastY=e.clientY;draw()};canvas.onpointerup=e=>{drag=false;if(moved)return;let r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,best=null,dist=40;centers.forEach(o=>{let d=Math.hypot(o.x-x,o.y-y);if(d<dist){best=o.p;dist=d}});if(best)select(best)};canvas.onwheel=e=>{e.preventDefault();zoom=Math.max(.3,Math.min(2,zoom-e.deltaY*.00085));draw()};
+function animate(t){if(spin){rot+=(t-lastFrame)*.012;draw()}lastFrame=t;requestAnimationFrame(animate)}
+addEventListener('keydown',e=>{if(e.key==='1')setView('iso');if(e.key==='2')setView('top');if(e.key==='3')setView('systems');if(e.key==='4')setView('components');if(e.key==='5')setView('wiring');if(e.key.toLowerCase()==='r')setView('iso')});addEventListener('resize',size);
+function makeLayers(){let box=document.querySelector('#layers');box.innerHTML='';ORDER.forEach(l=>{let label=document.createElement('label');label.className='layer-item';label.innerHTML=`<input type="checkbox" data-layer="${l}" checked><i class="swatch" style="background:${SWATCHES[l]||'#fff'}"></i>${LAYER_LABELS[l]||l}`;label.querySelector('input').onchange=e=>{visible[l]=e.target.checked;draw()};box.append(label)})}
+function sync(){document.querySelectorAll('[data-layer]').forEach(i=>i.checked=visible[i.dataset.layer])}
+function initLegend(){let box=document.querySelector('#legend');let items=[{c:'#8b6f4e',t:'Estructura'}, {c:'#8899aa',t:'Baquelita 120×100'}, {c:'#1a7a4a',t:'ProtoBoard Interior'}, {c:'#a01818',t:'ProtoBoard Trasera'}, {c:'#3a7aaa',t:'Cableado'}, {c:'#9b51e0',t:'Reservas'}];items.forEach(i=>{box.innerHTML+=`<div class="legend-item"><span class="legend-swatch" style="background:${i.c}"></span>${i.t}</div>`})};
+addEventListener('DOMContentLoaded',()=>{makeLayers();size();initLegend();requestAnimationFrame(animate)});
+</script></body></html>
