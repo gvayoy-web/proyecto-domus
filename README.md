@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-ESP32--S3-ff69b4.svg)](https://www.espressif.com/en/products/socs/esp32-s3)
 [![Framework](https://img.shields.io/badge/Arduino%20ESP32-3.3.10-004422.svg)](https://github.com/espressif/arduino-esp32)
-[![Tests](https://img.shields.io/badge/Tests-102_passed_0_failed-brightgreen.svg)](firmware/tests)
+[![Tests](https://img.shields.io/badge/Tests-115_passed_0_failed-brightgreen.svg)](firmware/tests)
 [![Profile](https://img.shields.io/badge/Profile-CASA_FINAL_DRV8833_DFPLAYER-green.svg)](obsidian/proyect%20domus/71%20-%20Perfil%20CASA_FINAL_DRV8833_DFPLAYER.md)
 [![Version](https://img.shields.io/badge/Version-v4.0-4A90E2.svg)](https://github.com/Isaac/casa_inteligente_v4/commits/proyecdomus)
 [![Lines](https://img.shields.io/badge/Code-1.9K-orange.svg)](firmware/casa_inteligente_v4/casa_inteligente_v4.ino)
@@ -18,7 +18,7 @@ Casa inteligente local para una maqueta con **ESP32-S3 N16R8** (16MB Flash / 8MB
 
 | Métrica | Valor |
 |---|---|
-| **Tests pasando** | 49+ passed, 0 failed ✅ (contract, HIL, audio, pantalla) |
+| **Tests pasando** | 115 passed, 0 failed ✅ (contract, HIL, audio, pantalla, native) |
 | **Tests contrato** | 27/27 ⭐ |
 | **Tests audio** | 13/13 ⭐ |
 | **Tests pantalla** | 5/5 ⭐ |
@@ -26,19 +26,23 @@ Casa inteligente local para una maqueta con **ESP32-S3 N16R8** (16MB Flash / 8MB
 | **Firmware Flash** | 14% |
 | **Firmware RAM** | 8% |
 | **Perfil actual** | `CASA_FINAL_DRV8833_DFPLAYER` (perfil 4) |
-| **Firmware en COM9** | Perfil 4 code listo, pendiente compilar/upload |
+| **Motor** | Solo bomba (DRV8833 canal A); ventilador eliminado |
+| **Firmware en COM9** | Último HIL 8/8 COM9; remap micOff→GPIO9, DFPlayer RX→GPIO17 |
 
 > **Nota 70**: Mejoras de firmware 2026-09-18: DIAGNOSTICO ampliado, `PINTEST_ALL`, optimización de automatizaciones combinadas, corrección de indentación y tests. Ver [[70 - Mejoras firmware 2026-09-18]].
 
 > **Nota 71**: Perfil `CASA_FINAL_DRV8833_DFPLAYER` implementado con DRV8833, 74HC595 y DFPlayer. Ver [[71 - Perfil CASA_FINAL_DRV8833_DFPLAYER]].
 
+> **Nota 80**: LCD 1602 **quemado/descartado**; botones físicos MODO/SILENCIO fuera. DFPlayer en **RX GPIO17 / TX GPIO18** (con R1k en TX); micOff/SILENCIO en GPIO9; GPIO11 no existe en la placa. Tecla IR **CH** = Spare, **PLAY** = silencio. Ver [[80 - LCD quemado layout y botones mando]].
+
 ## ✨ Características Implementadas
 
-### Audio 1:1 por botón (21 eventos)
-- **168 MP3 tracks** (21 botones x 4 variantes x 2 voces): **Carlos** SD 01-21 y **Karla** SD 51-71
-- Cada botón del mando CAR MP3 tiene su carpeta (códigos nota 64, acciones nota 46)
-- `MANIFEST.csv` con 168 filas (voz, carpeta, pista, evento, frase, SHA-256)
-- Antes: 64 subfolders desorganizados
+### Audio 1:1 por botón (22 eventos)
+- **176 MP3 tracks** (22 eventos x 4 variantes x 2 voces): **Carlos** SD 01-22 y **Karla** SD 51-72
+- Carpeta **22/72 = FALLO** (`No funciono.`); el resto, teclas del mando CAR MP3 (códigos nota 64, acciones nota 46)
+- `MANIFEST.csv` con 176 filas (voz, carpeta, pista, evento, frase, SHA-256)
+- SD a copiar en **raíz**: solo `audio/jarvis_sd/` → carpetas `01`–`22` y `51`–`72`, formato **FAT32**
+- El mando **100+** alterna voz Carlos/Karla
 
 ### Automatizaciones Inteligentes
 - **Automaciones combinadas**: calor+tierra_seca+agua, temp+presencia, luz+presencia+zonas_día
@@ -64,7 +68,7 @@ Casa inteligente local para una maqueta con **ESP32-S3 N16R8** (16MB Flash / 8MB
 PROJECT DOMUS/
 ├── firmware/              # Producto principal + diagnósticos
 ├── obsidian/              # Notas 00-68 + bitácora completa
-├── audio/                 # 168 MP3 (Carlos/Karla 01-21) + MANIFEST.csv
+├── audio/                 # 176 MP3 (jarvis_sd 01-22/51-72) + MANIFEST.csv
 ├── visualizaciones/       # Diagramas SVG
 ├── docs/                  # Documentos de entrega
 ├── tools/                 # Validadores y generadores
@@ -96,11 +100,10 @@ La compilación de producto para ESP32-S3 usa Arduino-ESP32 3.3.10 y las bibliot
 | `test_hil_producto_contract.py` | 4/4 ⭐ |
 | `test_jarvis_audio.py` | 13/13 ⭐ |
 | `test_pantalla_final.py` | 5/5 ⭐ (incluye nativo g++) |
-| `test_casa_candidato.py` + `test_native_safety.py` | nativos en verde |
-| `test_native_firmware.py` | nativos en verde |
-| **Total** | **49+ passed, 0 failed** 🟢 |
+| `test_casa_candidato.py` + `test_native_safety.py` + `test_native_firmware.py` | nativos en verde |
+| **Total local** | **115 passed, 0 failed** 🟢 |
 
-_(8 skipped = HIL, requiere placa física conectada)_
+_(HIL con placa = SKIP si no hay puerto; último corrido en COM9: 8/8)_
 
 **Mejoras 2026-09-18**: `PINTEST_ALL` añadido, DIAGNOSTICO con ADC crudos y calibración, optimización de automatizaciones combinadas (una sola lectura DHT), corrección de indentación en `domus_pantalla.h`, corrección de import en `test_pantalla_final.py`.
 

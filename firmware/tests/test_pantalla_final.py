@@ -282,19 +282,24 @@ class PantallaFinalTests(unittest.TestCase):
                 self.assertIn("lcd_->clear();", linea)
 
     def test_ino_delega_dibujo_en_la_clase(self):
+        # Demo feria headless (LCD quemado): la clase se integra pero no hay
+        # refresco ni navegación por botón MODO en el .ino.
         for fragmento in (
             '#include "domus_pantalla.h"',
             "PantallaFinal pantallaFinal;",
             "pantallaFinal.begin(lcd);",
-            "pantallaFinal.tick(d);",
-            "pantallaFinal.siguiente();",
-            "refrescarPantallaFinal();",
-            "clasificarSalidaFinal",
             "escanearBusI2C",
             "INTERVALO_PANTALLA_MS",
             "ultimoCambioBotonDemoMs",
         ):
             self.assertIn(fragmento, self.sketch)
+        for fragmento_ausente in (
+            "refrescarPantallaFinal();",
+            "pantallaFinal.tick(d);",
+            "pantallaFinal.siguiente();",
+            "clasificarSalidaFinal",
+        ):
+            self.assertNotIn(fragmento_ausente, self.sketch)
         for funcion_vieja in (
             "void mostrarBienvenida",
             "void actualizarPantallaEstado",
@@ -306,15 +311,14 @@ class PantallaFinalTests(unittest.TestCase):
 
     def test_modo_solo_navega_y_sensores_se_inicializan_antes_de_refrescar(self):
         controles = self.sketch.split("void revisarControlesFisicos()", 1)[1].split("\n}", 1)[0]
-        self.assertIn("pantallaFinal.siguiente();", controles)
-        self.assertIn("ACK;MODO_LCD;", controles)
         self.assertNotIn("ejecutarOrdenActuador", controles)
         self.assertNotIn("BOTON_LUZ_SALA", controles)
+        self.assertIn("MODO/LCD descartado", controles)
 
         setup = self.sketch.split("void setup()", 1)[1].split("\n}", 1)[0]
         self.assertIn("pantallaFinal.begin(lcd);", setup)
         self.assertIn("analogReadResolution(12);", setup)
-        self.assertIn("dht.begin();", setup)
+        self.assertNotIn("dht.begin();", setup)
         self.assertNotIn("refrescarPantallaFinal();", setup)
 
     def test_nativo_formato_prioridad_err_y_diferencial(self):

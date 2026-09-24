@@ -103,7 +103,7 @@ class HilProductoBancoTests(unittest.TestCase):
     def test_01_identidad_y_diagnostico(self):
         line = first(self.board.cmd("DIAGNOSTICO", wait=2.0), "DIAGNOSTICO;")
         self.assertIn(f"PERFIL_CANDIDATO={PROFILE};", line)
-        for field in ("WATCHDOG=", "PANTALLA=", "IR=ON", "BOMBA_ETAPA=DRV"):
+        for field in ("WATCHDOG=", "PANTALLA=", "IR=ON", "BOMBA_ETAPA=GPIO_DIRECTO"):
             self.assertIn(field, line)
 
     def test_02_estado_contiene_sensores_y_seguridad(self):

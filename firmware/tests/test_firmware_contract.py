@@ -81,20 +81,25 @@ class FirmwareContractTests(unittest.TestCase):
         self.assertIn("verificarLimiteBomba();", self.source)
 
     def test_automatic_controls_have_separate_hysteresis_thresholds(self):
+        # Demo feria IR+luces: umbral de riego/ventilador se conserva como
+        # contrato de calibración (static_assert) aunque el ciclo automático
+        # esté fuera del firmware mínimo.
         self.assertRegex(
             self.source, r"#define\s+UMBRAL_HUMEDAD_SECA_PCT\s+35\b"
         )
         self.assertRegex(
             self.source, r"#define\s+UMBRAL_HUMEDAD_HUMEDA_PCT\s+45\b"
         )
-        self.assertIn("pct >= UMBRAL_HUMEDAD_HUMEDA_PCT", self.source)
         self.assertRegex(
             self.source, r"#define\s+UMBRAL_TEMP_ALTA_C\s+28\.0\b"
         )
         self.assertRegex(
             self.source, r"#define\s+UMBRAL_TEMP_NORMAL_C\s+26\.0\b"
         )
-        self.assertIn("UMBRAL_TEMP_NORMAL_C", self.source)
+        self.assertIn(
+            "static_assert(UMBRAL_HUMEDAD_SECA_PCT < UMBRAL_HUMEDAD_HUMEDA_PCT",
+            self.source,
+        )
 
     def test_emergency_stop_blocks_new_on_orders(self):
         self.assertIn("paroEmergenciaActivo && orden.encender", self.source)
@@ -123,9 +128,12 @@ class FirmwareContractTests(unittest.TestCase):
         self.assertIn("limite_de_frecuencia", self.source)
 
     def test_critical_sensor_failures_cut_automatic_outputs(self):
-        self.assertIn("RIEGO_BLOQUEADO_SENSOR", self.source)
-        self.assertNotIn("VENT_BLOQUEADO_SENSOR", self.source)  # ventilador eliminado
-        self.assertIn("LUCES_BLOQUEADAS", self.source)
+        # Demo IR+luces: sin ciclo automático de riego/luces combinadas no hay
+        # motivo RIEGO_BLOQUEADO_SENSOR/LUCES_BLOQUEADAS en runtime; el ventilador
+        # ya no existe.
+        self.assertNotIn("VENT_BLOQUEADO_SENSOR", self.source)
+        self.assertNotIn("verificarRiegoAutomatico", self.source)
+        self.assertNotIn("verificarLucesCombinadas", self.source)
 
     def test_mic_off_and_physical_backup_are_present(self):
         self.assertIn("MAPA_CASA.micOff", self.source)
@@ -221,8 +229,7 @@ class FirmwareContractTests(unittest.TestCase):
         demo = self.source.split("void demoSecuenciaActualizar() {", 1)[1].split("\n}\n", 1)[0]
         self.assertIn("ejecutarComandoRele", demo)
         self.assertNotIn("digitalWrite", demo)
-        # Pantalla caída en caliente se reintenta, no se abandona.
-        self.assertIn("INTERVALO_REINTENTO_PANTALLA_MS", self.source)
+        # LCD descartado (quemado): sin reintento de pantalla en el mínimo.
 
     def test_botones_nuevos_serial_y_tecla_ch_spare(self):
         # LCD quemado (nota 80): CH alterna Spare; Serial expone SPARE/TODO/DEMO.
@@ -232,9 +239,32 @@ class FirmwareContractTests(unittest.TestCase):
             "\n}\n", 1)[0]
         ch = teclas.split("case CH:", 1)[1].split("case CH_MAS:", 1)[0]
         self.assertIn('alternarSalidaIR(4, "SPARE", "Spare")', ch)
-        self.assertIn("EventoJarvis::CH", ch)
-        self.assertIn("estadoSalidas[4] ? 1 : 2", ch)
         self.assertNotIn("PANTALLA_SIGUIENTE", ch)
+        # Mapa feria: tope usable, sin audio, 3 usable, consultas al final.
+        self.assertIn("fijarModoManualIR", teclas)
+        self.assertIn("fijarModoAutoIR", teclas)
+        self.assertIn("parpadeoAutoActualizar", self.source)
+        self.assertIn("MODOLUCES_AUTO", self.source)
+        # AUTO = invernadero: transición de parpadeo y riego por crudo.
+        self.assertIn("automatizarInvernadero", self.source)
+        self.assertIn("DURACION_TRANSICION_AUTO_MS", self.source)
+        self.assertIn("UMBRAL_RIEGO_SEC_CRUDO", self.source)
+        self.assertIn("#define UMBRAL_RIEGO_SEC_CRUDO   4000", self.source)
+        self.assertIn("BOMBA_ON_APAGA_LUCES", self.source)
+        self.assertIn("BOMBA_DIRECTA_S8050", self.source)
+        self.assertIn("GPIO_DIRECTO", self.source)
+        self.assertIn("ACK;IR;LUCES_TODAS_ON", teclas)
+        self.assertIn("ACK;IR;DEMO_ON", teclas)
+        self.assertIn("ACK;IR;TODO_OFF", teclas)
+        # Tecla 3 ya no es NACK de cultivo: alterna Spare.
+        n3 = teclas.split("case N_3:", 1)[1].split("case N_4:", 1)[0]
+        self.assertIn('alternarSalidaIR(4, "SPARE", "Spare")', n3)
+        self.assertNotIn("SALIDA_NO_INSTALADA", teclas)
+        # Consultas 6-9 solo al final, sin voz/LCD.
+        n6 = teclas.split("case N_6:", 1)[1].split("default:", 1)[0]
+        self.assertIn("construirReporteEstado", n6)
+        self.assertNotIn("anunciarJarvis", n6)
+        self.assertNotIn("pantallaFinal", n6)
         # carpetaSalida: cultivo = tecla 3, spare = tecla CH (no al revés).
         mapa = self.source.split("EventoJarvis carpetaSalida", 1)[1].split(
             "\n}", 1)[0]

@@ -13,9 +13,9 @@ DFPlayer y HIL del producto.
   suelo y `TIEMPO_MAXIMO_BOMBA_MS` (timeout). `MAPA_CASA.nivel` (GPIO16)
   queda reservado por unicidad de pines, nunca se lee.
 - IR HX1838: señal en GPIO12. DHT11 GPIO14, suelo GPIO15, LDR GPIO3.
-- DFPlayer: RX GPIO17 / TX GPIO18 (LCD descartado, quemado).
-- Botones a GND con pull-up: PARO GPIO10, SILENCIO GPIO9, MODO GPIO18.
-- GPIO11 no existe en la placa; SILENCIO usa GPIO9.
+- DFPlayer: RX GPIO17 / TX GPIO18 (LCD descartado, quemado); R1k en serie del TX hacia RX del módulo; VCC 5V_BUS.
+- Botones a GND con pull-up: PARO GPIO10, SILENCIO GPIO9. GPIO11 no existe en la placa.
+- Solo bomba por DRV8833 canal A (AIN1=GPIO4, AIN2=GPIO7); canal B / ventilador eliminado.
 
 ## Aprender el mando IR
 
@@ -66,7 +66,7 @@ espera unos segundos y envía `PRUEBA`. Copia desde `PRUEBA;INICIO` hasta
 ### Ejecutor automático seguro (Windows)
 
 El HIL vigente prueba este firmware, no el esqueleto legado. No flashea y no
-enciende bomba ni ventilador; sólo consulta el banco, conmuta los tres LED y
+enciende bomba; sólo consulta el banco, conmuta los tres LED y
 comprueba PARO/rearme. Desde la raíz del repositorio:
 
 ```powershell
@@ -88,21 +88,23 @@ Para probar la bomba manualmente, colócala primero dentro del agua y envía
 ## Bocinas disponibles
 
 No conectar bocinas de 1–2 ohmios directamente a ningún GPIO, 3V3 ni al S8050
-de la bomba. El audio permanece deshabilitado hasta disponer de un amplificador
-compatible y confirmar la impedancia admitida por este.
+de la bomba. El audio va por DFPlayer con parlante de 4–8 Ω en SPK_1/SPK_2.
 
 El MAX98306 de la compra es un amplificador con entrada analógica, no I2S y no
-reproduce archivos por sí solo. La fuente definida es DFPlayer Mini con microSD
-y cuatro pistas por evento; sigue deshabilitada hasta asignar UART libre y
-validar alimentación, tarjeta y parlante. Ver la nota Obsidian 65.
+reproduce archivos por sí solo (no sustituye al DFPlayer). La fuente definida
+es DFPlayer Mini con microSD y cuatro pistas por evento; requiere SD FAT32
+en el módulo, parlante y alimentación 5V estables. Ver la nota Obsidian 65.
+(Existe también un MAX98357A I2S en la compra: solo sirve si se rediseña el
+firmware para decodificar MP3 en el ESP32; hoy no está en uso.)
 
 Las 176 pistas generadas (88 por voz: 22 eventos x 4 variantes) y su
 manifiesto reproducible están en `audio/jarvis_sd/`. La voz 1 (Carlos) usa
 carpetas 01-22 y la voz 2 (Karla) usa 51-72. Cada botón del mando tiene su
-carpeta; la 22 es FALLO (`No funciono.`). Las variantes llevan significado
+carpeta; la 22/72 es FALLO (`No funciono.`). Las variantes llevan significado
 (1 = ON manual, 2 = OFF manual, 3 = ON automático, 4 = OFF automático). El
 botón CH habla con la carpeta 02 (frases de Spare). Ver
 `tools/generate_jarvis_audio.py`.
-El firmware ya contiene `JarvisAudio` y `DFPlayerTransport`, pero mantiene
-RX/TX/BUSY en `-1` y `MP3_HABILITADO=false`: la nota 66 exige identificar los
-GPIO libres y el módulo físico antes de crear el perfil final.
+La SD de producción se copia en la **raíz** (solo `01`–`22` y `51`–`72`),
+formato **FAT32**, sin `MANIFEST.csv` ni basura de Android. El firmware
+contiene `JarvisAudio` y `DFPlayerTransport` activos en perfil 4 (UART
+GPIO17/GPIO18); sin BUSY conectado, reporta por Serial (`DFP>carpeta X pista Y`).

@@ -54,6 +54,7 @@ struct String : std::string {
   String(float n,int):std::string(std::to_string(n)) {}
 };
 constexpr int LOW=0,HIGH=1,TOTAL_SALIDAS=5,PIN_PARO_EMERGENCIA=10;
+constexpr int INPUT=0, OUTPUT=1, INPUT_PULLUP=2, INPUT_PULLDOWN=3;
 constexpr int PIN_MIC_OFF=9;
 bool micHabilitado=true;
 constexpr int MAX_FALLOS_ANTES_DE_ALERTA_PERSISTENTE=3;
@@ -98,6 +99,7 @@ void responderJarvis(const String&) {}
 String construirRespuestaJarvis(const OrdenActuador&,bool,const ResultadoOrden&) {return "respuesta";}
 void digitalWrite(int pin,int valor) {gpio[pin]=valor;}
 int digitalRead(int pin) {return gpio[pin];}
+void pinMode(int pin,int modo) {(void)pin;(void)modo;}
 unsigned long millis() {return reloj;}
 void delay(int n) {reloj+=n;}
 unsigned long esp_get_free_heap_size() {return heap;}

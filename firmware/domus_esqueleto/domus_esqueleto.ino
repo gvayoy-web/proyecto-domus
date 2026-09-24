@@ -8,11 +8,8 @@
 #define MICROSD_HABILITADA false
 
 // Arduino solo genera prototipos para el .ino principal, no para un .ino
-// incluido. Estas son las tres funciones que la pantalla usa antes de su
-// definicion dentro del firmware de producto.
+// incluido. Demo feria IR+luces: solo la lectura de suelo se usa en loop.
 bool leerHumedad(int &crudoSalida, int &pctSalida);
-bool leerLuz(int &crudoSalida, int &pctSalida);
-bool leerAmbiente(float &tempCSalida, float &humAireSalida);
 
 // Funciones de hardware del perfil final
 void actualizarLuces74HC595(bool salaEncendida, bool cuartoEncendida, bool cultivoEncendida);

@@ -64,6 +64,10 @@ class Receptor {
       uint16_t valor = preferencias_.getUShort(clave(i), 0xFFFF);
       tabla_[i] = valor == 0xFFFF ? CODIGOS_INICIALES[i] : valor;
     }
+    // NVS virgen (feria): confiar en CODIGOS_INICIALES (nota 64) sin
+    // exigir IR_GRABAR. IR_BORRAR pone mapa_borrado y lo desactiva.
+    if (mascaraAprendida_ == 0 && !preferencias_.getBool("mapa_borrado", false))
+      mascaraAprendida_ = MASCARA_TOTAL;
     IrReceiver.begin(pin, DISABLE_LED_FEEDBACK);
   }
 
@@ -110,6 +114,7 @@ class Receptor {
   }
   void borrar() {
     preferencias_.clear();
+    preferencias_.putBool("mapa_borrado", true);
     mascaraAprendida_ = 0;
     for (uint8_t i = 0; i < TOTAL; ++i) {
       tabla_[i] = CODIGOS_INICIALES[i];

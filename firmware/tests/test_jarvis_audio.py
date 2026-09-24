@@ -91,21 +91,16 @@ class JarvisAudioContractTests(unittest.TestCase):
                 self.assertGreater(ruta.stat().st_size, 1000,
                                    f"Archivo demasiado pequeño: {ruta}")
 
-    def test_tecla_100_alterna_la_voz_de_un_toque(self):
-        """100+ alterna Carlos/Karla de un toque; Carlos es la voz inicial."""
+    def test_tecla_100_alterna_modo_sin_audio(self):
+        """100+ alterna MANUAL/AUTO (antes cambiaba la voz; sin DFPlayer)."""
         teclas = self.firmware.split("void ejecutarTeclaIRCasa", 1)[1].split(
             "\n}\n", 1)[0]
-        voz = teclas.split("case N_100_MAS:", 1)[1]
-        self.assertIn("jarvisAudio.cambiarVoz();", voz)
-        self.assertIn("ACK;IR;VOZ=", voz)
-        # El anuncio suena ya en la voz nueva (variante 1 = Carlos, 2 = Karla).
-        self.assertIn("TECLA_100", voz)
-        self.assertIn("voz == 1 ? 1 : 2", voz)
+        modo = teclas.split("case N_100_MAS:", 1)[1]
+        self.assertIn("fijarModoManualIR", modo)
+        self.assertIn("fijarModoAutoIR", modo)
+        self.assertNotIn("jarvisAudio.cambiarVoz", teclas)
         self.assertNotIn("ultimaN6Ms", self.firmware)
-        # La voz 2 usa las carpetas 51-72 (desplazamiento +50 sobre 01-22)
-        self.assertIn("DESPLAZAMIENTO_VOZ_2 = 50", self.audio_header)
-        self.assertIn("+ DESPLAZAMIENTO_VOZ_2", self.audio_header)
-        # FALLO anuncia "No funciono" en pedidos rechazados.
+        # FALLO sigue en el despachador (respuesta a pedidos rechazados).
         despacho = self.firmware.split(
             "ResultadoOrden ejecutarOrdenActuador", 1)[1].split(
             "\n}\n", 1)[0]
@@ -126,21 +121,27 @@ class JarvisAudioContractTests(unittest.TestCase):
         self.assertIn("jarvisAudio.ocupado()", puerta)
         self.assertIn("bool ocupado() const", self.audio_header)
 
-    def test_mapa_21_teclas_con_voz_propia(self):
-        """Cada botón anuncia su carpeta (notas 46 y 64).
+    def test_mapa_21_teclas_sin_voz_en_el_mando(self):
+        """Mapa feria: sin audio en ejecutarTeclaIRCasa; modos y luces útiles.
 
-        Menú y consultas hablan en ejecutarTeclaIRCasa; las cargas hablan
-        vía el despachador (carpetaSalida + variante por manual/auto).
+        Menú/consultas solo Serie; las cargas siguen con carpetaSalida
+        cuando exista DFPlayer (el despachador no cambia).
         """
         teclas = self.firmware.split("void ejecutarTeclaIRCasa", 1)[1].split(
             "\n}\n", 1)[0]
-        for evento in ("CH_MENOS", "CH_MAS", "TECLA_0", "TECLA_200",
-                       "EQ", "PLAY", "TECLA_6", "TECLA_7", "TECLA_8",
-                       "TECLA_9", "TECLA_100"):
-            self.assertIn(evento, teclas, f"Tecla sin voz propia: {evento}")
         # CH- = modo manual y CH+ = modo automático (nota 46).
         self.assertIn("fijarModoManualIR", teclas)
         self.assertIn("fijarModoAutoIR", teclas)
+        # Sin rutas de audio/LCD en el mando.
+        self.assertNotIn("anunciarJarvis", teclas)
+        self.assertNotIn("jarvisAudio", teclas)
+        self.assertNotIn("pantallaFinal", teclas)
+        self.assertNotIn("AUDIO_DESHABILITADO", teclas)
+        # Tope usable.
+        for marca in ("case CH_MENOS:", "case CH:", "case CH_MAS:",
+                      "case PLAY:", "case VOL_MENOS:", "case VOL_MAS:",
+                      "case EQ:", "ACK;IR;LUCES_TODAS_ON", "ACK;IR;DEMO_ON"):
+            self.assertIn(marca, teclas, f"Falta marca tope: {marca}")
         despacho = self.firmware.split(
             "ResultadoOrden ejecutarOrdenActuador", 1)[1].split(
             "\n}\n", 1)[0]
@@ -150,9 +151,14 @@ class JarvisAudioContractTests(unittest.TestCase):
         self.assertIn("TECLA_0, false, 3, 4", self.firmware)
 
     def test_tecla_cambia_volumen(self):
-        """Test that volume up/down keys work."""
-        self.assertIn("case VOL_MAS:", self.firmware)
-        self.assertIn("case VOL_MENOS:", self.firmware)
+        """VOL+ ya no es volumen: es demo; el API de audio queda para el futuro."""
+        teclas = self.firmware.split("void ejecutarTeclaIRCasa", 1)[1].split(
+            "\n}\n", 1)[0]
+        self.assertIn("case VOL_MAS:", teclas)
+        self.assertIn("case VOL_MENOS:", teclas)
+        volmas = teclas.split("case VOL_MAS:", 1)[1].split("case EQ:", 1)[0]
+        self.assertIn("DEMO_ON", volmas)
+        self.assertNotIn("ajustarVolumen", volmas)
         self.assertIn("ajustarVolumen", self.audio_header)
 
     def test_repetir_solo_por_serial(self):
