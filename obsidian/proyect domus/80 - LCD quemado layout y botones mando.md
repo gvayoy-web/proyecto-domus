@@ -64,6 +64,34 @@ depends: 76, 77, 79
 12. Conflicto GPIO18 resuelto: DFPlayer TX vs botón DEMO phantom `ACK;MODO_LCD` →
     lectura del botón `MAPA_CASA.demo` gateada con `if (!MP3_HABILITADO)`
 13. Re-upload a COM9; **HIL 12/12 PASS** (`DOMUS_PORT=COM9`); non-HIL **107 PASS**
+14. **GPIO11 no existe en la placa** (pins reales: 3–10, 12–18, 46). Remapeo:
+    - SILENCIO/micOff: **GPIO11 → GPIO9** (PIR inexistente, pin libre)
+    - DFPlayer UART: RX **11 → 17** (SDA del LCD quemado, liberado), TX sigue **18**
+    - `transporteDFPlayer.begin(MAPA_CASA.sda, MAPA_CASA.demo, …)`
+    - `LCD_DESCARTADO=true`: `detectarPantalla()` no inicia `Wire` (headless)
+15. Tests/README/native_integration actualizados al nuevo mapa; non-HIL **107 PASS**;
+    compile + **upload COM9**; **HIL 8/8 PASS** (`DOMUS_PORT=COM9`)
+
+### Mapa GPIO vigente (placa real, sin GPIO11)
+
+| Señal | GPIO | Nota |
+|-------|------|------|
+| LDR | 3 | techo Casa |
+| Bomba (DRV AIN1) | 4 | |
+| Casa (2 LEDs blancos) | 5 | |
+| Spare / LEDs Jarvis (opcionales) | 6 | |
+| Cultivo (DRV AIN2) | 7 | |
+| Porche (LED rojo) | 8 | |
+| **SILENCIO (micOff)** | **9** | antes 11 (inexistente) |
+| PARO | 10 | |
+| IR HX1838 | 12 | |
+| SCL (LCD descartado) | 13 | no se usa I2C |
+| DHT11 | 14 | techo Casa |
+| Suelo | 15 | |
+| Nivel agua | 16 | |
+| **SDA / DFPlayer RX** | **17** | LCD liberado |
+| **MODO/demo / DFPlayer TX** | **18** | botón gateado `!MP3_HABILITADO` |
+| GPIO46 | 46 | disponible; no usado |
 
 ## Mando CAR MP3 — tecla CH reasignada
 

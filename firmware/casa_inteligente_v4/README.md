@@ -12,9 +12,10 @@ al hardware disponible.
 - Ventilador GPIO7: bloqueado y configurado como entrada.
 - IR HX1838: señal en GPIO12; VCC a 3V3 y GND común.
 - Audio, micrófono, microSD y driver doble: deshabilitados.
-- Sensores: LDR GPIO3, PIR GPIO9, DHT11 GPIO14, suelo GPIO15 y nivel GPIO16.
+- Sensores: LDR GPIO3, PIR GPIO9 (no montado; GPIO9 es ahora SILENCIO), DHT11 GPIO14, suelo GPIO15 y nivel GPIO16.
 - LCD: SDA GPIO17, SCL GPIO13, VCC 3V3 y GND.
-- Botones a GND con pull-up interno: PARO GPIO10, SILENCIO GPIO11 y MODO GPIO18.
+- Botones a GND con pull-up interno: PARO GPIO10, SILENCIO GPIO9 y MODO GPIO18.
+- GPIO11 no existe en la placa; SILENCIO usa GPIO9. LCD descartado: DFPlayer RX en GPIO17.
 
 La bomba usa TP4056 `OUT+` para el positivo y su negativo va al colector del
 S8050. `OUT-` se une con GND del ESP32. El emisor va a GND, la base lleva

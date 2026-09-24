@@ -54,7 +54,7 @@ struct String : std::string {
   String(float n,int):std::string(std::to_string(n)) {}
 };
 constexpr int LOW=0,HIGH=1,TOTAL_SALIDAS=5,PIN_PARO_EMERGENCIA=10;
-constexpr int PIN_MIC_OFF=11;
+constexpr int PIN_MIC_OFF=9;
 bool micHabilitado=true;
 constexpr int MAX_FALLOS_ANTES_DE_ALERTA_PERSISTENTE=3;
 constexpr bool MP3_HABILITADO=false;
@@ -75,7 +75,7 @@ struct MapaPinesCasa {
 constexpr MapaPinesCasa MAPA_CASA = {
   15, 16, 3,
   4, 5, 8, 7, 8,
-  10, 11, 18, 13, 14, 17, 12,
+  10, 9, 18, 13, 14, 17, 12,
   {4, 5, 8, 7, 8}};
 // Fakes de perfil (nota 54): máscara con TODAS las etapas + driver validado,
 // para probar la lógica de despacho/seguridad/timeout con actuadores presentes.

@@ -55,7 +55,7 @@ class JarvisAudioContractTests(unittest.TestCase):
         """Test that audio is enabled in profile 4 with pin remapping."""
         self.assertIn("CASA_FINAL_DRV8833_DFPLAYER", self.firmware)
         self.assertIn("PERFIL_CASA == PerfilCasa::CASA_FINAL_DRV8833_DFPLAYER", self.firmware)
-        self.assertIn("transporteDFPlayer.begin(11, 18,", self.firmware)
+        self.assertIn("transporteDFPlayer.begin(MAPA_CASA.sda, MAPA_CASA.demo,", self.firmware)
         self.assertIn("MP3_BUSY_PIN", self.firmware)
         self.assertIn("AUDIO_CANDIDATO_HABILITADO", self.audio_header)
 

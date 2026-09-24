@@ -229,13 +229,13 @@ enum class PerfilCasa : uint8_t {
 struct MapaPinesCasa {
   int suelo, nivel, ldr;
   int bomba, casa, porche, cultivo, spare;
-  int paro, micOff, demo, scl, dht, sda, ir;  // micOff=GPIO11 (tambien DFPlayer RX), demo=GPIO18 (tambien DFPlayer TX)
+  int paro, micOff, demo, scl, dht, sda, ir;  // micOff=GPIO9 (SILENCIO), demo=GPIO18 (tambien DFPlayer TX); LCD quemado: scl/sda libres para DFPlayer RX
   int salidas[TOTAL_SALIDAS];
 };
 constexpr MapaPinesCasa MAPA_CASA = {
   15, 16, 3,
   4, 5, 8, 7, 6,
-  10, 11, 18, 13, 14, 17, 12,
+  10, 9, 18, 13, 14, 17, 12,
   {4, 5, 8, 7, 6}
 };
 DHT dht(MAPA_CASA.dht, TIPO_DHT);
@@ -395,9 +395,8 @@ static_assert(MEMORIA_LIBRE_CRITICA_BYTES < MEMORIA_LIBRE_RECUPERACION_BYTES,
 // SECCIÓN 3: OBJETOS GLOBALES
 // ============================================================================
 // DFPlayer por HardwareSerial con pin remapping (nota 69 opcion c).
-// UART1 remapeada: RX=GPIO4 (compartido con DRV8833 AIN1),
-// TX=GPIO7 (compartido con DRV8833 AIN2). El DRV8833 mantiene la
-// direccion estable durante la reproduccion de audio.
+// UART1: RX=GPIO17 (SDA del LCD quemado, liberado), TX=GPIO18 (demo/MODO;
+// boton gateado con !MP3_HABILITADO). GPIO11 no existe en la placa.
 HardwareSerial SerialMP3(1); // UART1 reservada
 DFPlayerTransport transporteDFPlayer(SerialMP3);
 JarvisAudio jarvisAudio(transporteDFPlayer);
@@ -864,7 +863,16 @@ bool escanearBusI2C(bool &hayLcd, uint8_t &dirLcd) {
   return dispositivosEncontrados > 0;
 }
 
+// LCD1602 quemado y descartado (nota 80): no se inicia I2C; libera
+// GPIO17/13 para el UART del DFPlayer y evita errores de bus.
+constexpr bool LCD_DESCARTADO = true;
+
 void detectarPantalla() {
+  if (LCD_DESCARTADO) {
+    log("PANTALLA", "LCD descartado (quemado); I2C no iniciado, modo headless");
+    pantallaActiva = PANTALLA_NINGUNA;
+    return;
+  }
   if (!Wire.begin(MAPA_CASA.sda, MAPA_CASA.scl)) {
     registrarError("I2C", "No se pudo iniciar; sin pantalla");
     return;
@@ -2480,13 +2488,14 @@ if (BOMBA_DIRECTA_S8050)
   }
 
 if (MP3_HABILITADO) {
-    // DFPlayer: UART1 remapeada a GPIO11(RX)/GPIO18(TX)
-    if (transporteDFPlayer.begin(11, 18, MP3_BUSY_PIN)) {
+    // DFPlayer: UART1 remapeada a GPIO17(RX)/GPIO18(TX); GPIO11 no existe
+    // en la placa. LCD descartado libera 17 (antes SDA).
+    if (transporteDFPlayer.begin(MAPA_CASA.sda, MAPA_CASA.demo, MP3_BUSY_PIN)) {
       jarvisAudio.begin(18);
       jarvisAudio.silenciar(!micHabilitado);
-      log("MP3", "DFPlayer iniciado en GPIO11/RX, GPIO18/TX; volumen 18/30");
+      log("MP3", "DFPlayer iniciado en GPIO17/RX, GPIO18/TX; volumen 18/30");
     } else {
-      log("MP3", "AUDIO_OFF: DFPlayer no detectado en GPIO11/RX, GPIO18/TX");
+      log("MP3", "AUDIO_OFF: DFPlayer no detectado en GPIO17/RX, GPIO18/TX");
     }
   } else {
     log("MP3", "AUDIO_OFF: GPIO UART/BUSY no asignados o invalidos");

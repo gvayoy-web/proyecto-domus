@@ -137,8 +137,8 @@ Cathodos → GND
 ```
 VCC → 5V/2A
 GND → GND
-RX → GPIO18(Proto1) TX  ← CRUZADO
-TX → GPIO11(Proto1) RX  ← CRUZADO
+RX → GPIO18(Proto1) TX  ← CRUZADO (ESP TX = MODO/demo)
+TX → GPIO17(Proto1) RX  ← CRUZADO (SDA LCD liberado; GPIO11 no existe)
 SPK_1/SPK_2 → Parlante 4ohm
 ```
 

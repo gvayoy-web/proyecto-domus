@@ -165,7 +165,7 @@ class FirmwareContractTests(unittest.TestCase):
         # el DFPlayer usa pins 4/7 por pin remapping en perfil 4.
         self.assertNotIn("#define MP3_RX_PIN", self.source)
         self.assertNotIn("#define MP3_TX_PIN", self.source)
-        self.assertIn("transporteDFPlayer.begin(11, 18,", self.source)
+        self.assertIn("transporteDFPlayer.begin(MAPA_CASA.sda, MAPA_CASA.demo,", self.source)
         self.assertIn("MP3_BUSY_PIN", self.source)
         registry = self.source.split(
             "constexpr int PINES_RESERVADOS_DOMUS[] = {", 1
