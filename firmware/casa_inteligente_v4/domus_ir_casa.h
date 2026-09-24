@@ -12,7 +12,7 @@ namespace IRCasa {
 // Jarvis propia: evento = índice + 1 (ver domus_jarvis_audio.h).
 enum Tecla : uint8_t {
   CH_MENOS = 0,   // 0x45 modo manual
-  CH = 1,         // 0x46 página LCD
+  CH = 1,         // 0x46 spare ON/OFF (LCD descartado, nota 80)
   CH_MAS = 2,     // 0x47 modo automático
   ANTERIOR = 3,   // 0x44 luz de sala
   PLAY = 4,       // 0x43 silencio

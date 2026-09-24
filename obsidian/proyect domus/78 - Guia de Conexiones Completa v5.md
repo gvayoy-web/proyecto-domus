@@ -37,7 +37,7 @@ Alimentada por USB ESP32        Alimentada por 5V/2A
 
 | GPIO | Funcion | Color | Protoboard |
 |------|---------|-------|------------|
-| 3 | LDR | Morado | 1 |
+| 3 | LDR | Morado | **Techo Casa** |
 | 4 | Bomba | Rojo | 2 |
 | 5 | Casa (2 LEDs) | Amarillo | 2 |
 | 7 | Cultivo (3 LEDs) | Azul | 2 |
@@ -46,11 +46,11 @@ Alimentada por USB ESP32        Alimentada por 5V/2A
 | 10 | PARO | Gris | 1 |
 | 11 | DFPlayer RX | Naranja | 2 |
 | 12 | IR VS1838B | Amarillo osc. | 1 |
-| 13 | LCD SCL | Azul claro | 1 |
-| 14 | DHT11 | Naranja | 1 |
+| 13 | LCD SCL | Azul claro | 1 | **LCD QUEMADO — pin libre** |
+| 14 | DHT11 | Naranja | **Techo Casa** |
 | 15 | Sensor suelo | Marron | 2 |
 | 16 | Sensor nivel | Gris osc. | 2 |
-| 17 | LCD SDA | Verde | 1 |
+| 17 | LCD SDA | Verde | 1 | **LCD QUEMADO — pin libre** |
 | 18 | DFPlayer TX | Morado | 2 |
 
 ## Conexiones detalladas
@@ -70,7 +70,7 @@ GND → GND
 VCC → 3V3
 ```
 
-### DHT11 (Protoboard 1)
+### DHT11 (**Techo de Casa**)
 ```
 VCC (pin1) → 3V3
 DATA (pin2) → GPIO14 + resistor 10k a 3V3
@@ -78,7 +78,17 @@ GND (pin4) → GND
 ```
 IMPORTANTE: Pull-up 10k es OBLIGATORIO.
 
-### LDR (Protoboard 1)
+### LDR (**Techo de Casa**, con divisor)
+```
+3V3 → LDR → nodo → GPIO3 → 10k → GND
+```
+El LDR mira hacia afuera (cara zigzag hacia la luz).
+
+### LCD1602
+**QUEMADO — descartado** (nota 80). No conectar; GPIO13/17 quedan libres
+en el firmware headless.
+
+### LDR (Techo de Casa)
 ```
 3V3 → LDR → GPIO3 → 10k → GND
 ```

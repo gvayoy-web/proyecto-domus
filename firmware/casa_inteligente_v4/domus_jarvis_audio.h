@@ -31,7 +31,7 @@
 //   significado; Play usa paridad ON {1,3} / OFF {2,4}.
 enum class EventoJarvis : uint8_t {
   CH_MENOS = 1,    // CH- 0x45: modo manual
-  CH = 2,          // CH  0x46: página siguiente del LCD
+  CH = 2,          // CH  0x46: spare (LCD descartado, carpeta 02 orden aceptada)
   CH_MAS = 3,      // CH+ 0x47: modo automático
   ANTERIOR = 4,    // Anterior 0x44: luz de sala (comparte con tecla 1)
   PLAY = 5,        // Play 0x43: silencio on/off

@@ -42,13 +42,17 @@ acción. El firmware rechaza asignar el mismo código a dos teclas y `IR_LISTA`
 muestra `APRENDIDAS=n/21`.
 
 Mapa por botón (un toque, sin combinaciones): arriba configuración, abajo
-acciones en orden. CH- fija modo manual, CH+ modo automático, CH cambia de
-página; PLAY silencia, VOL ajusta volumen, EQ diagnostica, 0 apaga todo,
+acciones en orden. CH- fija modo manual, CH+ modo automático, CH alterna
+Spare (salida 4); PLAY silencia, VOL ajusta volumen, EQ diagnostica, 0 apaga todo,
 100+ alterna la voz Carlos/Karla, 200+ rearma. Abajo: 1/Anterior sala,
-2/Siguiente cuarto, 3 cultivo, 4 ventilador (responde bloqueado sin driver),
-5 alterna riego, 6/7/8/9 consultas (temp, humedad, suelo+depósito, estado).
+2/Siguiente cuarto, 3 cultivo, 4 todas las luces, 5 alterna riego,
+6/7/8/9 consultas (temp, humedad, suelo+depósito, estado).
 Mientras Jarvis habla o 1.5 s tras cada orden, el mando responde
 `NACK;IR;OCUPADO` (la tecla 0 y el aprendizaje no se bloquean).
+
+Serial (nota 80): `SPARE_ON/OFF/AUTO`, `TODO_ON` (luces+Spare, sin bomba),
+`TODO_OFF`, `DEMO_ON/OFF`, aliases `LUZC_*` de Cultivo. El LCD1602 se
+descartó (quemado); las llamadas a pantalla son no-op con puntero nulo.
 
 La vista 0 del LCD muestra temperatura y humedad del aire. La vista 1 muestra
 humedad de suelo y agua en porcentaje. El porcentaje de agua usa provisionalmente

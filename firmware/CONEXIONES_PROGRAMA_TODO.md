@@ -79,7 +79,7 @@ Sin parlante/SD igual funciona todo menos el audio físico.
 | LCD 1602 | SDA → GPIO17, SCL → GPIO13, VCC → **3V3** (nota 39), GND → GND. SDA/SCL **antes** de encender |
 | IR VS1838B | OUT → GPIO12, VCC → 3V3, GND → GND |
 | Botón PARO | GPIO10 ─┤├── GND (INPUT_PULLUP) |
-| Botones MODO/SILENCIO | **DESCONECTADOS** (GPIO11/18 ahora son la UART del DFPlayer; el mando los reemplaza: CH = página LCD, PLAY = silencio) |
+| Botones MODO/SILENCIO | **DESCONECTADOS** (GPIO11/18 ahora son la UART del DFPlayer; en el mando de producto: CH = Spare, PLAY = silencio; en `domus_todo` aún CH = página LCD) |
 
 ## 7. Croquis completo
 
@@ -140,4 +140,4 @@ mando CAR MP3 con las 21 teclas de la nota 64.
 4. `SONAR` → debe salir `DFP>carpeta 21 pista 1` (y sonar si hay SD+parlante).
 5. Bomba **sumergida**: `RIEGO_ON` / `RIEGO_OFF`. Mando: **5** bomba, **4** vent,
    **1/2/3** luces, **8** suelo+agua, **9/EQ** diagnóstico, **0** todo off,
-   **CH+/CH−** auto/manual, **CH** página LCD, **PLAY** silencio.
+   **CH+/CH−** auto/manual; **CH** = página LCD en este sketch, Spare en producto; **PLAY** silencio.

@@ -19,7 +19,7 @@ reemplaza: notas parciales de 66 y 72
 | Tecla | Codigo | Funcion | Audio Jarvis |
 |-------|--------|---------|--------------|
 | CH- | 0x45 | Modo manual | Carpeta 01 (sistema listo) |
-| CH | 0x46 | Pagina LCD siguiente | Sin audio |
+| CH | 0x46 | Spare ON/OFF (GPIO6; LCD quemado, nota 80) | Carpeta 02 |
 | CH+ | 0x47 | Modo automatico | Carpeta 01 (sistema listo) |
 | ANTERIOR | 0x44 | Pagina LCD anterior | Sin audio |
 | PLAY | 0x43 | Silencio Jarvis ON/OFF | Sin audio (toggle) |

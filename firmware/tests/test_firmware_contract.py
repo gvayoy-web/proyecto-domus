@@ -223,6 +223,27 @@ class FirmwareContractTests(unittest.TestCase):
         # Pantalla caída en caliente se reintenta, no se abandona.
         self.assertIn("INTERVALO_REINTENTO_PANTALLA_MS", self.source)
 
+    def test_botones_nuevos_serial_y_tecla_ch_spare(self):
+        # LCD quemado (nota 80): CH alterna Spare; Serial expone SPARE/TODO/DEMO.
+        self.assertIn("case CH:", self.source)
+        teclas = self.source.split("void ejecutarTeblaIRCasa", 1)
+        teclas = self.source.split("void ejecutarTeclaIRCasa", 1)[1].split(
+            "\n}\n", 1)[0]
+        ch = teclas.split("case CH:", 1)[1].split("case CH_MAS:", 1)[0]
+        self.assertIn('alternarSalidaIR(4, "SPARE", "Spare")', ch)
+        self.assertNotIn("PANTALLA_SIGUIENTE", ch)
+        for comando in (
+            '"SPARE_ON"', '"SPARE_OFF"', '"SPARE_AUTO"',
+            '"TODO_ON"', '"TODO_OFF"',
+            '"DEMO_ON"', '"DEMO_OFF"',
+            '"LUZC_ON"', '"LUZC_OFF"', '"LUZC_AUTO"',
+        ):
+            self.assertIn(comando, self.source)
+        self.assertIn('{"SPARE_ON", 4, 1}', self.source)
+        self.assertIn('comando == "TODO_ON"', self.source)
+        self.assertIn('comando == "DEMO_ON"', self.source)
+        self.assertIn("iniciarSecuenciaDemo();", self.source)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

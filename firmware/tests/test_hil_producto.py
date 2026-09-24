@@ -18,8 +18,10 @@ except ImportError:  # pragma: no cover - dependencia exclusiva de HIL
 
 BAUD = 115200
 PROFILE = "CASA_FINAL_DRV8833_DFPLAYER"
-LED_COMMANDS = (("LUZ1", "Casa"), ("LUZ2", "Porche"), ("INVER", "Cultivo"))
-MOTOR_COMMANDS = (("RIEGO_ON", "Bomba"), ("VENT_ON", "Spare"))
+# Luces reales del layout (nota 80): Casa, Porche y Spare (CH).
+# Cultivo/INVER es canal de motor DRV8833 → NACK driver_no_listo sin F1.
+LED_COMMANDS = (("LUZ1", "Casa"), ("LUZ2", "Porche"), ("SPARE", "Spare"))
+MOTOR_COMMANDS = (("RIEGO_ON", "Bomba"),)
 
 
 def resolve_port():
@@ -93,7 +95,7 @@ class HilProductoBancoTests(unittest.TestCase):
     def tearDownClass(cls):
         try:
             # Estado seguro: todas las cargas manualmente apagadas. Nunca ON motor.
-            for command in ("RIEGO_OFF", "VENT_OFF", "LUZ1_OFF", "LUZ2_OFF", "INVER_OFF"):
+            for command in ("RIEGO_OFF", "VENT_OFF", "LUZ1_OFF", "LUZ2_OFF", "INVER_OFF", "SPARE_OFF"):
                 cls.board.cmd(command, wait=0.35)
         finally:
             cls.board.close()

@@ -144,7 +144,8 @@ class PantallaFinal {
   }
 
   // Cierra cualquier overlay (IR o aviso) para dejar ver la vista actual.
-  // Lo usa CH tras cambiar de página: si no, el overlay IR taparía 5 s
+  // Reserva de overlay IR (la botonería física de MODO aún puede llamarla):
+  // si no, el overlay IR taparía 5 s
   // la página recién elegida.
   void ocultarOverlays() {
     irVisibleHastaMs_ = 0;

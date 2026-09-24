@@ -1672,6 +1672,9 @@ const char* COMANDOS_VALIDOS[] = {
    "RIEGO_ON", "RIEGO_OFF", "LUZ1_ON", "LUZ1_OFF", "LUZ2_ON", "LUZ2_OFF",
    "INVER_ON", "INVER_OFF",
    "RIEGO_AUTO", "LUZ1_AUTO", "LUZ2_AUTO", "INVER_AUTO",
+   "SPARE_ON", "SPARE_OFF", "SPARE_AUTO",
+   "LUZC_ON", "LUZC_OFF", "LUZC_AUTO",
+   "TODO_ON", "TODO_OFF", "DEMO_ON", "DEMO_OFF",
    "ESTADO", "DIAGNOSTICO", "PRUEBA", "PARO", "REARMAR", "RECUPERAR",
    "MIC_ESTADO", "SD_PRUEBA", "PINTEST_ALL", "CAL_NIVEL", "CAL_SUELDO"
 };
@@ -1757,10 +1760,8 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
       anunciarJarvis(EventoJarvis::CH_MENOS);
       break;
     case CH:
-      pantallaFinal.siguiente();
-      // Sin esto, el overlay IR tapaba 5 s la página recién elegida.
-      pantallaFinal.ocultarOverlays();
-      emitirEventoLocal("ACK;IR;PANTALLA_SIGUIENTE");
+      // LCD descartado (quemado, nota 80): CH alterna la salida Spare.
+      alternarSalidaIR(4, "SPARE", "Spare");
       anunciarJarvis(EventoJarvis::CH);
       break;
     case CH_MAS:
@@ -2129,8 +2130,9 @@ bool procesarCalibracion(const String &comando) {
   return true;
 }
 
-// Tabla comando -> salida para los 15 comandos de relé/modo: una sola
-// comparación por entrada en vez de 15 ramas if/else con String temporales.
+// Tabla comando -> salida: una sola comparación por entrada en vez de
+// decenas de ramas if/else con String temporales. SPARE = índice 4 (GPIO6);
+// LUZC_* es alias de INVER_* (Cultivo).
 struct EntradaComandoRele {
   const char* nombre;
   int8_t indice;
@@ -2141,6 +2143,8 @@ static const EntradaComandoRele TABLA_COMANDOS_RELE[] = {
   {"LUZ1_ON", 1, 1}, {"LUZ1_OFF", 1, 0}, {"LUZ1_AUTO", 1, -1},
   {"LUZ2_ON", 2, 1}, {"LUZ2_OFF", 2, 0}, {"LUZ2_AUTO", 2, -1},
   {"INVER_ON", 3, 1}, {"INVER_OFF", 3, 0}, {"INVER_AUTO", 3, -1},
+  {"LUZC_ON", 3, 1}, {"LUZC_OFF", 3, 0}, {"LUZC_AUTO", 3, -1},
+  {"SPARE_ON", 4, 1}, {"SPARE_OFF", 4, 0}, {"SPARE_AUTO", 4, -1},
 };
 
 bool despacharComandoRele(const String &comando) {
@@ -2248,6 +2252,23 @@ void procesarComandoTexto(const String &comandoCrudo) {
   log("SERIAL", "Comando recibido: " + comando);
 
   if (despacharComandoRele(comando)) return;
+  else if (comando == "TODO_ON") {
+    // Enciende luces + Spare (índices 1..4); no toca la bomba (0).
+    for (int i = 1; i < TOTAL_SALIDAS; ++i)
+      ejecutarComandoRele("TODO_ON", i, true, ORIGEN_MANUAL);
+  }
+  else if (comando == "TODO_OFF") {
+    for (int i = 0; i < TOTAL_SALIDAS; ++i)
+      ejecutarComandoRele("TODO_OFF", i, false, ORIGEN_MANUAL);
+  }
+  else if (comando == "DEMO_ON") {
+    iniciarSecuenciaDemo();
+    emitirEventoLocal("ACK;DEMO_ON");
+  }
+  else if (comando == "DEMO_OFF") {
+    detenerSecuenciaDemo();
+    emitirEventoLocal("ACK;DEMO_OFF");
+  }
   else if (comando == "ESTADO")    emitirEventoLocal(construirReporteEstado());
   else if (comando == "DIAGNOSTICO") emitirEventoLocal(construirReporteDiagnostico());
   else if (comando == "PRUEBA") emitirPruebaGuiada();
@@ -2322,13 +2343,15 @@ void revisarControlesFisicos() {
   if (digitalRead(MAPA_CASA.paro) == LOW) {
     if (!paroEmergenciaActivo) activarParoEmergencia("PARO_FISICO");
   }
-  bool botonModo = digitalRead(MAPA_CASA.demo);
-  if (botonModo != ultimoBotonDemo && millis() - ultimoCambioBotonDemoMs >= 40UL) {
-    ultimoCambioBotonDemoMs = millis();
-    ultimoBotonDemo = botonModo;
-    if (botonModo == LOW && !paroEmergenciaActivo) {
-      pantallaFinal.siguiente();
-      emitirEventoLocal(String("ACK;MODO_LCD;") + pantallaFinal.indice());
+  if (!MP3_HABILITADO) {
+    bool botonModo = digitalRead(MAPA_CASA.demo);
+    if (botonModo != ultimoBotonDemo && millis() - ultimoCambioBotonDemoMs >= 40UL) {
+      ultimoCambioBotonDemoMs = millis();
+      ultimoBotonDemo = botonModo;
+      if (botonModo == LOW && !paroEmergenciaActivo) {
+        pantallaFinal.siguiente();
+        emitirEventoLocal(String("ACK;MODO_LCD;") + pantallaFinal.indice());
+      }
     }
   }
 }
