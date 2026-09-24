@@ -141,7 +141,7 @@ class CasaCandidatoTests(unittest.TestCase):
         body = r'''
 int main() {
   gpio[PIN_PARO_EMERGENCIA]=HIGH; gpio[PIN_MIC_OFF]=HIGH;
-  agua=1000; sensorValido=true; micHabilitado=true;
+  micHabilitado=true;
   heap=100000; calibracion.nivelMinimo=600;
   ResultadoOrden bomba = ejecutarOrdenActuador({0,true,ORIGEN_MANUAL,1,"bomba"});
   ResultadoOrden sala = ejecutarOrdenActuador({1,true,ORIGEN_MANUAL,1,"sala"});

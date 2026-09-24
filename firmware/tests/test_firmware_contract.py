@@ -45,7 +45,6 @@ class FirmwareContractTests(unittest.TestCase):
     def test_adc_rails_are_rejected(self):
         import re
         for low, high in (("HUMEDAD_MIN_VALIDA", "HUMEDAD_MAX_VALIDA"),
-                          ("NIVEL_AGUA_MIN_VALIDO", "NIVEL_AGUA_MAX_VALIDO"),
                           ("LDR_MIN_VALIDO", "LDR_MAX_VALIDO")):
             minimum = int(re.search(r"#define\s+" + low + r"\s+(\d+)", self.source)[1])
             maximum = int(re.search(r"#define\s+" + high + r"\s+(\d+)", self.source)[1])
@@ -74,8 +73,10 @@ class FirmwareContractTests(unittest.TestCase):
         product_job = self.workflow.split("compilar-perfiles-alfa:", 1)[0]
         self.assertNotIn("Adafruit SSD1306", product_job)
 
-    def test_pump_has_level_and_timeout_interlocks(self):
-        self.assertIn("nivel_agua_bajo", self.source)
+    def test_pump_has_timeout_interlock_no_level_sensor(self):
+        # Sin sonda de depósito en el inventario: solo timeout gobierna la bomba.
+        self.assertNotIn("nivel_agua_bajo", self.source)
+        self.assertNotIn("leerNivelAgua", self.source)
         self.assertIn("TIEMPO_MAXIMO_BOMBA_MS", self.source)
         self.assertIn("verificarLimiteBomba();", self.source)
 
@@ -231,14 +232,30 @@ class FirmwareContractTests(unittest.TestCase):
             "\n}\n", 1)[0]
         ch = teclas.split("case CH:", 1)[1].split("case CH_MAS:", 1)[0]
         self.assertIn('alternarSalidaIR(4, "SPARE", "Spare")', ch)
+        self.assertIn("EventoJarvis::CH", ch)
+        self.assertIn("estadoSalidas[4] ? 1 : 2", ch)
         self.assertNotIn("PANTALLA_SIGUIENTE", ch)
+        # carpetaSalida: cultivo = tecla 3, spare = tecla CH (no al revés).
+        mapa = self.source.split("EventoJarvis carpetaSalida", 1)[1].split(
+            "\n}", 1)[0]
+        self.assertIn("case 3: return EventoJarvis::TECLA_3;", mapa)
+        self.assertIn("case 4: return EventoJarvis::CH;", mapa)
         for comando in (
             '"SPARE_ON"', '"SPARE_OFF"', '"SPARE_AUTO"',
             '"TODO_ON"', '"TODO_OFF"',
             '"DEMO_ON"', '"DEMO_OFF"',
-            '"LUZC_ON"', '"LUZC_OFF"', '"LUZC_AUTO"',
+            '"FALLO"',
         ):
-            self.assertIn(comando, self.source)
+            if comando == '"FALLO"':
+                self.assertIn("EventoJarvis::FALLO", self.source)
+            else:
+                self.assertIn(comando, self.source)
+        for removido in (
+            '"LUZC_ON"', '"LUZC_OFF"', '"LUZC_AUTO"',
+            '"INVER_ON"', '"INVER_OFF"', '"INVER_AUTO"',
+            '"CAL_NIVEL"',
+        ):
+            self.assertNotIn(removido, self.source)
         self.assertIn('{"SPARE_ON", 4, 1}', self.source)
         self.assertIn('comando == "TODO_ON"', self.source)
         self.assertIn('comando == "DEMO_ON"', self.source)

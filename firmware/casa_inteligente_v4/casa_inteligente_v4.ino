@@ -249,11 +249,16 @@ static_assert(MAPA_CASA.bomba == MAPA_CASA.salidas[0] && MAPA_CASA.casa == MAPA_
               MAPA_CASA.spare == MAPA_CASA.salidas[4], "Campos y arreglo de salidas unidos");
 // Habilitación física derivada del perfil. Los motores quedan bloqueados en
 // los tres perfiles vigentes (ver DRIVER_MOTORES_LISTO en domus_drivers.h).
+// Hardware real de la feria: bomba (DRV canal A), Casa, Porche y Spare
+// (2 LEDs azules de Jarvis en GPIO6). Cultivo NO tiene luz (índice 3 siempre
+// sin etapa); no hay sensor de nivel de agua en el inventario.
+// Bomba física en perfil 3 (S8050 directo) y perfil 4 (DRV8833 canal A).
 constexpr bool SALIDA_FISICA_CASA[TOTAL_SALIDAS] = {
-   PERFIL_CASA == PerfilCasa::BANCO_COMPLETO_S8050_IR,
-   PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES,
-   PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES,
+   PERFIL_CASA == PerfilCasa::BANCO_COMPLETO_S8050_IR ||
    PERFIL_CASA == PerfilCasa::CASA_FINAL_DRV8833_DFPLAYER,
+   PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES,
+   PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES,
+   false,
    PERFIL_CASA != PerfilCasa::BANCO_SIN_ACTUADORES
 };
 constexpr bool BOMBA_DIRECTA_S8050 =
@@ -288,12 +293,8 @@ static_assert(!(BOMBA_DIRECTA_S8050 && SALIDA_FISICA_CASA[3]),
 
 #define HUMEDAD_MIN_VALIDA      50     // los rieles ADC se tratan como fallo
 #define HUMEDAD_MAX_VALIDA      4045
-#define NIVEL_AGUA_MIN_VALIDO          16
-#define NIVEL_AGUA_MAX_VALIDO          4079
-#define NIVEL_AGUA_MUESTRAS_ESTABLES   3
-#define NIVEL_AGUA_MINIMO_CRUDO        600 // PROVISIONAL: calibrar con deposito casi vacio
-#define NIVEL_AGUA_VACIO_CRUDO         600 // 0%: medir con sensor fuera del agua
-#define NIVEL_AGUA_LLENO_CRUDO        2500 // 100%: medir a la altura maxima permitida
+// #define NIVEL_AGUA_* eliminados: sin sonda de depósito en el inventario.
+// calibracion.nivelMinimo queda solo por compatibilidad del struct NVS.
 #define PIR_RETENCION_MS              30000UL
 
 // Calibración del LDR (fotoresistor), mismo principio que la humedad de
@@ -413,7 +414,7 @@ bool paroEmergenciaActivo = false;
 bool modoSeguroActivo = false;
 bool watchdogActivo = false;
 CalibracionDomus calibracion = {1, HUMEDAD_LECTURA_SECA, HUMEDAD_LECTURA_HUMEDA,
-  LDR_LECTURA_OSCURO, LDR_LECTURA_BRILLANTE, NIVEL_AGUA_MINIMO_CRUDO, 0};
+  LDR_LECTURA_OSCURO, LDR_LECTURA_BRILLANTE, 600, 0};
 CalibracionDomus calibracionPendiente = calibracion;
 bool calibracionGuardada = false;
 uint8_t direccionLcdActiva = 0;
@@ -461,7 +462,6 @@ unsigned long bombaEncendidaDesdeMs = 0;
 // Últimas lecturas válidas de sensores (para no mostrar basura si un sensor
 // falla momentáneamente)
 int ultimaHumedadValida = -1;       // ADC crudo, humedad de TIERRA
-int ultimoNivelAguaValido = -1;
 bool ultimaPresenciaValida = false;
 unsigned long ultimaPresenciaMs = 0;
 int ultimoHumedadPctValido = -1;    // % calibrado, humedad de TIERRA
@@ -497,7 +497,7 @@ void emitirEventoLocal(const char* linea);
 bool leerHumedad(int &crudoSalida, int &pctSalida);
 bool leerLuz(int &crudoSalida, int &pctSalida);
 bool leerAmbiente(float &tempCSalida, float &humAireSalida);
-bool leerNivelAgua(int &valorSalida);
+
 bool probarMicroSD();
 void registrarLineaMicroSD(const String &linea);
 void activarParoEmergencia(const char* motivo);
@@ -532,11 +532,10 @@ String obtenerUltimoError() {
 String construirReporteDiagnostico() {
   static char buf[1024];
   const String ultimo = obtenerUltimoError();
-  int humCrudo = -1, sueloCrudo = -1, ldrCrudo = -1, nivelCrudo = -1;
+  int humCrudo = -1, sueloCrudo = -1, ldrCrudo = -1;
   if (ultimaHumedadValida >= 0) humCrudo = (int)ultimaHumedadValida;
   if (ultimoHumedadPctValido >= 0) sueloCrudo = (int)ultimoHumedadPctValido;
   if (ultimoLdrCrudoValido >= 0) ldrCrudo = (int)ultimoLdrCrudoValido;
-  if (ultimoNivelAguaValido >= 0) nivelCrudo = (int)ultimoNivelAguaValido;
   snprintf(buf, sizeof(buf),
     "DIAGNOSTICO;"
     "PERFIL_CANDIDATO=%s;"
@@ -557,8 +556,8 @@ String construirReporteDiagnostico() {
     "BOMBA_ETAPA=%s;"
     "SD_DESCARTADOS=%lu;SD_ERRORES=%lu;SD_PRUEBA=%d;"
     "RECONOCIMIENTO_VOZ=NO_USADO;AUDIO=APLAZADO;"
-    "ADC_SUELRO=%d;ADC_NIVEL=%d;ADC_LDR=%d;"
-    "CAL_SECO=%d;CAL_HUMEDO=%d;CAL_OSCURO=%d;CAL_CLARO=%d;CAL_NIVEL_MIN=%d;",
+    "ADC_SUELRO=%d;ADC_LDR=%d;"
+    "CAL_SECO=%d;CAL_HUMEDO=%d;CAL_OSCURO=%d;CAL_CLARO=%d;",
     nombrePerfilCasa(PERFIL_CASA),
     (unsigned long)(millis() / 1000),
     (unsigned long)esp_get_free_heap_size(),
@@ -583,10 +582,9 @@ String construirReporteDiagnostico() {
     (unsigned long)sdDescartados.load(),
     (unsigned long)sdErrores.load(),
     (int)sdUltimaPrueba.load(),
-    sueloCrudo, nivelCrudo, ldrCrudo,
+    sueloCrudo, ldrCrudo,
     calibracion.sueloSeco, calibracion.sueloHumedo,
-    calibracion.luzOscura, calibracion.luzClara,
-    calibracion.nivelMinimo);
+    calibracion.luzOscura, calibracion.luzClara);
   return String(buf);
 }
 
@@ -597,9 +595,11 @@ bool driverMotoresAplicarFinal(uint8_t canal, bool activar) {
   if (!DRIVER_MOTORES_LISTO) return false;
   if (canal > 1) return false;
   if (canal == 0) {
-    // Bomba: AIN1=GPIO4, AIN2=GPIO7
+    // Bomba: AIN1=GPIO4, AIN2=GPIO7.
+    // ON  = AIN1 HIGH, AIN2 LOW  -> forward
+    // OFF = AIN1 LOW,  AIN2 LOW  -> coast (nunca reverse)
     digitalWrite(DRV8833_PIN_AIN1, activar ? HIGH : LOW);
-    digitalWrite(DRV8833_PIN_AIN2, activar ? LOW : HIGH);
+    digitalWrite(DRV8833_PIN_AIN2, LOW);
   } else {
     // Canal 1: ventilador eliminado, sin accion
     return false;
@@ -963,14 +963,14 @@ bool anunciarJarvisGrupo(EventoJarvis evento, bool alertaAutomatica,
 }
 
 // Carpeta del botón que gobierna cada salida: bomba = tecla 5,
-// casa = tecla 1, porche = tecla 2, todas_luces = tecla 4, cultivo = tecla 3.
+// casa = tecla 1, porche = tecla 2, cultivo = tecla 3, spare = tecla CH.
 EventoJarvis carpetaSalida(int indice) {
   switch (indice) {
     case 0: return EventoJarvis::TECLA_5;
     case 1: return EventoJarvis::TECLA_1;
     case 2: return EventoJarvis::TECLA_2;
-    case 3: return EventoJarvis::TECLA_4;
-    case 4: return EventoJarvis::TECLA_3;
+    case 3: return EventoJarvis::TECLA_3;
+    case 4: return EventoJarvis::CH;
     default: return EventoJarvis::TECLA_9;
   }
 }
@@ -1099,35 +1099,27 @@ ResultadoOrden ejecutarOrdenActuador(const OrdenActuador &orden) {
     return {false, false, "modo_seguro"};
   }
 
-  // Motores primero por driver (F1) y después por etapa del perfil: el motivo
-  // reportado distingue "sin driver validado" de "sin etapa instalada".
-  if (orden.encender &&
-      ((orden.indiceRele == 0 && !BOMBA_DIRECTA_S8050) || orden.indiceRele == 3) &&
+  // Bomba por driver (F1): el motivo reportado distingue "sin driver
+  // validado" de "sin etapa instalada". Cultivo/canal B no existen.
+  if (orden.encender && orden.indiceRele == 0 && !BOMBA_DIRECTA_S8050 &&
       !driverMotoresListo()) {
     log("SEGURIDAD", "Encendido rechazado: driver de motores no validado (F1)");
+    if (orden.origen == ORIGEN_IR || orden.origen == ORIGEN_MANUAL) {
+      responderJarvis("No funciono.");
+      anunciarJarvis(EventoJarvis::FALLO, false, 1);
+    }
     return {false, false, "driver_no_listo"};
   }
 
   // Habilitación física del perfil: ninguna fuente enciende una salida sin
-  // etapa instalada (nota 53/54/55).
+  // etapa instalada (nota 53/54/55). Cultivo no tiene luz en el hardware.
   if (orden.encender && !SALIDA_FISICA_CASA[orden.indiceRele]) {
     log("SEGURIDAD", "Encendido rechazado: salida sin etapa en este perfil");
-    return {false, false, "salida_no_instalada"};
-  }
-
-  // El nivel del depósito es una interlock física: ninguna fuente puede
-  // encender la bomba si la lectura falta o está por debajo del mínimo.
-  if (orden.indiceRele == 0 && orden.encender) {
-    int nivelAgua = 0;
-    if (!leerNivelAgua(nivelAgua) || nivelAgua < calibracion.nivelMinimo) {
-      registrarError("SEGURIDAD", "Bomba bloqueada por nivel de agua bajo o invalido");
-      ResultadoOrden bloqueo = {false, false, "nivel_agua_bajo"};
-      if (orden.origen == ORIGEN_IR) {
-        responderJarvis("No puedo regar: el deposito no tiene agua suficiente.");
-      }
-      anunciarJarvis(EventoJarvis::TECLA_8, orden.origen == ORIGEN_AUTOMATICO, 4);
-      return bloqueo;
+    if (orden.origen == ORIGEN_IR || orden.origen == ORIGEN_MANUAL) {
+      responderJarvis("No funciono.");
+      anunciarJarvis(EventoJarvis::FALLO, false, 1);
     }
+    return {false, false, "salida_no_instalada"};
   }
 
   const bool estadoAnterior = estadoSalidas[orden.indiceRele];
@@ -1136,21 +1128,16 @@ ResultadoOrden ejecutarOrdenActuador(const OrdenActuador &orden) {
     : desactivarSalida(orden.indiceRele, false);
   if (!exito) {
     ResultadoOrden fallo = {false, false, "gpio_no_confirmado"};
-    if (orden.origen == ORIGEN_IR) {
-      responderJarvis(construirRespuestaJarvis(orden, estadoAnterior, fallo));
+    if (orden.origen == ORIGEN_IR || orden.origen == ORIGEN_MANUAL) {
+      responderJarvis("No funciono.");
+      anunciarJarvis(EventoJarvis::FALLO, false, 1);
     }
     return fallo;
   }
 
-  // Perfil final: conducir DRV8833 para motores
-  if (orden.encender && orden.indiceRele == 0 && driverMotoresListo()) {
-    driverMotoresAplicarFinal(0, true);
-  } else if (!orden.encender && orden.indiceRele == 0 && driverMotoresListo()) {
-    driverMotoresAplicarFinal(0, false);
-  } else if (orden.encender && orden.indiceRele == 3 && driverMotoresListo()) {
-    driverMotoresAplicarFinal(1, true);
-  } else if (!orden.encender && orden.indiceRele == 3 && driverMotoresListo()) {
-    driverMotoresAplicarFinal(1, false);
+  // Perfil final: conducir DRV8833 solo en la bomba (canal A).
+  if (orden.indiceRele == 0 && driverMotoresListo()) {
+    driverMotoresAplicarFinal(0, orden.encender);
   }
 
   // Una orden manual/IR toma propiedad incluso si fue idempotente.
@@ -1239,10 +1226,9 @@ void refrescarPantallaFinal() {
     return;
   }
 
-  int humedadCrudo = 0, humedadPct = 0, nivelAgua = 0, ldrCrudo = 0, luzPct = 0;
+  int humedadCrudo = 0, humedadPct = 0, ldrCrudo = 0, luzPct = 0;
   float tempC = 0, humAire = 0;
   bool humedadValida = leerHumedad(humedadCrudo, humedadPct);
-  bool nivelValido = leerNivelAgua(nivelAgua);
   bool luzValida = leerLuz(ldrCrudo, luzPct);
   bool tempValida = leerAmbiente(tempC, humAire);
 
@@ -1268,12 +1254,10 @@ void refrescarPantallaFinal() {
       humAire <= DHT_HUM_MAX_VALIDA_PCT;
   d.sueloPct = humedadPct;
   d.sueloValido = humedadValida;
-  d.nivelRaw = nivelAgua;
-  long nivelRango = (long)NIVEL_AGUA_LLENO_CRUDO - NIVEL_AGUA_VACIO_CRUDO;
-  long nivelPct = nivelRango == 0 ? 0 :
-    ((long)nivelAgua - NIVEL_AGUA_VACIO_CRUDO) * 100L / nivelRango;
-  d.nivelPct = constrain((int)nivelPct, 0, 100);
-  d.nivelValido = nivelValido;
+  // Sin sensor de nivel: la vista 1 solo muestra suelo; nivel queda inválido.
+  d.nivelRaw = 0;
+  d.nivelPct = 0;
+  d.nivelValido = false;
   d.nivelMin = calibracion.nivelMinimo;
   d.luzPct = luzPct;
   d.luzValida = luzValida;
@@ -1327,8 +1311,6 @@ int leerSensorPromediado(int pin, int muestras = 4) {
 }
 
 int fallosConsecutivosHumedad = 0;
-int fallosConsecutivosNivelAgua = 0;
-uint8_t muestrasNivelAguaValidasConsecutivas = 0;
 #define MAX_FALLOS_ANTES_DE_REGISTRAR 3
 
 // Conversor único ADC->%: los dos anteriores (humedad y LDR) eran el mismo
@@ -1370,29 +1352,9 @@ bool leerHumedad(int &crudoSalida, int &pctSalida) {
   return true;
 }
 
-bool leerNivelAgua(int &valorSalida) {
-  int lectura = leerSensorPromediado(MAPA_CASA.nivel);
-  if (lectura < NIVEL_AGUA_MIN_VALIDO || lectura > NIVEL_AGUA_MAX_VALIDO) {
-    static unsigned long ultimoAvisoMs = 0;
-    muestrasNivelAguaValidasConsecutivas = 0;
-    fallosConsecutivosNivelAgua++;
-    if (fallosConsecutivosNivelAgua >= MAX_FALLOS_ANTES_DE_REGISTRAR) {
-      if (millis() - ultimoAvisoMs >= INTERVALO_AVISO_SENSOR_MS) {
-        ultimoAvisoMs = millis();
-        registrarError("SENSOR", "Nivel de agua fuera de rango, revisar conexion");
-      }
-      fallosConsecutivosNivelAgua = 0;
-    }
-    return false;
-  }
-  fallosConsecutivosNivelAgua = 0;
-  valorSalida = lectura;
-  ultimoNivelAguaValido = lectura;
-  if (muestrasNivelAguaValidasConsecutivas < NIVEL_AGUA_MUESTRAS_ESTABLES) {
-    muestrasNivelAguaValidasConsecutivas++;
-  }
-  return muestrasNivelAguaValidasConsecutivas >= NIVEL_AGUA_MUESTRAS_ESTABLES;
-}
+// Sin sensor de nivel de agua en el inventario de hardware: no se lee GPIO16
+// ni se usa como interlock. La bomba se gobierna por humedad de suelo y
+// TIEMPO_MAXIMO_BOMBA_MS.
 
 // ---- LDR (fotoresistor) - luz ambiental ----
 int fallosConsecutivosLdr = 0;
@@ -1494,18 +1456,6 @@ void verificarRiegoAutomatico() {
   if (millis() - ultimaVerificacionRiego < INTERVALO_RIEGO_MS) return;
   ultimaVerificacionRiego = millis();
 
-  int nivelAgua = 0;
-  bool nivelValido = leerNivelAgua(nivelAgua);
-  if (!nivelValido || nivelAgua < calibracion.nivelMinimo) {
-    if (estadoSalidas[0]) {
-      OrdenActuador corte = {0, false, ORIGEN_SISTEMA, 1.0f, "NIVEL_AGUA_BAJO"};
-      if (ejecutarOrdenActuador(corte).exito) {
-        emitirEventoLocal("EVENTO;RIEGO_BLOQUEADO_NIVEL;0");
-      }
-    }
-    return;
-  }
-
   int crudo, pct;
   if (!leerHumedad(crudo, pct)) {
     // Si el riego fue automático, una pérdida del sensor crítico debe cortar
@@ -1541,30 +1491,22 @@ void verificarRiegoAutomatico() {
   }
 }
 
-// Nueva regla combinada: temperatura alta + tierra seca + nivel suficiente
-// Optimización: reutiliza la lectura de DHT de verificarVentiladorCombinado
-// para evitar lecturas redundantes del sensor.
+// Regla combinada: temperatura alta + tierra seca (sin sensor de nivel).
 void verificarRiegoAutomaticoCombinado(float tempC_cached, bool tempValida_cached) {
   if (modoSeguroActivo) return;
 
   int crudo, pct;
   bool humValida = leerHumedad(crudo, pct);
-  int nivelAgua = 0;
-  bool nivelValido = leerNivelAgua(nivelAgua);
 
-  if (tempValida_cached && tempC_cached >= UMBRAL_TEMP_ALTA_C && humValida && pct < UMBRAL_HUMEDAD_SECA_PCT &&
-      nivelValido && nivelAgua >= calibracion.nivelMinimo) {
+  if (tempValida_cached && tempC_cached >= UMBRAL_TEMP_ALTA_C &&
+      humValida && pct < UMBRAL_HUMEDAD_SECA_PCT) {
     if (!estadoSalidas[0] || propietarioSalidas[0] == PROPIETARIO_AUTOMATICO) {
-      log("AUTO_COMBINADO", "Calor + tierra seca + nivel OK: riego de enfriamiento");
+      log("AUTO_COMBINADO", "Calor + tierra seca: riego de enfriamiento");
       OrdenActuador orden = {0, true, ORIGEN_AUTOMATICO, 1.0f, "RIEGO_COOLING"};
       if (ejecutarOrdenActuador(orden).exito) {
         emitirEventoLocal("EVENTO;RIEGO_AUTO_COMBINADO;CALOR_TERRA_SECA");
       }
     }
-  }
-  // Regla: si hace calor y la tierra está húmeda, solo ventilador, no riego
-  else if (tempValida_cached && tempC_cached >= UMBRAL_TEMP_ALTA_C && humValida && pct >= UMBRAL_HUMEDAD_HUMEDA_PCT) {
-    // Ya maneja ventilador automático abajo
   }
 }
 
@@ -1583,7 +1525,7 @@ void verificarLucesCombinadas() {
   ultimaPresenciaMs = millis();
 
   if (!luzValida) {
-    const int luces[] = {1, 4};
+    const int luces[] = {1, 2, 4};
     bool huboCorte = false;
     for (int indice : luces) {
       if (estadoSalidas[indice] && propietarioSalidas[indice] == PROPIETARIO_AUTOMATICO) {
@@ -1612,19 +1554,6 @@ void verificarLucesCombinadas() {
       ejecutarOrdenActuador(orden);
     }
   }
-
-  // Luz cultivo con LDR solo (no necesita presencia)
-  if (propietarioSalidas[3] != PROPIETARIO_MANUAL_ON &&
-      propietarioSalidas[3] != PROPIETARIO_MANUAL_OFF) {
-    if (!estadoSalidas[3] && luzPct <= UMBRAL_LUZ_OSCURO_PCT) {
-      OrdenActuador orden = {3, true, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_COMB"};
-      ejecutarOrdenActuador(orden);
-    } else if (estadoSalidas[3] && propietarioSalidas[3] == PROPIETARIO_AUTOMATICO &&
-               luzPct >= UMBRAL_LUZ_CLARO_PCT) {
-      OrdenActuador orden = {3, false, ORIGEN_AUTOMATICO, 1.0f, "LUZ_INVER_COMB_OFF"};
-      ejecutarOrdenActuador(orden);
-    }
-  }
 }
 
 // La sala se enciende únicamente con oscuridad y presencia. La retención
@@ -1635,7 +1564,7 @@ void verificarLucesCombinadas() {
 // ============================================================================
 // Comandos de texto terminados en salto de línea:
 //   RIEGO_ON / RIEGO_OFF | LUZ1_ON / LUZ1_OFF | LUZ2_ON / LUZ2_OFF
-//   INVER_ON / INVER_OFF | ESTADO | DIAGNOSTICO
+//   SPARE_ON / SPARE_OFF | ESTADO | DIAGNOSTICO
 //
 //   "ACK;<comando>;<estado_logico_0_o_1>"   -> el comando se aplicó y se confirmó por GPIO
 //   "NACK;<comando>;<motivo>"               -> el comando no pudo confirmarse o fue rechazado
@@ -1644,7 +1573,7 @@ String construirReporteEstado() {
   static char buf[320];
   snprintf(buf, sizeof(buf),
     "ESTADO;%s=%d;%s=%d;%s=%d;%s=%d;%s=%d;"
-    "HUM=%d;HUM_PCT=%d;NIVEL_AGUA=%d;PRESENCIA=1;"
+    "HUM=%d;HUM_PCT=%d;PRESENCIA=1;"
     "TEMP_C=%.1f;HUM_AIRE_PCT=%.1f;LUZ_PCT=%d;"
     "MIC=%s;SD=%s;EMERGENCIA=%s;MODO_SEGURO=%s;",
     NOMBRES_SALIDAS[0], estadoSalidas[0] ? 1 : 0,
@@ -1653,7 +1582,6 @@ String construirReporteEstado() {
     NOMBRES_SALIDAS[3], estadoSalidas[3] ? 1 : 0,
     NOMBRES_SALIDAS[4], estadoSalidas[4] ? 1 : 0,
     ultimaHumedadValida, ultimoHumedadPctValido,
-    ultimoNivelAguaValido,
     (double)ultimaTempCValida, (double)ultimaHumAireValida,
     ultimoLuzPctValido,
     micHabilitado ? "ON" : "OFF",
@@ -1678,13 +1606,11 @@ void emitirPruebaGuiada() {
 
 const char* COMANDOS_VALIDOS[] = {
    "RIEGO_ON", "RIEGO_OFF", "LUZ1_ON", "LUZ1_OFF", "LUZ2_ON", "LUZ2_OFF",
-   "INVER_ON", "INVER_OFF",
-   "RIEGO_AUTO", "LUZ1_AUTO", "LUZ2_AUTO", "INVER_AUTO",
+   "RIEGO_AUTO", "LUZ1_AUTO", "LUZ2_AUTO",
    "SPARE_ON", "SPARE_OFF", "SPARE_AUTO",
-   "LUZC_ON", "LUZC_OFF", "LUZC_AUTO",
    "TODO_ON", "TODO_OFF", "DEMO_ON", "DEMO_OFF",
    "ESTADO", "DIAGNOSTICO", "PRUEBA", "PARO", "REARMAR", "RECUPERAR",
-   "MIC_ESTADO", "SD_PRUEBA", "PINTEST_ALL", "CAL_NIVEL", "CAL_SUELDO"
+   "MIC_ESTADO", "SD_PRUEBA", "PINTEST_ALL", "CAL_SUELDO"
 };
 const int CANTIDAD_COMANDOS_VALIDOS =
   sizeof(COMANDOS_VALIDOS) / sizeof(COMANDOS_VALIDOS[0]);
@@ -1769,8 +1695,10 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
       break;
     case CH:
       // LCD descartado (quemado, nota 80): CH alterna la salida Spare.
+      // El despachador ya anuncia con carpetaSalida(4)=CH y variante 1/2;
+      // aquí solo se refuerza el par manual con el estado real.
       alternarSalidaIR(4, "SPARE", "Spare");
-      anunciarJarvis(EventoJarvis::CH);
+      anunciarJarvis(EventoJarvis::CH, false, estadoSalidas[4] ? 1 : 2);
       break;
     case CH_MAS:
       fijarModoAutoIR();
@@ -1850,16 +1778,17 @@ void ejecutarTeclaIRCasa(IRCasa::Tecla tecla) {
                      estadoSalidas[2] ? 1 : 2);
       break;
     case N_3:
-      alternarSalidaIR(3, "INVER", "Cultivo");
-      anunciarJarvis(EventoJarvis::CULTIVO_ENCENDIDO, false,
-                     estadoSalidas[3] ? 1 : 2);
+      // Cultivo no tiene luz en el hardware real: sin etapa, sin voz de éxito.
+      emitirEventoLocal("NACK;IR;SALIDA_NO_INSTALADA");
+      pantallaFinal.mostrarMensaje("No funciono", "Tecla 3");
+      anunciarJarvis(EventoJarvis::FALLO, false, 1);
       break;
     case N_4: {
-      // Todas las luces ON/OFF: alterna salidas 1 (casa), 2 (porche), 3 (cultivo)
-      bool encender = !estadoSalidas[1] && !estadoSalidas[2] && !estadoSalidas[3];
+      // Todas las luces físicas: casa (1), porche (2) y Spare/Jarvis (4).
+      bool encender = !estadoSalidas[1] && !estadoSalidas[2] && !estadoSalidas[4];
       ejecutarComandoRele("IR_TODAS_LUCES", 1, encender, ORIGEN_IR);
       ejecutarComandoRele("IR_TODAS_LUCES", 2, encender, ORIGEN_IR);
-      ejecutarComandoRele("IR_TODAS_LUCES", 3, encender, ORIGEN_IR);
+      ejecutarComandoRele("IR_TODAS_LUCES", 4, encender, ORIGEN_IR);
       char aviso[17];
       snprintf(aviso, sizeof(aviso), "Luces %s", encender ? "ON" : "OFF");
       pantallaFinal.mostrarMensaje(aviso, "Tecla 4");
@@ -2104,7 +2033,6 @@ bool procesarCalibracion(const String &comando) {
     if (guardada) {
       calibracion = calibracionPendiente;
       calibracionGuardada = true;
-      muestrasNivelAguaValidasConsecutivas = 0;
     }
     emitirEventoLocal(guardada ? "ACK;CAL_GUARDAR;OK" : "NACK;CAL;error_nvs");
     return true;
@@ -2132,15 +2060,14 @@ bool procesarCalibracion(const String &comando) {
   else if (clave == "CAL_HUMEDO") calibracionPendiente.sueloHumedo = valor;
   else if (clave == "CAL_OSCURO") calibracionPendiente.luzOscura = valor;
   else if (clave == "CAL_CLARO") calibracionPendiente.luzClara = valor;
-  else if (clave == "CAL_NIVEL") calibracionPendiente.nivelMinimo = valor;
   else { emitirEventoLocal("NACK;CAL;clave_invalida"); return true; }
   emitirEventoLocal("ACK;CAL;PENDIENTE_GUARDAR");
   return true;
 }
 
 // Tabla comando -> salida: una sola comparación por entrada en vez de
-// decenas de ramas if/else con String temporales. SPARE = índice 4 (GPIO6);
-// LUZC_* es alias de INVER_* (Cultivo).
+// decenas de ramas if/else con String temporales. SPARE = índice 4 (GPIO6,
+// 2 LEDs azules de Jarvis). Cultivo no tiene luz: sin comandos.
 struct EntradaComandoRele {
   const char* nombre;
   int8_t indice;
@@ -2150,8 +2077,6 @@ static const EntradaComandoRele TABLA_COMANDOS_RELE[] = {
   {"RIEGO_ON", 0, 1}, {"RIEGO_OFF", 0, 0}, {"RIEGO_AUTO", 0, -1},
   {"LUZ1_ON", 1, 1}, {"LUZ1_OFF", 1, 0}, {"LUZ1_AUTO", 1, -1},
   {"LUZ2_ON", 2, 1}, {"LUZ2_OFF", 2, 0}, {"LUZ2_AUTO", 2, -1},
-  {"INVER_ON", 3, 1}, {"INVER_OFF", 3, 0}, {"INVER_AUTO", 3, -1},
-  {"LUZC_ON", 3, 1}, {"LUZC_OFF", 3, 0}, {"LUZC_AUTO", 3, -1},
   {"SPARE_ON", 4, 1}, {"SPARE_OFF", 4, 0}, {"SPARE_AUTO", 4, -1},
 };
 
@@ -2261,9 +2186,11 @@ void procesarComandoTexto(const String &comandoCrudo) {
 
   if (despacharComandoRele(comando)) return;
   else if (comando == "TODO_ON") {
-    // Enciende luces + Spare (índices 1..4); no toca la bomba (0).
+    // Enciende luces + Spare (índices 1,2,4); no toca la bomba (0) ni
+    // Cultivo (3, sin etapa).
     for (int i = 1; i < TOTAL_SALIDAS; ++i)
-      ejecutarComandoRele("TODO_ON", i, true, ORIGEN_MANUAL);
+      if (SALIDA_FISICA_CASA[i])
+        ejecutarComandoRele("TODO_ON", i, true, ORIGEN_MANUAL);
   }
   else if (comando == "TODO_OFF") {
     for (int i = 0; i < TOTAL_SALIDAS; ++i)
@@ -2436,11 +2363,18 @@ void setup() {
   micHabilitado = digitalRead(MAPA_CASA.micOff) != LOW;
 
   for (int i = 0; i < TOTAL_SALIDAS; i++) {
-    // Precarga el nivel inactivo antes de habilitar la salida para reducir
-    // pulsos breves durante el arranque en módulos activos en LOW.
-    // Arranque OFF: las salidas sin etapa quedan en INPUT (nota 53/54).
-    digitalWrite(MAPA_CASA.salidas[i], nivelSalida(i, false));
-    pinMode(MAPA_CASA.salidas[i], SALIDA_FISICA_CASA[i] ? OUTPUT : INPUT);
+    // En perfil 4, AIN1/AIN2 del DRV8833 los configura el init del driver:
+    // no precargarlos aquí (evita AIN1 HIGH con AIN2 flotando en el arranque).
+    const bool pinEsPuentH = PERFIL_CON_DRV8833 &&
+        (MAPA_CASA.salidas[i] == DRV8833_PIN_AIN1 ||
+         MAPA_CASA.salidas[i] == DRV8833_PIN_AIN2);
+    if (!pinEsPuentH) {
+      // Precarga el nivel inactivo antes de habilitar la salida para reducir
+      // pulsos breves durante el arranque en módulos activos en LOW.
+      // Arranque OFF: las salidas sin etapa quedan en INPUT (nota 53/54).
+      digitalWrite(MAPA_CASA.salidas[i], nivelSalida(i, false));
+      pinMode(MAPA_CASA.salidas[i], SALIDA_FISICA_CASA[i] ? OUTPUT : INPUT);
+    }
     propietarioSalidas[i] = PROPIETARIO_NINGUNO;
   }
   // El perfil con S8050 arranca con la bomba en manual OFF. Así una lectura
@@ -2516,7 +2450,6 @@ if (MP3_HABILITADO) {
 struct EstadoInteligente {
   // Limites diarios
   unsigned long bombaMsHoy;
-  unsigned long lucesCultivoMsHoy;
   unsigned long diaActualMs;    // millis() del inicio del día actual
 
   // Cooldowns
@@ -2528,12 +2461,10 @@ struct EstadoInteligente {
   bool presencia;
   bool calor;
   bool tierraSeca;
-  bool aguaBaja;
 
   // Salud sensores
   bool dht11OK;
   bool sueloOK;
-  bool nivelOK;
   bool ldrOK;
   unsigned long ultimoDHT11ValidoMs;
 };
@@ -2541,7 +2472,6 @@ struct EstadoInteligente {
 EstadoInteligente estadoInt = {};
 
 const unsigned long LIMITE_BOMBA_DIA_MS = 1800000UL;  // 30 min
-const unsigned long LIMITE_CULTIVO_DIA_MS = 57600000UL; // 16 h
 const unsigned long COOLDOWN_BOMBA_MS = 300000UL;      // 5 min
 const unsigned long COOLDOWN_LUCES_MS = 30000UL;       // 30 s
 const unsigned long DURACION_DIA_MS = 86400000UL;      // 24 h
@@ -2553,7 +2483,6 @@ void actualizarEstadoInteligente() {
   // Reset diario
   if (millis() - estadoInt.diaActualMs >= DURACION_DIA_MS) {
     estadoInt.bombaMsHoy = 0;
-    estadoInt.lucesCultivoMsHoy = 0;
     estadoInt.diaActualMs = millis();
   }
 
@@ -2566,10 +2495,6 @@ void actualizarEstadoInteligente() {
   int humCrudo = 0, humPct = 0;
   estadoInt.sueloOK = leerHumedad(humCrudo, humPct);
   estadoInt.tierraSeca = estadoInt.sueloOK && humPct <= UMBRAL_HUMEDAD_SECA_PCT;
-
-  int nivelAgua = 0;
-  estadoInt.nivelOK = leerNivelAgua(nivelAgua);
-  estadoInt.aguaBaja = estadoInt.nivelOK && nivelAgua < calibracion.nivelMinimo;
 
   int ldrCrudo = 0, luzPct = 0;
   estadoInt.ldrOK = leerLuz(ldrCrudo, luzPct);
@@ -2585,9 +2510,6 @@ void actualizarEstadoInteligente() {
   if (estadoSalidas[0] && bombaEncendidaDesdeMs != 0) {
     estadoInt.bombaMsHoy += millis() - ultimoCicloCheckMs;
   }
-  if (estadoSalidas[3]) {
-    estadoInt.lucesCultivoMsHoy += millis() - ultimoCicloCheckMs;
-  }
 }
 
 void ejecutarModoInteligente() {
@@ -2598,17 +2520,8 @@ void ejecutarModoInteligente() {
 
   actualizarEstadoInteligente();
 
-  // 1. Interlock agua baja: bomba OFF inmediato
-  if (estadoInt.aguaBaja && estadoSalidas[0]) {
-    OrdenActuador corte = {0, false, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_AGUA_BAJA"};
-    if (ejecutarOrdenActuador(corte).exito) {
-      emitirEventoLocal("EVENTO;INTELIGENTE_AGUA_BAJA;0");
-      anunciarJarvis(EventoJarvis::RIEGO_DETENIDO, false, 4);  // OFF automatico
-    }
-  }
-
-  // 2. Riego: tierra seca + agua OK + sin cooldown + sin limite diario
-  if (estadoInt.tierraSeca && !estadoInt.aguaBaja && !estadoSalidas[0] &&
+  // 1. Riego: tierra seca + sin cooldown + sin limite diario
+  if (estadoInt.tierraSeca && !estadoSalidas[0] &&
       (ahora - estadoInt.ultimoCicloBombaMs >= COOLDOWN_BOMBA_MS) &&
       estadoInt.bombaMsHoy < LIMITE_BOMBA_DIA_MS &&
       propietarioSalidas[0] != PROPIETARIO_MANUAL_OFF) {
@@ -2620,20 +2533,7 @@ void ejecutarModoInteligente() {
     }
   }
 
-  // 3. Cultivo: oscuridad → luces ON (fotoperiodo)
-  if (estadoInt.oscuridad && !estadoSalidas[3] &&
-      propietarioSalidas[3] != PROPIETARIO_MANUAL_OFF &&
-      estadoInt.lucesCultivoMsHoy < LIMITE_CULTIVO_DIA_MS &&
-      (ahora - estadoInt.ultimoToggleLucesMs >= COOLDOWN_LUCES_MS)) {
-    OrdenActuador orden = {3, true, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_CULTIVO_ON"};
-    if (ejecutarOrdenActuador(orden).exito) {
-      estadoInt.ultimoToggleLucesMs = ahora;
-      emitirEventoLocal("EVENTO;INTELIGENTE_CULTIVO_ON;1");
-      anunciarJarvis(EventoJarvis::CULTIVO_ENCENDIDO, false, 3);  // ON auto
-    }
-  }
-
-  // 4. Casa: oscuridad + presencia → ON
+  // 2. Casa: oscuridad + presencia → ON
   if (estadoInt.oscuridad && estadoInt.presencia && !estadoSalidas[1] &&
       propietarioSalidas[1] != PROPIETARIO_MANUAL_OFF &&
       (ahora - estadoInt.ultimoToggleLucesMs >= COOLDOWN_LUCES_MS)) {
@@ -2645,7 +2545,7 @@ void ejecutarModoInteligente() {
     }
   }
 
-  // 5. Casa: sin presencia → OFF (ahorro)
+  // 2. Casa: sin presencia → OFF (ahorro)
   if (estadoSalidas[1] && !estadoInt.presencia &&
       propietarioSalidas[1] == PROPIETARIO_AUTOMATICO &&
       (ahora - estadoInt.ultimoToggleLucesMs >= COOLDOWN_LUCES_MS)) {
@@ -2676,16 +2576,6 @@ void ejecutarModoInteligente() {
     if (ejecutarOrdenActuador(corte).exito) {
       emitirEventoLocal("EVENTO;INTELIGENTE_LIMITE_DIA;BOMBA");
       anunciarJarvis(EventoJarvis::RIEGO_DETENIDO, false, 4);  // OFF auto
-    }
-  }
-
-  // 8. Limite diario cultivo alcanzado
-  if (estadoInt.lucesCultivoMsHoy >= LIMITE_CULTIVO_DIA_MS && estadoSalidas[3] &&
-      propietarioSalidas[3] == PROPIETARIO_AUTOMATICO) {
-    OrdenActuador corte = {3, false, ORIGEN_AUTOMATICO, 1.0f, "INTELIGENTE_LIMITE_CULTIVO"};
-    if (ejecutarOrdenActuador(corte).exito) {
-      emitirEventoLocal("EVENTO;INTELIGENTE_LIMITE_CULTIVO;0");
-      anunciarJarvis(EventoJarvis::CULTIVO_APAGADO, false, 4);  // OFF auto
     }
   }
 }
@@ -2803,10 +2693,10 @@ void emitirTelemetriaSensores() {
   ultimaTelemetriaSensoresMs = millis();
   char linea[160];
   snprintf(linea, sizeof(linea),
-    "SENSORES;TEMP_C=%.1f;HUM_AIRE=%.1f;HUM_PCT=%d;NIVEL=%d;LUZ_PCT=%d;"
+    "SENSORES;TEMP_C=%.1f;HUM_AIRE=%.1f;HUM_PCT=%d;LUZ_PCT=%d;"
     "PRESENCIA=1;SALIDAS=%d%d%d%d%d;",
     (double)ultimaTempCValida, (double)ultimaHumAireValida,
-    ultimoHumedadPctValido, ultimoNivelAguaValido, ultimoLuzPctValido,
+    ultimoHumedadPctValido, ultimoLuzPctValido,
     estadoSalidas[0] ? 1 : 0, estadoSalidas[1] ? 1 : 0,
     estadoSalidas[2] ? 1 : 0, estadoSalidas[3] ? 1 : 0,
     estadoSalidas[4] ? 1 : 0);
@@ -2838,12 +2728,10 @@ ResultadoDiagnostico diagnosticarSensores() {
   emitirEventoLocal(r.suelo ? "DIAG;SUELO;OK" : "DIAG;SUELO;FAIL");
   delay(2000);
 
-  // 3. Nivel agua
-  int nivelAgua = 0;
-  r.nivel = leerNivelAgua(nivelAgua);
-  pantallaFinal.mostrarMensaje(r.nivel ? "Nivel: OK" : "Nivel: FAIL",
-                               r.nivel ? (String(nivelAgua) + "/1023").c_str() : "Revisar sonda");
-  emitirEventoLocal(r.nivel ? "DIAG;NIVEL;OK" : "DIAG;NIVEL;FAIL");
+  // 3. Nivel agua: sin hardware (no se instala sonda)
+  r.nivel = true;
+  pantallaFinal.mostrarMensaje("Nivel: SIN HW", "Sin sonda deposito");
+  emitirEventoLocal("DIAG;NIVEL;SIN_HW");
   delay(2000);
 
   // 4. LDR

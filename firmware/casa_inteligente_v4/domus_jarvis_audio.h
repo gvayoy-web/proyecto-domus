@@ -9,29 +9,32 @@
 #define AUDIO_CANDIDATO_HABILITADO (DOMUS_PERFIL_CASA == 4 && DOMUS_DRIVER_VALIDADO == 1)
 #endif
 
-// Catálogo Jarvis 1:1 con los 21 botones del mando CAR MP3.
-// Cada evento vive en su carpeta: voz 1 (Carlos) 01-21, voz 2 (Karla) 51-71
-// (desplazamiento +50). Códigos físicos capturados en la nota Obsidian 64
-// (protocolo P7); acciones por botón en la nota 46; DFPlayer exige carpetas
-// 01-99 con pistas 001-004 (nota 65).
+// Catálogo Jarvis: 21 botones del mando CAR MP3 + evento FALLO (22).
+// Cada botón vive en su carpeta: voz 1 (Carlos) 01-21, voz 2 (Karla) 51-71
+// (desplazamiento +50). FALLO = carpeta 22/72 ("No funciono."). Códigos
+// físicos capturados en la nota Obsidian 64 (protocolo P7); acciones por
+// botón en la nota 46; DFPlayer exige carpetas 01-99 con pistas 001-004
+// (nota 65).
 //
 // Convención de variantes (001-004) por carpeta:
-// - Conmutadores (casa, porche, cultivo, todas_luces, riego): 1 = ON manual,
-//   2 = OFF manual, 3 = ON automático, 4 = OFF automático.
+// - Conmutadores (casa, porche, spare/CH, todas_luces, riego):
+//   1 = ON manual, 2 = OFF manual, 3 = ON automático, 4 = OFF automático.
 // - Botón 0: 1-2 = apagado general; 3-4 = PARO de emergencia.
 // - EQ: 1-2 = diagnóstico manual; 3-4 = fallo de sensor (automático).
-// - Tecla 8 (suelo): 1-2 = consulta en pantalla; 3 = tierra seca (reservada
-//   para alerta automática); 4 = depósito bajo, riego bloqueado.
+// - Tecla 3 (cultivo sin hardware): las 4 = "No funciono."
+// - Tecla 8 (suelo): 1-2 = consulta; 3 = tierra seca; 4 = depósito bajo
+//   (reservada; sin sonda de nivel en el inventario).
 // - Tecla 9 (estado): las 4 = estado general; la 3 = "Sistemas en línea"
 //   (arranque y confirmación de cambio de voz).
 // - Tecla 200+: 1-2 = rearme logrado; 3-4 = sigue bloqueado.
 // - Tecla 100+: 1/3 = voz Carlos, 2/4 = voz Karla (un toque alterna;
-//   repetir quedó solo en Serial). Tecla 200+: 1-2 = rearme, 3-4 = bloqueado.
-// - Resto (CH-, CH, CH+, Play, VOL-, VOL+, 6, 7): 4 variantes del mismo
+//   repetir quedó solo en Serial).
+// - Resto (CH-, CH+, Play, VOL-, VOL+, 6, 7): 4 variantes del mismo
 //   significado; Play usa paridad ON {1,3} / OFF {2,4}.
+// - FALLO (22): las 4 = "No funciono." (orden rechazada o GPIO sin etapa).
 enum class EventoJarvis : uint8_t {
   CH_MENOS = 1,    // CH- 0x45: modo manual
-  CH = 2,          // CH  0x46: spare (LCD descartado, carpeta 02 orden aceptada)
+  CH = 2,          // CH  0x46: spare ON/OFF (LCD descartado, nota 80)
   CH_MAS = 3,      // CH+ 0x47: modo automático
   ANTERIOR = 4,    // Anterior 0x44: luz de sala (comparte con tecla 1)
   PLAY = 5,        // Play 0x43: silencio on/off
@@ -44,27 +47,26 @@ enum class EventoJarvis : uint8_t {
   TECLA_200 = 12,  // 200+ 0x0D: rearme seguro
   TECLA_1 = 13,    // 1 0x0C: luz de sala → Casa
   TECLA_2 = 14,    // 2 0x18: luz de cuarto → Porche
-  TECLA_3 = 15,    // 3 0x5E: luz de cultivo
+  TECLA_3 = 15,    // 3 0x5E: sin luz de cultivo en el hardware
   TECLA_4 = 16,    // 4 0x08: todas las luces ON/OFF
   TECLA_5 = 17,    // 5 0x1C: riego
   TECLA_6 = 18,    // 6 0x5A: consulta temperatura
   TECLA_7 = 19,    // 7 0x42: consulta humedad
-  TECLA_8 = 20,    // 8 0x52: consulta suelo + depósito
+  TECLA_8 = 20,    // 8 0x52: consulta suelo
   TECLA_9 = 21,    // 9 0x4A: estado completo (+ arranque)
+  FALLO = 22,      // orden rechazada / sin etapa: "No funciono."
 
   // Aliases semánticos para clarity en el código de automatización
   CASA_ENCENDIDA = TECLA_1,       // Carpeta 13: "Iluminación activada"
   CASA_APAGADA = TECLA_1,         // Carpeta 13: "Luz apagada"
   PORCHE_ENCENDIDO = TECLA_2,     // Carpeta 14: "Porche iluminado"
   PORCHE_APAGADO = TECLA_2,       // Carpeta 14: "Porche apagado"
-  CULTIVO_ENCENDIDO = TECLA_3,    // Carpeta 15: "Luces de cultivo activadas"
-  CULTIVO_APAGADO = TECLA_3,      // Carpeta 15: "Luces de cultivo off"
   TODAS_LUCES_ON = TECLA_4,       // Carpeta 16: "Todas las luces on"
   TODAS_LUCES_OFF = TECLA_4,      // Carpeta 16: "Todas las luces off"
   RIEGO_INICIADO = TECLA_5,       // Carpeta 17: "Iniciando riego"
   RIEGO_DETENIDO = TECLA_5,       // Carpeta 17: "Riego detenido"
   TIERRA_SECA = TECLA_8,          // Carpeta 20: "La tierra está seca"
-  AGUA_BAJA = TECLA_8,            // Carpeta 20: "Nivel de agua bajo"
+  AGUA_BAJA = FALLO,              // sin sonda: cualquier fallo de orden
   DIAG_TODOS_OK = EQ,             // Carpeta 9: "Diagnóstico completo"
   DIAG_ALGUNOS_FAIL = TECLA_6,    // Carpeta 18: "Sensor sin respuesta"
   DIAG_TODOS_FAIL = TECLA_200,    // Carpeta 12: "Sistema bloqueado"
@@ -76,7 +78,7 @@ enum class EventoJarvis : uint8_t {
 // cualquier frase y siempre tiene prioridad.
 class JarvisAudio {
  public:
-  static constexpr uint8_t NUM_EVENTOS = 21;
+  static constexpr uint8_t NUM_EVENTOS = 22;
   static constexpr uint8_t DESPLAZAMIENTO_VOZ_2 = 50;
 
   explicit JarvisAudio(DFPlayerTransport& transporte) : transporte_(transporte) {}
@@ -107,7 +109,7 @@ class JarvisAudio {
     return habilitado_ && transporte_.volumen(volumen_);
   }
 
-  // Carpeta DFPlayer para un evento y voz dados. Voz 1: 01-21, voz 2: 51-71.
+  // Carpeta DFPlayer para un evento y voz dados. Voz 1: 01-22, voz 2: 51-72.
   static uint8_t carpetaPara(EventoJarvis evento, uint8_t voz) {
     const uint8_t base = static_cast<uint8_t>(evento);
     if (base < 1 || base > NUM_EVENTOS) return 0;

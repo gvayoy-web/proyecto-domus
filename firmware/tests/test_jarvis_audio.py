@@ -15,15 +15,15 @@ class JarvisAudioContractTests(unittest.TestCase):
         self.transport = (ROOT / "firmware/casa_inteligente_v4/domus_dfplayer.h").read_text(encoding="utf-8")
         self.firmware = (ROOT / "firmware/casa_inteligente_v4/casa_inteligente_v4.ino").read_text(encoding="utf-8")
 
-    def test_catalogo_tiene_21_eventos_uno_por_boton(self):
-        """21 botones (nota 64) = 21 eventos; carpeta = botón, voz 2 = +50."""
+    def test_catalogo_tiene_21_botones_mas_fallo(self):
+        """21 botones (nota 64) + FALLO; carpeta = botón, voz 2 = +50."""
         for evento in ("CH_MENOS", "CH =", "CH_MAS", "ANTERIOR", "PLAY",
                        "SIGUIENTE", "VOL_MENOS", "VOL_MAS", "EQ", "TECLA_0",
                        "TECLA_100", "TECLA_200", "TECLA_1", "TECLA_2",
                        "TECLA_3", "TECLA_4", "TECLA_5", "TECLA_6", "TECLA_7",
-                       "TECLA_8", "TECLA_9"):
+                       "TECLA_8", "TECLA_9", "FALLO"):
             self.assertIn(evento, self.audio_header)
-        self.assertIn("NUM_EVENTOS = 21", self.audio_header)
+        self.assertIn("NUM_EVENTOS = 22", self.audio_header)
         self.assertIn("carpetaPara", self.audio_header)
         self.assertIn("reproducirGrupo", self.audio_header)
         self.assertIn("reproducirEstado", self.audio_header)
@@ -59,29 +59,29 @@ class JarvisAudioContractTests(unittest.TestCase):
         self.assertIn("MP3_BUSY_PIN", self.firmware)
         self.assertIn("AUDIO_CANDIDATO_HABILITADO", self.audio_header)
 
-    def test_manifest_tiene_168_mp3_unicos(self):
-        """MANIFEST.csv: 21 botones x 4 pistas x 2 voces = 168 filas."""
+    def test_manifest_tiene_176_mp3_unicos(self):
+        """MANIFEST.csv: 22 eventos x 4 pistas x 2 voces = 176 filas."""
         manifest = ROOT / "audio/jarvis_sd/MANIFEST.csv"
         self.assertTrue(manifest.exists(), "El manifest no existe aún")
         with manifest.open(encoding="utf-8-sig", newline="") as stream:
             rows = list(csv.DictReader(stream))
-        self.assertEqual(len(rows), 168, f"Expected 168 rows, got {len(rows)}")
-        # 21 botones distintos, 4 pistas por (voz, carpeta SD).
-        self.assertEqual(len({r["evento"] for r in rows}), 21)
+        self.assertEqual(len(rows), 176, f"Expected 176 rows, got {len(rows)}")
+        # 22 eventos distintos, 4 pistas por (voz, carpeta SD).
+        self.assertEqual(len({r["evento"] for r in rows}), 22)
         por_voz_carpeta: dict[tuple[str, str], int] = {}
         for row in rows:
             por_voz_carpeta[(row["voz"], row["carpeta"])] = \
                 por_voz_carpeta.get((row["voz"], row["carpeta"]), 0) + 1
-        self.assertEqual(len(por_voz_carpeta), 42)
+        self.assertEqual(len(por_voz_carpeta), 44)
         for clave, total in por_voz_carpeta.items():
             self.assertEqual(total, 4, f"{clave} debe tener 4 pistas")
-        # Voz 1 (Carlos): SD 01-21; voz 2 (Karla): SD 51-71.
+        # Voz 1 (Carlos): SD 01-22; voz 2 (Karla): SD 51-72.
         carlos = {r["carpeta"] for r in rows if r["voz"] == "1"}
         karla = {r["carpeta"] for r in rows if r["voz"] == "2"}
-        self.assertEqual(len([r for r in rows if r["voz"] == "1"]), 84)
-        self.assertEqual(len([r for r in rows if r["voz"] == "2"]), 84)
-        self.assertEqual(carlos, {f"{i:02d}" for i in range(1, 22)})
-        self.assertEqual(karla, {f"{i:02d}" for i in range(51, 72)})
+        self.assertEqual(len([r for r in rows if r["voz"] == "1"]), 88)
+        self.assertEqual(len([r for r in rows if r["voz"] == "2"]), 88)
+        self.assertEqual(carlos, {f"{i:02d}" for i in range(1, 23)})
+        self.assertEqual(karla, {f"{i:02d}" for i in range(51, 73)})
         for row in rows:
             self.assertTrue(row["biblioteca"].startswith(
                 "Carlos/" if row["voz"] == "1" else "Karla/"))
@@ -102,9 +102,15 @@ class JarvisAudioContractTests(unittest.TestCase):
         self.assertIn("TECLA_100", voz)
         self.assertIn("voz == 1 ? 1 : 2", voz)
         self.assertNotIn("ultimaN6Ms", self.firmware)
-        # La voz 2 usa las carpetas 51-71 (desplazamiento +50 sobre 01-21)
+        # La voz 2 usa las carpetas 51-72 (desplazamiento +50 sobre 01-22)
         self.assertIn("DESPLAZAMIENTO_VOZ_2 = 50", self.audio_header)
         self.assertIn("+ DESPLAZAMIENTO_VOZ_2", self.audio_header)
+        # FALLO anuncia "No funciono" en pedidos rechazados.
+        despacho = self.firmware.split(
+            "ResultadoOrden ejecutarOrdenActuador", 1)[1].split(
+            "\n}\n", 1)[0]
+        self.assertIn("EventoJarvis::FALLO", despacho)
+        self.assertIn('responderJarvis("No funciono.")', despacho)
 
     def test_puerta_ordenada_rechaza_senales_mientras_habla(self):
         """Mientras Jarvis habla o 1.5 s tras la orden, IR responde OCUPADO."""

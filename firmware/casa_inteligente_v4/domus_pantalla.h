@@ -180,19 +180,13 @@ class PantallaFinal {
           snprintf(b, sizeof(b), "H aire ERR");
         }
         break;
-      case 1:  // Humedad de suelo + nivel del deposito.
+      case 1:  // Humedad de suelo; sin sonda de depósito.
         if (d.sueloValido) {
           snprintf(a, sizeof(a), "\x01 Suelo %d%%", d.sueloPct);
         } else {
           snprintf(a, sizeof(a), "\x01 Suelo ERR");
         }
-        if (!d.nivelValido) {
-          snprintf(b, sizeof(b), "Nivel ERR");
-        } else if (d.nivelRaw < d.nivelMin) {
-          snprintf(b, sizeof(b), "\x04 Agua %d%% BAJA", d.nivelPct);
-        } else {
-          snprintf(b, sizeof(b), "\x04 Agua %d%%", d.nivelPct);
-        }
+        snprintf(b, sizeof(b), "Sin deposito");
         break;
       case 2:  // Luz ambiental + presencia.
         if (d.luzValida) {

@@ -96,8 +96,9 @@ static DatosPantallaFinal datosBase() {
   DatosPantallaFinal d;
   d.tempC = 25.0f; d.tempValida = true;
   d.humAire = 60.0f; d.humAireValida = true;
-  d.sueloPct = 45; d.sueloValido = true;
-  d.nivelRaw = 1500; d.nivelPct = 47; d.nivelValido = true; d.nivelMin = 600;
+    d.sueloPct = 45; d.sueloValido = true;
+  // Sin sonda de depósito: nivel inválido siempre; vista 1 solo suelo.
+  d.nivelRaw = 0; d.nivelPct = 0; d.nivelValido = false; d.nivelMin = 600;
   d.luzPct = 70; d.luzValida = true;
   d.presencia = true;
   for (int i = 0; i < 5; ++i) d.salidas[i] = SAL_OFF;
@@ -175,13 +176,13 @@ int main() {
     d.tempValida = false;
     d.humAireValida = false;
     d.sueloValido = false;
-    d.nivelValido = false;
     d.luzValida = false;
     char l0[17], l1[17];
     p.formatear(0, d, l0, l1);
     CHEQUEA(std::strstr(l0, "ERR") && std::strstr(l1, "ERR"));
     p.formatear(1, d, l0, l1);
-    CHEQUEA(std::strstr(l0, "ERR") && std::strstr(l1, "ERR"));
+    CHEQUEA(std::strstr(l0, "ERR") != nullptr);
+    CHEQUEA(std::strstr(l1, "Sin deposito") != nullptr);
     p.formatear(2, d, l0, l1);
     CHEQUEA(std::strstr(l0, "ERR") != nullptr);
     d = datosBase();
@@ -189,7 +190,7 @@ int main() {
     CHEQUEA(std::strstr(l0, "25") && !std::strstr(l0, "ERR"));
     p.formatear(1, d, l0, l1);
     CHEQUEA(std::strstr(l0, "45") && !std::strstr(l0, "ERR"));
-    CHEQUEA(std::strstr(l1, "47%") && !std::strstr(l1, "1500"));
+    CHEQUEA(std::strstr(l1, "Sin deposito") != nullptr);
     if (fallos == base) std::puts("ERR_OK");
   }
   {

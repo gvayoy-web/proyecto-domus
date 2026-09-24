@@ -95,7 +95,7 @@ class HilProductoBancoTests(unittest.TestCase):
     def tearDownClass(cls):
         try:
             # Estado seguro: todas las cargas manualmente apagadas. Nunca ON motor.
-            for command in ("RIEGO_OFF", "VENT_OFF", "LUZ1_OFF", "LUZ2_OFF", "INVER_OFF", "SPARE_OFF"):
+            for command in ("RIEGO_OFF", "VENT_OFF", "LUZ1_OFF", "LUZ2_OFF", "SPARE_OFF"):
                 cls.board.cmd(command, wait=0.35)
         finally:
             cls.board.close()
@@ -108,9 +108,10 @@ class HilProductoBancoTests(unittest.TestCase):
 
     def test_02_estado_contiene_sensores_y_seguridad(self):
         line = first(self.board.cmd("ESTADO"), "ESTADO;")
+        self.assertNotIn("NIVEL_AGUA=", line)
         for field in (
             "Bomba=", "Casa=", "Porche=", "Cultivo=", "Spare=",
-            "HUM_PCT=", "NIVEL_AGUA=", "TEMP_C=", "HUM_AIRE_PCT=",
+            "HUM_PCT=", "TEMP_C=", "HUM_AIRE_PCT=",
             "LUZ_PCT=", "EMERGENCIA=", "MODO_SEGURO=",
         ):
             self.assertIn(field, line)

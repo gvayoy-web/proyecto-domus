@@ -34,9 +34,9 @@ depends: 76, 77, 79
 | **Porche** | 1 LED rojo (GPIO8 / salida Porche) |
 | **Jarvis** | 2 LEDs azules, 2 parlantes, DFPlayer, sensor IR |
 
-> Sin LCD. PIR no existe. Cultivo/Spare siguen en el mapa de salidas del
-> firmware (índices 3 y 4); si no hay carga física, quedan bloqueados por
-> la máscara `SALIDA_FISICA_CASA`.
+> Sin LCD. PIR no existe. **Cultivo no tiene luz** (índice 3 siempre
+> `SALIDA_FISICA=false`). **No hay sensor de nivel de agua** (GPIO16 solo
+> reservado por unicidad; nunca se lee). Spare/Jarvis (índice 4) = GPIO6.
 
 ### Alimentación
 
@@ -71,6 +71,9 @@ depends: 76, 77, 79
     - `LCD_DESCARTADO=true`: `detectarPantalla()` no inicia `Wire` (headless)
 15. Tests/README/native_integration actualizados al nuevo mapa; non-HIL **107 PASS**;
     compile + **upload COM9**; **HIL 8/8 PASS** (`DOMUS_PORT=COM9`)
+16. **Corte de hardware estricto del usuario**: sin luz Cultivo, sin sonda de
+    nivel; Spare/Jarvis = GPIO6; toda orden fallida habla **"No funciono"**
+    (`EventoJarvis::FALLO` carpeta 22/72); `INVER_*`/`LUZC_*`/`CAL_NIVEL` fuera.
 
 ### Mapa GPIO vigente (placa real, sin GPIO11)
 
@@ -88,10 +91,13 @@ depends: 76, 77, 79
 | SCL (LCD descartado) | 13 | no se usa I2C |
 | DHT11 | 14 | techo Casa |
 | Suelo | 15 | |
-| Nivel agua | 16 | |
+| GPIO16 (reservado; sin sonda) | 16 | unicidad de pines; nunca se lee |
 | **SDA / DFPlayer RX** | **17** | LCD liberado |
 | **MODO/demo / DFPlayer TX** | **18** | botón gateado `!MP3_HABILITADO` |
 | GPIO46 | 46 | disponible; no usado |
+
+> GPIO7 = `MAPA_CASA.cultivo` **y** `DRV8833 AIN2`; nunca se escribe como
+> "luz de cultivo" (canal B del driver está muerto).
 
 ## Mando CAR MP3 — tecla CH reasignada
 
@@ -104,7 +110,9 @@ La tecla **CH (0x46)** ya **no** cambia de página LCD (hardware inexistente).
 Las teclas **ANTERIOR/SIGUIENTE** se conservan como atajos de Casa/Porche
 (teclas 1/2): sin LCD no aporta navegar páginas.
 
-Audio Jarvis de CH: sigue en carpeta 02 (orden aceptada / confirmación).
+Audio Jarvis de CH: carpeta **02/52 regenerada** con frases de Spare
+(1=ON, 2=OFF, 3=auto ON, 4=auto OFF); `carpetaSalida(4)` → `EventoJarvis::CH`.
+Tecla 3 (Cultivo sin etapa) → `NACK;SALIDA_NO_INSTALADA` + voz FALLO.
 
 ## Nuevos botones de software (Serial)
 
@@ -113,10 +121,13 @@ Mismo contrato ACK/NACK; entran por `COMANDOS_VALIDOS` y la tabla de relés.
 | Comando | Acción |
 |---------|--------|
 | `SPARE_ON` / `SPARE_OFF` / `SPARE_AUTO` | Salida Spare (GPIO6) |
-| `TODO_ON` | Enciende Casa+Porche+Cultivo+Spare (no bomba) |
+| `TODO_ON` | Enciende Casa+Porche+Spare (no bomba; sin Cultivo) |
 | `TODO_OFF` | Apaga todas las salidas (incluye bomba) |
 | `DEMO_ON` / `DEMO_OFF` | Secuencia de demostración por despachador |
-| `LUZC_ON` / `LUZC_OFF` / `LUZC_AUTO` | Alias de `INVER_*` (Cultivo) |
+
+**Eliminados** (hardware inexistente): `INVER_*`, `LUZC_*`, `CAL_NIVEL`,
+enclavamiento de nivel y lectura `NIVEL_AGUA=`. Toda orden IR/manual
+fallida anuncia **`EventoJarvis::FALLO`** (`No funciono.`, carpeta 22/72).
 
 Sin LCD: los `pantallaFinal.mostrarMensaje(...)` son no-op seguros
 (`lcd_ == nullptr`); los ACK/NACK siguen por Serial y microSD.
@@ -126,9 +137,11 @@ Sin LCD: los `pantallaFinal.mostrarMensaje(...)` son no-op seguros
 - [ ] Enchufar Pico (micro USB) y detectar COM → sketch DHT11+LDR (si se usa como auxiliar)
 - [x] Decidir ubicación física DHT11 y LDR → **techo de Casa**
 - [x] ESP32: USB-C en COM9 detectado → re-upload firmware con botones nuevos
-- [ ] Regenerar/ajustar frases CH si se quiere texto "Spare" (opcional)
-- [ ] Definir si Cultivo/Spare tienen carga física o solo quedan en software
-- [x] HIL verdes: 12/12 (`DOMUS_PORT=COM9`); non-HIL 107
+- [x] Regenerar frases CH → texto "Spare" (carpeta 02/52 + MANIFEST)
+- [x] Decidir si Cultivo/Spare tienen carga física → **Cultivo sin luz; Spare = GPIO6 (2 LEDs azules Jarvis)**
+- [x] Sin sensor de nivel de agua: bomba solo por suelo + timeout 120 s
+- [x] Voz "No funciono" en fallos (`FALLO` = carpeta 22/72)
+- [x] HIL verdes: 8/8 (`DOMUS_PORT=COM9`); non-HIL 107
 - [x] Gate botón DEMO cuando `MP3_HABILITADO` (GPIO18 = DFPlayer TX)
 
 ## Relacionadas

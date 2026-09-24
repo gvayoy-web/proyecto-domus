@@ -1,17 +1,17 @@
-"""Genera la microSD de Jarvis: 21 carpetas, una por botón del mando CAR MP3.
+"""Genera la microSD de Jarvis: 22 carpetas (21 botones + FALLO).
 
 Códigos físicos en la nota Obsidian 64, acciones por botón en la nota 46 y
 formato DFPlayer en la nota 65. Convención de variantes por carpeta:
 conmutadores 1 = ON manual, 2 = OFF manual, 3 = ON automático,
 4 = OFF automático; botón 0: 1-2 apagado, 3-4 emergencia; EQ: 1-2
 diagnóstico, 3-4 fallo de sensor; tecla 8: 1-2 consulta, 3 tierra seca
-(reservada), 4 depósito bajo; tecla 9: estado (3 = "Sistemas en línea":
-arranque y cambio de voz); 200+: 1-2 rearme logrado, 3-4 sigue bloqueado;
-100+: 1/3 voz Carlos, 2/4 voz Karla (un toque alterna; repetir: Serial).
-Tecla 4 = todas_luces (reemplaza ventilador muerto).
+(reservada); tecla 9: estado (3 = "Sistemas en línea": arranque y cambio
+de voz); 200+: 1-2 rearme logrado, 3-4 sigue bloqueado; 100+: 1/3 voz
+Carlos, 2/4 voz Karla (un toque alterna; repetir: Serial). Tecla 4 =
+todas_luces. Carpeta 22 = FALLO "No funciono."
 
-Requiere ``edge-tts`` y acceso de red. La voz 1 (Carlos) usa carpetas 01-21
-y la voz 2 (Karla) usa 51-71; ambas llevan pistas 001-004, tal como espera
+Requiere ``edge-tts`` y acceso de red. La voz 1 (Carlos) usa carpetas 01-22
+y la voz 2 (Karla) usa 51-72; ambas llevan pistas 001-004, tal como espera
 el DFPlayer Mini (playFolder 01-99).
 """
 
@@ -29,7 +29,7 @@ import edge_tts
 
 CATALOGO = {
     1: ("ch_menos", ("Modo manual activado.", "Control manual habilitado.", "Tú mandas, yo obedezco.", "Automático desactivado.")),
-    2: ("ch_pagina", ("Página siguiente.", "Cambiando de página.", "En pantalla lo ves.", "Mira el LCD.")),
+    2: ("ch_spare", ("Spare encendido.", "Spare apagado.", "Spare en automático.", "Spare apagado en automático.")),
     3: ("ch_mas", ("Modo automático activado.", "Automatización habilitada.", "La casa se gobierna sola.", "Control automático en marcha.")),
     4: ("casa", ("Casa encendida.", "Casa apagada.", "Casa en automático.", "Casa apagada en automático.")),
     5: ("play_silencio", ("Sonido activado.", "Silencio activado.", "Voz reanudada.", "Jarvis enmudecido.")),
@@ -49,6 +49,7 @@ CATALOGO = {
     19: ("tecla_7_humedad", ("La humedad aparece en pantalla.", "Humedad ambiental en el LCD.", "Valor de humedad mostrado.", "Revisa la humedad en pantalla.")),
     20: ("tecla_8_suelo", ("Suelo y depósito en pantalla.", "Revisa suelo y agua en el LCD.", "La tierra está seca.", "Depósito bajo, riego bloqueado.")),
     21: ("tecla_9_estado", ("El sistema está funcionando.", "Casa operativa sin fallos.", "Sistemas en línea.", "DOMUS trabajando con normalidad.")),
+    22: ("fallo", ("No funciono.", "No funciono.", "No funciono.", "No funciono.")),
 }
 
 VOCES = {

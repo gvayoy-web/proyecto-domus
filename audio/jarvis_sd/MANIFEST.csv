@@ -3,10 +3,10 @@
 1,es-HN-CarlosNeural,01,002,ch_menos,Control manual habilitado.,Carlos/01/002.mp3,01/002.mp3,14832,b76f01e31db966745b88fc7a6d0bc49ee9dcb2930f70428b359a383bd1312b63
 1,es-HN-CarlosNeural,01,003,ch_menos,"Tú mandas, yo obedezco.",Carlos/01/003.mp3,01/003.mp3,16272,3f3b40517803164180fc7538be0f229765ca50ddafe7d5add8a629a454f8a158
 1,es-HN-CarlosNeural,01,004,ch_menos,Automático desactivado.,Carlos/01/004.mp3,01/004.mp3,15120,cac4a03e1939d987cff1cc9163ae804b6effce92de3f85e1e6be00c3b2e54ed8
-1,es-HN-CarlosNeural,02,001,ch_pagina,Página siguiente.,Carlos/02/001.mp3,02/001.mp3,12096,9315362b7e699577f360ea2c49e6d0b3a944ffe017c750177f532d645f4eb8f5
-1,es-HN-CarlosNeural,02,002,ch_pagina,Cambiando de página.,Carlos/02/002.mp3,02/002.mp3,12960,8df45023da9ef75d8087ef5cf94187a4163be916c15b190992eae3fd89cfb6c8
-1,es-HN-CarlosNeural,02,003,ch_pagina,En pantalla lo ves.,Carlos/02/003.mp3,02/003.mp3,13392,29a6aa80ed346037ae6c1ccca86454de6cc9f491f2b69d57361e4717a5cdfd6a
-1,es-HN-CarlosNeural,02,004,ch_pagina,Mira el LCD.,Carlos/02/004.mp3,02/004.mp3,12960,48ef8804409ecedb930557dd94ce9c109c1ccfaa05e923f54752b6c8047c592f
+1,es-HN-CarlosNeural,02,001,ch_spare,Spare encendido.,Carlos/02/001.mp3,02/001.mp3,12096,9326bcb9c3fa976d57be0babbdc1403c923b3687fdf198521f3a92caa164dee0
+1,es-HN-CarlosNeural,02,002,ch_spare,Spare apagado.,Carlos/02/002.mp3,02/002.mp3,11520,ab2cc1332a9e15539e1ecc746668fa07f377df2a56a6cdbc495c81ff98891fd2
+1,es-HN-CarlosNeural,02,003,ch_spare,Spare en automático.,Carlos/02/003.mp3,02/003.mp3,13392,05313ba466ec4e0581605b26992f5eec31c9926a26e1992a78067444e96d3041
+1,es-HN-CarlosNeural,02,004,ch_spare,Spare apagado en automático.,Carlos/02/004.mp3,02/004.mp3,15696,9ce4a34e5ab8332030d6a7c088845d841d5e536569b3141ed1c87beef99e12c2
 1,es-HN-CarlosNeural,03,001,ch_mas,Modo automático activado.,Carlos/03/001.mp3,03/001.mp3,14688,95459ea6eab46c8be531709f51f1d076b6214874b55813abee73ab8bb6ce7b7e
 1,es-HN-CarlosNeural,03,002,ch_mas,Automatización habilitada.,Carlos/03/002.mp3,03/002.mp3,15840,ed6bd3ffddde63d4109e7c99248e75f5d8a8b2544b912dfe321504360873f176
 1,es-HN-CarlosNeural,03,003,ch_mas,La casa se gobierna sola.,Carlos/03/003.mp3,03/003.mp3,15120,a5bf84530da6558eb5c79dcbccc4132aaed7ccbf6d93a5ffeac6ee7d7c987e52
@@ -83,14 +83,18 @@
 1,es-HN-CarlosNeural,21,002,tecla_9_estado,Casa operativa sin fallos.,Carlos/21/002.mp3,21/002.mp3,15696,774d05f14155de95245d4c0f7a44c29e66e600fa953d963f1cc0918d30f54693
 1,es-HN-CarlosNeural,21,003,tecla_9_estado,Sistemas en línea.,Carlos/21/003.mp3,21/003.mp3,13392,30e52a36e04ae023c9c6d9befb807d36aa52609eb7f6c5880a2b3a2b67b22a0a
 1,es-HN-CarlosNeural,21,004,tecla_9_estado,DOMUS trabajando con normalidad.,Carlos/21/004.mp3,21/004.mp3,17136,f61f302d0d8146e704d28989ddf04bdc49307b40cb751734ce118421a27cf99e
+1,es-HN-CarlosNeural,22,001,fallo,No funciono.,Carlos/22/001.mp3,22/001.mp3,11232,147dd6ca71991246f390424c12126aa218ffc110f6123f925a9894f50760ec05
+1,es-HN-CarlosNeural,22,002,fallo,No funciono.,Carlos/22/002.mp3,22/002.mp3,11232,1b1ce033e58aca764acb305979fb94a8cfad648be00a456d28de821ef9a5f697
+1,es-HN-CarlosNeural,22,003,fallo,No funciono.,Carlos/22/003.mp3,22/003.mp3,11232,23be7335eb0542941d85abdb851d50ba51554b61e219db5efcb4c09460789177
+1,es-HN-CarlosNeural,22,004,fallo,No funciono.,Carlos/22/004.mp3,22/004.mp3,11232,8b71efbf1b38a69088865127e15dc8e2bb752b33739603297a8b41219545d1bc
 2,es-HN-KarlaNeural,51,001,ch_menos,Modo manual activado.,Karla/01/001.mp3,51/001.mp3,14976,3b43486efe4db685eed4b673f73d2d9e975001eb2c50ff2c2c3fea9f4eb3de57
 2,es-HN-KarlaNeural,51,002,ch_menos,Control manual habilitado.,Karla/01/002.mp3,51/002.mp3,15984,fcedd9ebc867d272e56566173aab429d70a5d16190e0c5d4153a929341bb1993
 2,es-HN-KarlaNeural,51,003,ch_menos,"Tú mandas, yo obedezco.",Karla/01/003.mp3,51/003.mp3,17424,937e2144439faf43cdce14624781fde51b171f1bceec2262b0ea38f8b50bc321
 2,es-HN-KarlaNeural,51,004,ch_menos,Automático desactivado.,Karla/01/004.mp3,51/004.mp3,16416,3dd742e63f17cfad14c4177639b5e4154a06815b4b5338709ef318f2015edabd
-2,es-HN-KarlaNeural,52,001,ch_pagina,Página siguiente.,Karla/02/001.mp3,52/001.mp3,13536,9c2b97bc3c1c090408210928b647e29fabe64e5a423839f27d05ef83000ff7bf
-2,es-HN-KarlaNeural,52,002,ch_pagina,Cambiando de página.,Karla/02/002.mp3,52/002.mp3,13968,a3a55a8b3b1bcddaffc789e340b02e81282c11177bc8cca1f45a8a1f07205266
-2,es-HN-KarlaNeural,52,003,ch_pagina,En pantalla lo ves.,Karla/02/003.mp3,52/003.mp3,13968,50bda066c74366c0dc5237560491a746d18ccd2a46f657251cf5498184ef33ac
-2,es-HN-KarlaNeural,52,004,ch_pagina,Mira el LCD.,Karla/02/004.mp3,52/004.mp3,14112,a3d5aa7b3c163c15a31eb114c8c7a112599850ff24828437abbc60574e86287f
+2,es-HN-KarlaNeural,52,001,ch_spare,Spare encendido.,Karla/02/001.mp3,52/001.mp3,12816,1df4c628c7764803edacbfcc0eea81b73423f9ca95bec8b1c8665acafcb3e224
+2,es-HN-KarlaNeural,52,002,ch_spare,Spare apagado.,Karla/02/002.mp3,52/002.mp3,12384,9b60738e2979864dca7fe1b1a9df01a72a8e74a001582cce899c1a048a5507e8
+2,es-HN-KarlaNeural,52,003,ch_spare,Spare en automático.,Karla/02/003.mp3,52/003.mp3,14256,6485f89f7bb5bad7279939e33f55215a10dea13b2de95da8f874bedef661702f
+2,es-HN-KarlaNeural,52,004,ch_spare,Spare apagado en automático.,Karla/02/004.mp3,52/004.mp3,16992,52a590658bb6d793251ecd022834f8f3118fe81c1ab111db8a531eb24a815cb2
 2,es-HN-KarlaNeural,53,001,ch_mas,Modo automático activado.,Karla/03/001.mp3,53/001.mp3,16416,89043b5958bf2a9425a77729e12f55734c1e30735030365b6c5a24b2f09aa482
 2,es-HN-KarlaNeural,53,002,ch_mas,Automatización habilitada.,Karla/03/002.mp3,53/002.mp3,16704,a92f2836f74ebc210f509aaeeb11b76567e04919f395d85ed940c260939955e5
 2,es-HN-KarlaNeural,53,003,ch_mas,La casa se gobierna sola.,Karla/03/003.mp3,53/003.mp3,15552,1d5acd0b244f40a4f7cae40b1a1d8713346221ddfb87133e7678f1144a69d28d
@@ -167,3 +171,7 @@
 2,es-HN-KarlaNeural,71,002,tecla_9_estado,Casa operativa sin fallos.,Karla/21/002.mp3,71/002.mp3,16992,c738189b6fff8bed2c6676e886b021800f02e137c305b71562b2ee623cecaa89
 2,es-HN-KarlaNeural,71,003,tecla_9_estado,Sistemas en línea.,Karla/21/003.mp3,71/003.mp3,13824,df1b8dc7749b7453272228fd7adde3c75734e3634b2f1a3341e583cf376f6b3d
 2,es-HN-KarlaNeural,71,004,tecla_9_estado,DOMUS trabajando con normalidad.,Karla/21/004.mp3,71/004.mp3,18144,f4bd794600b585b062ece95048ba01e75887aa436d9be098b3af81ad4dc92c7f
+2,es-HN-KarlaNeural,72,001,fallo,No funciono.,Karla/22/001.mp3,72/001.mp3,11808,c61531bece87d3ec7bdf72896aa01d67527f550a7eebefc19f37cd50a0894168
+2,es-HN-KarlaNeural,72,002,fallo,No funciono.,Karla/22/002.mp3,72/002.mp3,11808,4699b3579ecce4644867493eebe98ac67de82330b7a53bc629cac0ffe8a11f08
+2,es-HN-KarlaNeural,72,003,fallo,No funciono.,Karla/22/003.mp3,72/003.mp3,11808,96c185bd24aaf9ad36684a2786a852bb39bbafa542c89f2daf3892abd41fcfea
+2,es-HN-KarlaNeural,72,004,fallo,No funciono.,Karla/22/004.mp3,72/004.mp3,11808,09719bfb7f4692bc68080e0c8b078105d04c633cb2e873a17a114c184bb3586e

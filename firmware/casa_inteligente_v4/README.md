@@ -1,26 +1,21 @@
-# DOMUS — firmware único y perfil de banco
+# DOMUS — firmware único y perfil de producto
 
 `casa_inteligente_v4.ino` es la única base funcional. El perfil predeterminado
-actual es `DOMUS_PERFIL_CASA=3` (`BANCO_COMPLETO_S8050_IR`): conserva sensores,
-LCD, automatización, control manual, PARO e infrarrojo, pero adapta las salidas
-al hardware disponible.
+actual es `DOMUS_PERFIL_CASA=4` (`CASA_FINAL_DRV8833_DFPLAYER`): DRV8833,
+DFPlayer y HIL del producto.
 
-## Hardware habilitado en el perfil 3
+## Hardware real (inventario autorizado)
 
-- Bomba: GPIO4 → 1 kΩ → base del único S8050; activa en HIGH.
-- Sala, cuarto y cultivo: LED con resistencia en GPIO5, GPIO6 y GPIO8.
-- Ventilador GPIO7: bloqueado y configurado como entrada.
-- IR HX1838: señal en GPIO12; VCC a 3V3 y GND común.
-- Audio, micrófono, microSD y driver doble: deshabilitados.
-- Sensores: LDR GPIO3, PIR GPIO9 (no montado; GPIO9 es ahora SILENCIO), DHT11 GPIO14, suelo GPIO15 y nivel GPIO16.
-- LCD: SDA GPIO17, SCL GPIO13, VCC 3V3 y GND.
-- Botones a GND con pull-up interno: PARO GPIO10, SILENCIO GPIO9 y MODO GPIO18.
-- GPIO11 no existe en la placa; SILENCIO usa GPIO9. LCD descartado: DFPlayer RX en GPIO17.
-
-La bomba usa TP4056 `OUT+` para el positivo y su negativo va al colector del
-S8050. `OUT-` se une con GND del ESP32. El emisor va a GND, la base lleva
-resistencia de 1 kΩ desde GPIO4 y pull-down de 10 kΩ a GND. El 1N4007 va en
-paralelo con la bomba, con la raya hacia `OUT+`.
+- Bomba: GPIO4 → DRV8833 canal A (AIN1/AIN2 = GPIO4/GPIO7); solo canal A.
+- Casa / Porche / Spare(Jarvis): LED en GPIO5 / GPIO8 / GPIO6 (2 azules).
+- Cultivo NO tiene luz: índice 3 siempre `SALIDA_FISICA=false`; sin comandos.
+- Sin sensor de nivel de agua: la bomba solo se gobierna por humedad de
+  suelo y `TIEMPO_MAXIMO_BOMBA_MS` (timeout). `MAPA_CASA.nivel` (GPIO16)
+  queda reservado por unicidad de pines, nunca se lee.
+- IR HX1838: señal en GPIO12. DHT11 GPIO14, suelo GPIO15, LDR GPIO3.
+- DFPlayer: RX GPIO17 / TX GPIO18 (LCD descartado, quemado).
+- Botones a GND con pull-up: PARO GPIO10, SILENCIO GPIO9, MODO GPIO18.
+- GPIO11 no existe en la placa; SILENCIO usa GPIO9.
 
 ## Aprender el mando IR
 
@@ -46,19 +41,20 @@ Mapa por botón (un toque, sin combinaciones): arriba configuración, abajo
 acciones en orden. CH- fija modo manual, CH+ modo automático, CH alterna
 Spare (salida 4); PLAY silencia, VOL ajusta volumen, EQ diagnostica, 0 apaga todo,
 100+ alterna la voz Carlos/Karla, 200+ rearma. Abajo: 1/Anterior sala,
-2/Siguiente cuarto, 3 cultivo, 4 todas las luces, 5 alterna riego,
-6/7/8/9 consultas (temp, humedad, suelo+depósito, estado).
+2/Siguiente cuarto, 3 sin etapa (NACK + Jarvis "No funciono"), 4 todas las
+luces (casa+porche+spare), 5 alterna riego, 6/7/8/9 consultas (temp, humedad,
+suelo, estado).
 Mientras Jarvis habla o 1.5 s tras cada orden, el mando responde
 `NACK;IR;OCUPADO` (la tecla 0 y el aprendizaje no se bloquean).
 
 Serial (nota 80): `SPARE_ON/OFF/AUTO`, `TODO_ON` (luces+Spare, sin bomba),
-`TODO_OFF`, `DEMO_ON/OFF`, aliases `LUZC_*` de Cultivo. El LCD1602 se
+`TODO_OFF`, `DEMO_ON/OFF`. Sin aliases `LUZC_*`/`INVER_*`. El LCD1602 se
 descartó (quemado); las llamadas a pantalla son no-op con puntero nulo.
 
 La vista 0 del LCD muestra temperatura y humedad del aire. La vista 1 muestra
-humedad de suelo y agua en porcentaje. El porcentaje de agua usa provisionalmente
-`NIVEL_AGUA_VACIO_CRUDO=600` como 0% y `NIVEL_AGUA_LLENO_CRUDO=2500` como 100%;
-anota las lecturas reales vacío/lleno y sustituye esos dos valores para calibrarlo.
+solo humedad de suelo (sin sonda de depósito: la segunda línea fija
+`Sin deposito`). Toda orden IR/manual fallida hace hablar a Jarvis con la
+carpeta FALLO (`No funciono.`, carpeta 22/72).
 
 ## Primera prueba completa
 
@@ -86,9 +82,8 @@ Un `SKIP` significa que falta puerto, placa, dependencia o perfil 3 cargado; no
 significa PASS. Al terminar, el ejecutor ordena apagar las cinco salidas.
 
 Para probar la bomba manualmente, colócala primero dentro del agua y envía
-`RIEGO_ON`; apágala con `RIEGO_OFF`. Para permitir que humedad y nivel gobiernen
-el riego envía `RIEGO_AUTO`. El LCD escanea todo el rango I2C `0x08–0x77` y
-reporta la dirección detectada.
+`RIEGO_ON`; apágala con `RIEGO_OFF`. El timeout de 120 s la corta sola. Envía
+`RIEGO_AUTO` para humedad de suelo con histéresis (sin enclavamiento de nivel).
 
 ## Bocinas disponibles
 
@@ -101,11 +96,13 @@ reproduce archivos por sí solo. La fuente definida es DFPlayer Mini con microSD
 y cuatro pistas por evento; sigue deshabilitada hasta asignar UART libre y
 validar alimentación, tarjeta y parlante. Ver la nota Obsidian 65.
 
-Las 168 pistas generadas (84 por voz: 21 botones x 4 variantes) y su
+Las 176 pistas generadas (88 por voz: 22 eventos x 4 variantes) y su
 manifiesto reproducible están en `audio/jarvis_sd/`. La voz 1 (Carlos) usa
-carpetas 01-21 y la voz 2 (Karla) usa 51-71. Cada botón del mando tiene su
-carpeta; las variantes llevan significado (1 = ON manual, 2 = OFF manual,
-3 = ON automático, 4 = OFF automático). Ver `tools/generate_jarvis_audio.py`.
+carpetas 01-22 y la voz 2 (Karla) usa 51-72. Cada botón del mando tiene su
+carpeta; la 22 es FALLO (`No funciono.`). Las variantes llevan significado
+(1 = ON manual, 2 = OFF manual, 3 = ON automático, 4 = OFF automático). El
+botón CH habla con la carpeta 02 (frases de Spare). Ver
+`tools/generate_jarvis_audio.py`.
 El firmware ya contiene `JarvisAudio` y `DFPlayerTransport`, pero mantiene
 RX/TX/BUSY en `-1` y `MP3_HABILITADO=false`: la nota 66 exige identificar los
 GPIO libres y el módulo físico antes de crear el perfil final.

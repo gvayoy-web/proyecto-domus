@@ -61,11 +61,11 @@ class NativeFirmwareTests(unittest.TestCase):
             self.skipTest("No host C++ compiler; native behavior runs on Ubuntu CI")
         source = SKETCH.read_text(encoding="utf-8")
         constants = "\n".join(re.findall(
-            r"^#define (?:NIVEL_AGUA_(?:MIN_VALIDO|MAX_VALIDO|MUESTRAS_ESTABLES)|MAX_FALLOS_ANTES_DE_REGISTRAR|INTERVALO_AVISO_SENSOR_MS)\s+\d+(?:UL)?", source, re.M))
+            r"^#define (?:MAX_FALLOS_ANTES_DE_REGISTRAR|INTERVALO_AVISO_SENSOR_MS)\s+\d+(?:UL)?", source, re.M))
         polarity = re.search(r"const bool SALIDA_ACTIVA_EN_BAJO\[TOTAL_SALIDAS\] = \{.*?\};", source, re.S)[0]
         actual = "\n".join(function(source, signature) for signature in (
             "int nivelSalida(int indice, bool encendida)",
-            "void revisarComandosSerial()", "bool leerNivelAgua(int &valorSalida)"))
+            "void revisarComandosSerial()"))
         harness = r'''
 #include <cassert>
 #include <string>
@@ -73,10 +73,7 @@ class NativeFirmwareTests(unittest.TestCase):
 #include <deque>
 #include <cstdint>
 using String = std::string;
-constexpr int LOW=0, HIGH=1, TOTAL_SALIDAS=5, PIN_NIVEL_AGUA=16;
-// Fake del mapa central (nota 55): leerNivelAgua() extraída lo usa.
-struct MapaPinesCasa { int suelo, nivel, ldr; };
-constexpr MapaPinesCasa MAPA_CASA = {15, 16, 3};
+constexpr int LOW=0, HIGH=1, TOTAL_SALIDAS=5;
 struct FakeSerial {
   std::deque<char> bytes;
   int available() { return bytes.size(); }
@@ -89,10 +86,6 @@ std::vector<std::string> commands, events;
 void procesarComandoTexto(const String &s) { commands.push_back(s); }
 void emitirEventoLocal(const String &s) { events.push_back(s); }
 void registrarError(const char*, const String&) {}
-    int adc=1000, fallosConsecutivosNivelAgua=0, ultimoNivelAguaValido=-1;
-    uint8_t muestrasNivelAguaValidasConsecutivas=0;
-    int leerSensorPromediado(int) { return adc; }
-    unsigned long millis() { return 0; }
     '''
         checks = r'''
 void drain() { while(Serial.available()) revisarComandosSerial(); }
@@ -115,17 +108,6 @@ int main() {
   commands.clear();
   Serial.feed(std::string(40,'A')+"\n"); drain();
   assert(commands.size()==1 && commands[0].size()==40);
-  int value=-1;
-  adc=1000;
-  assert(!leerNivelAgua(value)); assert(!leerNivelAgua(value));
-  assert(leerNivelAgua(value) && value==1000);
-  for(int invalid : {0,15,4080,4095}) {
-    adc=invalid; assert(!leerNivelAgua(value));
-    assert(muestrasNivelAguaValidasConsecutivas==0);
-    adc=1000;
-    assert(!leerNivelAgua(value)); assert(!leerNivelAgua(value));
-    assert(leerNivelAgua(value));
-  }
 }
 '''
         with tempfile.TemporaryDirectory(prefix="domus-native-") as directory:

@@ -12,7 +12,7 @@
 enum class EventoJarvis : uint8_t {
   CH_MENOS = 1, CH, CH_MAS, ANTERIOR, PLAY, SIGUIENTE, VOL_MENOS, VOL_MAS,
   EQ, TECLA_0, TECLA_100, TECLA_200, TECLA_1, TECLA_2, TECLA_3, TECLA_4,
-  TECLA_5, TECLA_6, TECLA_7, TECLA_8, TECLA_9
+  TECLA_5, TECLA_6, TECLA_7, TECLA_8, TECLA_9, FALLO
 };
 inline bool anunciarJarvis(EventoJarvis, bool = false, uint8_t = 0) { return false; }
 inline bool anunciarJarvisGrupo(EventoJarvis, bool, uint8_t, uint8_t) { return false; }
@@ -21,8 +21,8 @@ inline EventoJarvis carpetaSalida(int indice) {
     case 0: return EventoJarvis::TECLA_5;
     case 1: return EventoJarvis::TECLA_1;
     case 2: return EventoJarvis::TECLA_2;
-    case 3: return EventoJarvis::TECLA_4;
-    case 4: return EventoJarvis::TECLA_3;
+    case 3: return EventoJarvis::TECLA_3;
+    case 4: return EventoJarvis::CH;
     default: return EventoJarvis::TECLA_9;
   }
 }
@@ -88,7 +88,6 @@ inline bool driverMotoresAplicarFinal(uint8_t canal, bool activar) { (void)canal
 bool paroEmergenciaActivo=false, modoSeguroActivo=false, watchdogActivo=true;
 char motivoModoSeguro[48]="ninguno";
 unsigned long bombaEncendidaDesdeMs=0, reloj=1000, heap=100000;
-int agua=1000; bool sensorValido=true;
 CalibracionDomus calibracion={1,2800,1200,3200,400,600,0};
 std::vector<String> eventos;
 void emitirEventoLocal(const String &s) {eventos.push_back(s);}
@@ -97,7 +96,6 @@ void log(const String&,const String&) {}
 void reproducirPista(int) {}
 void responderJarvis(const String&) {}
 String construirRespuestaJarvis(const OrdenActuador&,bool,const ResultadoOrden&) {return "respuesta";}
-bool leerNivelAgua(int &salida) {salida=agua;return sensorValido;}
 void digitalWrite(int pin,int valor) {gpio[pin]=valor;}
 int digitalRead(int pin) {return gpio[pin];}
 unsigned long millis() {return reloj;}
@@ -121,13 +119,11 @@ int main() {
     gpio[PIN_PARO_EMERGENCIA]=LOW; assert(!rearmarSistema());
     gpio[PIN_PARO_EMERGENCIA]=HIGH; assert(rearmarSistema());
     assert(!estadoSalidas[0]);
-    agua=0; assert(!ejecutarOrdenActuador({0,true,ORIGEN_MANUAL,1,"pump"}).exito);
-    agua=1000; sensorValido=false;
-    assert(!ejecutarOrdenActuador({0,true,ORIGEN_MANUAL,1,"pump"}).exito);
-    sensorValido=true;
+    // Sin sonda de nivel: solo timeout/driver/PARO gobernando la bomba.
+    assert(ejecutarOrdenActuador({0,true,ORIGEN_MANUAL,1,"pump"}).exito);
+    assert(estadoSalidas[0]);
     assert(ejecutarOrdenActuador({1,true,ORIGEN_IR,1,"ir allowed"}).exito);
     assert(ejecutarOrdenActuador({1,false,ORIGEN_IR,1,"ir allowed"}).exito);
-    assert(ejecutarOrdenActuador({0,true,ORIGEN_MANUAL,1,"pump"}).exito);
     reloj+=TIEMPO_MAXIMO_BOMBA_MS; verificarLimiteBomba(); assert(!estadoSalidas[0]);
     assert(propietarioSalidas[0]==PROPIETARIO_MANUAL_OFF);
     entrarModoSeguro("test");
