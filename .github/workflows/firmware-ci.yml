@@ -12,6 +12,8 @@ on:
       - "firmware/tests/**"
       - "assets/new/deliverables/execute/01_FINAL_V2/simulator/**"
       - "tools/validate_project.py"
+      - "tools/validate_markdown.py"
+      - "tools/jarvis_pc/**"
       - "README.md"
       - "docs/PLAN_PROYECTO.md"
       - ".github/workflows/firmware-ci.yml"
@@ -26,6 +28,8 @@ on:
       - "firmware/tests/**"
       - "assets/new/deliverables/execute/01_FINAL_V2/simulator/**"
       - "tools/validate_project.py"
+      - "tools/validate_markdown.py"
+      - "tools/jarvis_pc/**"
       - "README.md"
       - "docs/PLAN_PROYECTO.md"
       - ".github/workflows/firmware-ci.yml"
@@ -54,6 +58,17 @@ jobs:
       - name: Probar simulador y contratos del firmware
         run: python tools/validate_project.py
 
+      - name: Verificar documentacion y enlaces
+        run: python tools/validate_markdown.py
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Smoke de la consola Jarvis
+        run: node tools/jarvis_pc/smoke_jarvis.js
+
   compilar:
     needs: pruebas
     runs-on: ubuntu-latest
@@ -79,15 +94,15 @@ jobs:
             board: FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB,CPUFreq=240,LoopCore=1
             economical: 1
             perfil_casa: 1
-- name: n16r8-candidato-motor-pendiente
-             board: FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB,CPUFreq=240,LoopCore=1
-             economical: 1
-             perfil_casa: 2
-           - name: n16r8-casa-final-drv8833-dfplayer
-             board: FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB,CPUFreq=240,LoopCore=1
-             economical: 0
-             perfil_casa: 4
-           - name: 4m-sin-psram
+          - name: n16r8-candidato-motor-pendiente
+            board: FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB,CPUFreq=240,LoopCore=1
+            economical: 1
+            perfil_casa: 2
+          - name: n16r8-casa-final-drv8833-dfplayer
+            board: FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB,CPUFreq=240,LoopCore=1
+            economical: 0
+            perfil_casa: 4
+          - name: 4m-sin-psram
             board: FlashSize=4M,PSRAM=disabled,PartitionScheme=huge_app,CPUFreq=160,LoopCore=0
             economical: 0
           - name: 8m-qspi

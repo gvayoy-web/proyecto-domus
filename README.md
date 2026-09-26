@@ -6,7 +6,7 @@
 [![Framework](https://img.shields.io/badge/Arduino%20ESP32-3.3.10-004422.svg)](https://github.com/espressif/arduino-esp32)
 [![Tests](https://img.shields.io/badge/Tests-107_passed_0_failed-brightgreen.svg)](firmware/tests)
 [![Profile](https://img.shields.io/badge/Profile-CASA_FINAL_perfil_4-green.svg)](obsidian/proyect%20domus/71%20-%20Perfil%20CASA_FINAL_DRV8833_DFPLAYER.md)
-[![Version](https://img.shields.io/badge/Version-v4.0-4A90E2.svg)](https://github.com/Isaac/casa_inteligente_v4/commits/proyecdomus)
+[![Version](https://img.shields.io/badge/Version-v4.0-4A90E2.svg)](https://github.com/gvayoy-web/proyecto-domus/commits/main)
 [![Docs](https://img.shields.io/badge/Docs-Obsidian%2000--82-9944FF.svg)](obsidian/proyect%20domus)
 
 ---
