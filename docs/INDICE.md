@@ -9,6 +9,7 @@ La [nota 63](../obsidian/proyect%20domus/63%20-%20Auditoria%20total%20de%20Obsid
 | Ver DHT11, PIR, IR y cada sketch pin por pin | [Diagramas de todos los firmware](DIAGRAMAS_CADA_FIRMWARE.md) |
 | Cargar el firmware | firmware/domus_esqueleto/ para banco; firmware/casa_inteligente_v4/ para producto |
 | Consultar pruebas y límites | Nota 60, [estado breve](ESTADO_ACTUAL.md) y [cierre 82](../obsidian/proyect%20domus/82%20-%20Cierre%20jurado%20bomba%20GPIO17%20Jarvis%20PC%20y%20documentacion.md) |
+| Ver todo lo que falta con pasos exactos | [Próximos pasos](PROXIMOS_PASOS.md) |
 | Usar la interfaz de PC | `tools/jarvis_pc/jarvis.html` (consola serie con voz y diagnóstico; smoke en `smoke_jarvis.js`) |
 | Construir la maqueta | hardware/planos/ y hardware/GUIA_MONTAJE.md; confirmar antes el perfil físico |
 | Consultar entregables antiguos | [Archivo de entregables](../assets/new/README.md) y [documentos](../documentos/README.md) |

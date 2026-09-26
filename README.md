@@ -213,7 +213,7 @@ casa_inteligente_v4/
 ├── audio/                     # 176 MP3 (jarvis_sd 01-22/51-72) + MANIFEST.csv
 ├── hardware/                  # Guías de montaje + planos (PDF/CSV/3D)
 ├── visualizaciones/           # Diagramas SVG/HTML del banco y cableado
-├── docs/                      # ENTREGA_FINAL, ESTADO_ACTUAL, INDICE
+├── docs/                      # ENTREGA_FINAL, ESTADO_ACTUAL, INDICE, PROXIMOS_PASOS
 └── output/                    # Exportaciones generadas
 ```
 
@@ -227,6 +227,7 @@ casa_inteligente_v4/
 | Compilar/cargar firmware | Este README (Paso 3) + `firmware/casa_inteligente_v4/README.md` |
 | Probar sin romper nada | `firmware/PRUEBA_HOY.md` + `firmware/diagnosticos/domus_banco_integracion/` |
 | Entender el estado y alcance | [[00 - Inicio]], `docs/ESTADO_ACTUAL.md`, `docs/ENTREGA_FINAL.md` |
+| Ver todo lo que falta, paso a paso | `docs/PROXIMOS_PASOS.md` |
 | La bitácora completa | Notas [[00 - Inicio]] … [[82 - Cierre jurado bomba GPIO17 Jarvis PC y documentacion]] |
 | Entregables antiguos | `assets/new/README.md` y `documentos/README.md` |
 
