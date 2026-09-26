@@ -489,7 +489,12 @@ unsigned long ultimoReintentoDhtMs = 0;
 #define DHT_REINTENTO_SUSPENDIDO_MS 60000UL
 
 void log(const char* etiqueta, const char* mensaje);
+void log(const String &etiqueta, const String &mensaje);
+void log(const char* etiqueta, const String &mensaje);
+void log(const String &etiqueta, const char* mensaje);
 void emitirEventoLocal(const char* linea);
+void emitirEventoLocal(const String &linea);
+bool rearmarSistema();
 bool leerHumedad(int &crudoSalida, int &pctSalida);
 bool leerLuz(int &crudoSalida, int &pctSalida);
 void registrarError(const String &origen, const String &mensaje);
