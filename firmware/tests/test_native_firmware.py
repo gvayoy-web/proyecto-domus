@@ -91,7 +91,9 @@ void registrarError(const char*, const String&) {}
 void drain() { while(Serial.available()) revisarComandosSerial(); }
 int main() {
   for(int i=0;i<5;i++) {
-    bool low=(i==0 || !DOMUS_SALIDAS_ECONOMICAS);
+    // bomba (i==0): S8050/DRV → activa en ALTO siempre.
+    // luces: HIGH si variante económica montada (flag 1), LOW con relé (0).
+    bool low=(i!=0 && !DOMUS_SALIDAS_ECONOMICAS);
     assert(nivelSalida(i,false)==(low?HIGH:LOW));
     assert(nivelSalida(i,true)==(low?LOW:HIGH));
   }

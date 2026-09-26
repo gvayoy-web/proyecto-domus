@@ -94,5 +94,5 @@ switches, reed, termistor, tilt switch, ventilador (quemado).
 - [[69 - Placa real lado usable y restriccion de GPIO]]
 - [[01 - Inventario confirmado]]
 - [[73 - Auditoria Profunda Completa del Proyecto]]
-- [[75 - Audio Jarvis remodelado]]
+- [[75 - Audio Jarvis remodelado - Carlos Karla y SD]]
 - [[76 - Control IR y modo inteligente]]

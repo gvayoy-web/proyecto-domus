@@ -143,6 +143,6 @@ depends: 74, 75, 76
 ## Relacionadas
 
 - [[74 - Hardware final y mapa GPIO v5]]
-- [[75 - Audio Jarvis remodelado]]
+- [[75 - Audio Jarvis remodelado - Carlos Karla y SD]]
 - [[76 - Control IR y modo inteligente]]
 - [[73 - Auditoria Profunda Completa del Proyecto]]

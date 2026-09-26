@@ -50,8 +50,10 @@ class FirmwareContractTests(unittest.TestCase):
             maximum = int(re.search(r"#define\s+" + high + r"\s+(\d+)", self.source)[1])
             self.assertTrue(0 < minimum < maximum < 4095)
 
-    def test_economical_outputs_require_explicit_selection(self):
-        self.assertIn("#define DOMUS_SALIDAS_ECONOMICAS 0", self.source)
+    def test_economical_outputs_default_matches_mounted_wiring(self):
+        # Cableado montado (nota 78): "+" de cada carga hacia el GPIO,
+        # "-" a GND → variante económica activa en HIGH, default 1.
+        self.assertIn("#define DOMUS_SALIDAS_ECONOMICAS 1", self.source)
         self.assertNotIn("RELE_ACTIVO_EN_LOW", self.source)
         self.assertIn("nivelSalida(indice, true)", self.source)
         self.assertIn("nivelSalida(indice, false)", self.source)
@@ -274,6 +276,7 @@ class FirmwareContractTests(unittest.TestCase):
             '"SPARE_ON"', '"SPARE_OFF"', '"SPARE_AUTO"',
             '"TODO_ON"', '"TODO_OFF"',
             '"DEMO_ON"', '"DEMO_OFF"',
+            '"MODO_MANUAL"', '"MODO_AUTO"',
             '"FALLO"',
         ):
             if comando == '"FALLO"':
@@ -289,6 +292,7 @@ class FirmwareContractTests(unittest.TestCase):
         self.assertIn('{"SPARE_ON", 4, 1}', self.source)
         self.assertIn('comando == "TODO_ON"', self.source)
         self.assertIn('comando == "DEMO_ON"', self.source)
+        self.assertIn('comando == "MODO_AUTO"', self.source)
         self.assertIn("iniciarSecuenciaDemo();", self.source)
 
 

@@ -160,13 +160,15 @@
 #define DOMUS_PERFIL_CASA 4
 #endif
 
-// Mantener 0 para el cableado original. Seleccionar 1 únicamente
-// después de montar la alternativa descrita en la nota 21 de Obsidian.
+// Mantener 0 para cableado con relé (activo en LOW). La variante montada
+// (LED directo / S8050, nota 78: "+" hacia el GPIO, "-" a GND) es la
+// económica y es activa en HIGH → default 1. Ver SALIDA_ACTIVA_EN_BAJO.
 #ifndef DOMUS_SALIDAS_ECONOMICAS
-#define DOMUS_SALIDAS_ECONOMICAS 0
+#define DOMUS_SALIDAS_ECONOMICAS 1
 #endif
 const bool SALIDA_ACTIVA_EN_BAJO[TOTAL_SALIDAS] = {
-  DOMUS_PERFIL_CASA == 3 ? false : true,
+  // Bomba: S8050 directo (perfil 3/4) o DRV8833 → GPIO alto = encendido.
+  false,
   DOMUS_PERFIL_CASA == 3 ? false : !DOMUS_SALIDAS_ECONOMICAS,
   DOMUS_PERFIL_CASA == 3 ? false : !DOMUS_SALIDAS_ECONOMICAS,
   !DOMUS_SALIDAS_ECONOMICAS,
@@ -210,23 +212,23 @@ enum class PerfilCasa : uint8_t {
           "SIN_ACT";
  }
 // Mapa GPIO central: ÚNICA fuente de pines del candidato (nota 55).
-// Costado accesible autorizado (nota 46/47): suelo 15, nivel 16, SDA 17,
+// Costado accesible autorizado (nota 46/47): suelo 15, nivel 16, bomba 17,
 // demo/modo 18. Todo el firmware lee MAPA_CASA; no existen #define de pines.
 struct MapaPinesCasa {
   int suelo, nivel, ldr;
   int bomba, casa, porche, cultivo, spare;
-  int paro, micOff, demo, scl, dht, sda, ir;  // micOff=GPIO9 (SILENCIO), demo=GPIO18 (tambien DFPlayer TX); LCD quemado: scl/sda libres para DFPlayer RX
+  int paro, micOff, demo, scl, dht, sda, ir;  // micOff=GPIO9 (SILENCIO), demo=GPIO18 (tambien DFPlayer TX); sda=-1: LCD quemado y MP3 fuera, GPIO17 es hoy la bomba directa
   int salidas[TOTAL_SALIDAS];
 };
 constexpr MapaPinesCasa MAPA_CASA = {
   15, 16, 3,
-  4, 5, 8, 7, 6,
-  10, 9, 18, 13, 14, 17, 12,
-  {4, 5, 8, 7, 6}
+  17, 5, 8, 7, 6,
+  10, 9, 18, 13, 14, -1, 12,
+  {17, 5, 8, 7, 6}
 };
-static_assert(MAPA_CASA.bomba == 4 && MAPA_CASA.casa == 5 && MAPA_CASA.porche == 8 &&
+static_assert(MAPA_CASA.bomba == 17 && MAPA_CASA.casa == 5 && MAPA_CASA.porche == 8 &&
               MAPA_CASA.cultivo == 7 && MAPA_CASA.spare == 6, "Mapa de salidas del candidato");
-static_assert(MAPA_CASA.suelo == 15 && MAPA_CASA.nivel == 16 && MAPA_CASA.sda == 17 &&
+static_assert(MAPA_CASA.suelo == 15 && MAPA_CASA.nivel == 16 && MAPA_CASA.sda == -1 &&
               MAPA_CASA.demo == 18 && MAPA_CASA.scl == 13 && MAPA_CASA.ir == 12,
               "Costado accesible autorizado");
 static_assert(MAPA_CASA.bomba == MAPA_CASA.salidas[0] && MAPA_CASA.casa == MAPA_CASA.salidas[1] &&
@@ -793,8 +795,9 @@ bool escanearBusI2C(bool &hayLcd, uint8_t &dirLcd) {
   return dispositivosEncontrados > 0;
 }
 
-// LCD1602 quemado y descartado (nota 80): no se inicia I2C; libera
-// GPIO17/13 para el UART del DFPlayer y evita errores de bus.
+// LCD1602 quemado y descartado (nota 80): no se inicia I2C y no hay
+// errores de bus. GPIO17 quedo libre y hoy es la bomba directa; si se
+// reactiva el DFPlayer (hoy deshabilitado) necesita otros pines, no el 17.
 constexpr bool LCD_DESCARTADO = true;
 
 void detectarPantalla() {
@@ -1273,6 +1276,7 @@ const char* COMANDOS_VALIDOS[] = {
    "RIEGO_AUTO", "LUZ1_AUTO", "LUZ2_AUTO",
    "SPARE_ON", "SPARE_OFF", "SPARE_AUTO",
    "TODO_ON", "TODO_OFF", "DEMO_ON", "DEMO_OFF",
+   "MODO_MANUAL", "MODO_AUTO",
    "ESTADO", "DIAGNOSTICO", "PRUEBA", "PARO", "REARMAR", "RECUPERAR",
    "MIC_ESTADO", "SD_PRUEBA", "PINTEST_ALL", "CAL_SUELDO"
 };
@@ -1382,6 +1386,7 @@ void fijarModoManualIR() {
 // Transición de modo: parpadea unos segundos y apaga (no parpadeo eterno).
 void parpadeoAutoActualizar() {
   if (modoLucesIR != MODOLUCES_AUTO) return;
+  if (estadoDemo == DEMO_EN_CURSO) detenerSecuenciaDemo();
   if (paroEmergenciaActivo || modoSeguroActivo) return;
   if (autoTransicionLuces) {
     if ((long)(millis() - parpadeoTransicionHastaMs) < 0) {
@@ -1798,16 +1803,19 @@ bool procesarPinTest(const String &comando) {
   pinMode(pin, INPUT_PULLDOWN);
   delayMicroseconds(500);
   const int conPullDown = analogRead(pin);
-  bool esSalida = false;
+  int indiceSalida = -1;
   for (int i = 0; i < TOTAL_SALIDAS; ++i) {
-    if (MAPA_CASA.salidas[i] == pin) { esSalida = true; break; }
+    if (MAPA_CASA.salidas[i] == pin) { indiceSalida = i; break; }
   }
-  if (esSalida) {
-    pinMode(pin, OUTPUT);
-    digitalWrite(pin, nivelSalida(pin == MAPA_CASA.salidas[0] ? 0 :
-      pin == MAPA_CASA.salidas[1] ? 1 :
-      pin == MAPA_CASA.salidas[2] ? 2 :
-      pin == MAPA_CASA.salidas[3] ? 3 : 4, false));
+  if (indiceSalida >= 0) {
+    // Restaura la salida con su estado real: un PINTEST no debe apagar
+    // ni desincronizar bomba/luces hasta el siguiente reinicio.
+    digitalWrite(pin, nivelSalida(indiceSalida, estadoSalidas[indiceSalida]));
+    pinMode(pin, SALIDA_FISICA_CASA[indiceSalida] ? OUTPUT : INPUT);
+  } else if (PERFIL_CON_DRV8833 &&
+             (pin == DRV8833_PIN_AIN1 || pin == DRV8833_PIN_AIN2)) {
+    pinMode(pin, OUTPUT);   // mismos pines/pasos del init del DRV8833
+    digitalWrite(pin, LOW);
   } else {
     pinMode(pin, INPUT);
   }
@@ -1866,6 +1874,19 @@ void procesarComandoTexto(const String &comandoCrudo) {
                 (conPullUp > 3500 && conPullDown < 600) ? "FLOTANTE" : "CONECTADO");
        emitirEventoLocal(linea);
      }
+     // PINTEST_ALL dejo todos los pines en INPUT: restaura las cinco
+     // salidas con su estado real y las entradas del DRV8833 como en boot
+     // para no dejar bomba/luces muertas hasta reinicio.
+     for (uint8_t i = 0; i < TOTAL_SALIDAS; ++i) {
+       digitalWrite(MAPA_CASA.salidas[i], nivelSalida(i, estadoSalidas[i]));
+       pinMode(MAPA_CASA.salidas[i], SALIDA_FISICA_CASA[i] ? OUTPUT : INPUT);
+     }
+     if (PERFIL_CON_DRV8833) {
+       pinMode(DRV8833_PIN_AIN1, OUTPUT);
+       pinMode(DRV8833_PIN_AIN2, OUTPUT);
+       digitalWrite(DRV8833_PIN_AIN1, LOW);
+       digitalWrite(DRV8833_PIN_AIN2, LOW);
+     }
      emitirEventoLocal("PINTEST;FIN");
      return;
    }
@@ -1896,6 +1917,14 @@ void procesarComandoTexto(const String &comandoCrudo) {
   else if (comando == "DEMO_OFF") {
     detenerSecuenciaDemo();
     emitirEventoLocal("ACK;DEMO_OFF");
+  }
+  else if (comando == "MODO_MANUAL") {
+    fijarModoManualIR();
+    emitirEventoLocal("ACK;MODO_MANUAL");
+  }
+  else if (comando == "MODO_AUTO") {
+    fijarModoAutoIR();
+    emitirEventoLocal("ACK;MODO_AUTO");
   }
   else if (comando == "ESTADO")    emitirEventoLocal(construirReporteEstado());
   else if (comando == "DIAGNOSTICO") emitirEventoLocal(construirReporteDiagnostico());
@@ -2046,10 +2075,9 @@ void setup() {
   micHabilitado = digitalRead(MAPA_CASA.micOff) != LOW;
 
   for (int i = 0; i < TOTAL_SALIDAS; i++) {
-    // En perfil 4, AIN1/AIN2 del DRV8833 los configura el init del driver:
-    // no precargarlos aquí (evita AIN1 HIGH con AIN2 flotando en el arranque).
-    // Con bomba por GPIO directo no se reservan AIN1/AIN2: GPIO4 sale como
-    // OUTPUT normal en el arranque (el DRV queda fuera del camino).
+    // La bomba (GPIO17) se precarga aqui en su nivel inactivo y sale como
+    // OUTPUT normal en el arranque. AIN1=GPIO4/AIN2=GPIO7 los configura el
+    // init del driver; el DRV8833 queda fuera del camino de la bomba.
     const bool pinEsPuentH = PERFIL_CON_DRV8833 && !BOMBA_DIRECTA_S8050 &&
         (MAPA_CASA.salidas[i] == DRV8833_PIN_AIN1 ||
          MAPA_CASA.salidas[i] == DRV8833_PIN_AIN2);
@@ -2094,7 +2122,8 @@ if (BOMBA_DIRECTA_S8050)
 
   // Perfil final: inicializar DRV8833
   if (PERFIL_CON_DRV8833) {
-    // DRV8833: AIN1=GPIO4, AIN2=GPIO7 (bomba canal A)
+    // DRV8833: AIN1=GPIO4, AIN2=GPIO7 (fuera del camino de la bomba, hoy
+    // directa en GPIO17; canal B eliminado)
     // Canal B (ventilador) eliminado
     pinMode(DRV8833_PIN_AIN1, OUTPUT);
     pinMode(DRV8833_PIN_AIN2, OUTPUT);
@@ -2121,6 +2150,10 @@ unsigned long ultimaDemoCambioMs = 0;
 const unsigned long INTERVALO_DEMO_MS = 2000; // 2 segundos entre cambios
 
 void iniciarSecuenciaDemo() {
+  if (modoLucesIR == MODOLUCES_AUTO) {
+    emitirEventoLocal("NACK;DEMO_ON;MODO_AUTO_ACTIVO");
+    return;
+  }
   if (estadoDemo == DEMO_DETENIDO) {
     estadoDemo = DEMO_EN_CURSO;
     ultimaDemoCambioMs = millis();
@@ -2135,13 +2168,17 @@ void detenerSecuenciaDemo() {
 
 void demoSecuenciaActualizar() {
   if (estadoDemo != DEMO_EN_CURSO) return;
+  if (modoLucesIR == MODOLUCES_AUTO) {
+    detenerSecuenciaDemo();
+    return;
+  }
   if (millis() - ultimaDemoCambioMs < INTERVALO_DEMO_MS) return;
   ultimaDemoCambioMs = millis();
 
-  // Alterna todas las salidas instaladas pasando por el despachador: así
-  // la demo respeta interlocks (nivel, PARO, driver), propiedad, historial
-  // y voz. Antes escribía el GPIO directo y podía regar en seco.
+  // Solo luces (casa, porche, spare). Nunca bomba (0) ni cultivo (3):
+  // el demo del jurado no debe bombear agua ni etapa inexistente.
   for (int i = 0; i < TOTAL_SALIDAS; i++) {
+    if (i == 0 || i == 3) continue;
     if (SALIDA_FISICA_CASA[i]) {
       ejecutarComandoRele("DEMO_TOGGLE", i, !estadoSalidas[i], ORIGEN_MANUAL);
     }

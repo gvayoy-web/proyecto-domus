@@ -181,6 +181,6 @@ Fuente 2A sobra.
 ## Relacionadas
 
 - [[74 - Hardware final y mapa GPIO v5]]
-- [[75 - Audio Jarvis remodelado]]
+- [[75 - Audio Jarvis remodelado - Carlos Karla y SD]]
 - [[76 - Control IR y modo inteligente]]
 - [[77 - Plan firmware final v5]]

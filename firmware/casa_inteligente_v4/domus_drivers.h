@@ -60,7 +60,8 @@ constexpr bool DRIVER_MOTORES_LISTO =
     PERFIL_CON_DRV8833;
 
 // GPIO asignados al DRV8833 (perfil CASA_FINAL_DRV8833_DFPLAYER).
-// AIN1=GPIO4 (bomba), AIN2=GPIO7 (bomba)
+// AIN1=GPIO4, AIN2=GPIO7 (DRV8833; fuera del camino de la bomba, hoy
+// directa en GPIO17)
 // BIN1/BIN2: ELIMINADOS - ventilador muerto, GPIO5/6 libres para otros usos
 // nSLEEP → VCC (no usa GPIO)
 constexpr uint8_t DRV8833_PIN_AIN1 = 4;
@@ -113,7 +114,7 @@ constexpr const DescriptorBackendMotor& descriptorBackendMotor(BackendMotor b) {
 // GPIO12. Esto evita mantener dos banderas contradictorias.
 
 // --- Audio Jarvis ---
-// DFPlayer Mini por UART. El perfil CASA_FINAL_DRV8833_DFPLAYER habilita
-// el audio. Los pines UART se definen en el .ino principal.
-constexpr bool AUDIO_CANDIDATO_HABILITADO =
-    PERFIL_CON_DRV8833 && DOMUS_DRIVER_VALIDADO == 1;
+// DFPlayer Mini por UART. El candidato lo mantiene apagado: el audio real
+// depende de DOMUS_DRIVER_VALIDADO y hoy el módulo está deshabilitado en el
+// hardware (su RX era GPIO17, pin de la bomba directa; ver nota 82).
+constexpr bool AUDIO_CANDIDATO_HABILITADO = false;

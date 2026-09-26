@@ -6,16 +6,20 @@ DFPlayer y HIL del producto.
 
 ## Hardware real (inventario autorizado)
 
-- Bomba: GPIO4 → DRV8833 canal A (AIN1/AIN2 = GPIO4/GPIO7); solo canal A.
+- Bomba: **GPIO17 directo** (GPIO ALTO = riego ON); el DRV8833 queda
+  fuera del camino (AIN1=GPIO4 / AIN2=GPIO7 solo reservados).
 - Casa / Porche / Spare(Jarvis): LED en GPIO5 / GPIO8 / GPIO6 (2 azules).
 - Cultivo NO tiene luz: índice 3 siempre `SALIDA_FISICA=false`; sin comandos.
 - Sin sensor de nivel de agua: la bomba solo se gobierna por humedad de
   suelo y `TIEMPO_MAXIMO_BOMBA_MS` (timeout). `MAPA_CASA.nivel` (GPIO16)
   queda reservado por unicidad de pines, nunca se lee.
 - IR HX1838: señal en GPIO12. DHT11 GPIO14, suelo GPIO15, LDR GPIO3.
-- DFPlayer: RX GPIO17 / TX GPIO18 (LCD descartado, quemado); R1k en serie del TX hacia RX del módulo; VCC 5V_BUS.
+- DFPlayer: deshabilitado ("sin audio"); su RX era GPIO17 y hoy ese pin es
+  la bomba — si se reactiva hay que recablearlo a otros GPIO. TX sigue en
+  GPIO18 (compartido con el botón demo). LCD descartado (quemado).
 - Botones a GND con pull-up: PARO GPIO10, SILENCIO GPIO9. GPIO11 no existe en la placa.
-- Solo bomba por DRV8833 canal A (AIN1=GPIO4, AIN2=GPIO7); canal B / ventilador eliminado.
+- Solo bomba por GPIO directo (`BOMBA_DIRECTA_S8050=true`); canal B /
+  ventilador eliminado.
 
 ## Aprender el mando IR
 

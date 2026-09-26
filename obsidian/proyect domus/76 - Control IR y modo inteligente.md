@@ -183,5 +183,5 @@ SI sensorFalla:
 ## Relacionadas
 
 - [[74 - Hardware final y mapa GPIO v5]]
-- [[75 - Audio Jarvis remodelado]]
+- [[75 - Audio Jarvis remodelado - Carlos Karla y SD]]
 - [[77 - Plan firmware final v5]]

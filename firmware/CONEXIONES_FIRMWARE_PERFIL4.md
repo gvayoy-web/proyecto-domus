@@ -325,9 +325,9 @@ GPIO12 ───────────────► OUT
 ```cpp
 // Definido en casa_inteligente_v4.ino:
 #define DOMUS_PERFIL_CASA 4          // Perfil CASA_FINAL_DRV8833_DFPLAYER
-#define DOMUS_SALIDAS_ECONOMICAS 0   // Salidas económicas deshabilitadas
+#define DOMUS_SALIDAS_ECONOMICAS 1   // Variante montada: LED directo, activas en HIGH
 #define MICROSD_HABILITADA false     // MicroSD deshabilitado
-#define BOMBA_DIRECTA_S8050 false    // No usa S8050 directo
+#define BOMBA_DIRECTA_S8050 true     // Bomba por GPIO directo (S8050), activa en HIGH
 #define IR_CASA_HABILITADO true      // IR habilitado (perfil >= 3)
 
 // Definido en domus_drivers.h:

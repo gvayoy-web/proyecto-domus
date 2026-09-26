@@ -23,12 +23,15 @@ VISUAL_SOURCE = ROOT / "visualizaciones" / "sistema-domus-fragment.html"
 VISUAL_STANDALONE = ROOT / "visualizaciones" / "sistema-domus.html"
 WIKILINK = re.compile(r"\[\[([^\]|#]+)")
 
+# Mapa vigente (nota 82): bomba directa GPIO17, LEDs activos en HIGH,
+# micOff remapeado a GPIO9, sin PIR, LCD descartado (sda = -1 libre).
 EXPECTED_MAPA_PINS = {    "suelo": 15, "nivel": 16, "ldr": 3,
-    "bomba": 4, "sala": 5, "cuarto": 6, "vent": 7, "inv": 8,
-    "pir": 9, "paro": 10, "micOff": 11, "demo": 18,
-    "scl": 13, "dht": 14, "sda": 17, "ir": 12,
+    "bomba": 17, "casa": 5, "porche": 8, "cultivo": 7, "spare": 6,
+    "paro": 10, "micOff": 9, "demo": 18,
+    "scl": 13, "dht": 14, "sda": -1, "ir": 12,
 }
 TOTAL_SALIDAS_FIRMWARE = 5
+SALIDAS_ESPERADAS = [17, 5, 8, 7, 6]
 
 
 def run_tests(directory: Path) -> bool:
@@ -228,7 +231,7 @@ def validate_firmware_wiring_contract() -> list[str]:
     block = firmware.split("constexpr MapaPinesCasa MAPA_CASA = {", 1)
     if len(block) != 2:
         return ["Firmware: no se encontró MAPA_CASA como fuente única"]
-    numbers = [int(n) for n in re.findall(r"\b(\d+)\b", block[1].split("};", 1)[0])]
+    numbers = [int(n) for n in re.findall(r"-?\d+", block[1].split("};", 1)[0])]
     fields = list(EXPECTED_MAPA_PINS)
     if len(numbers) < len(fields) + TOTAL_SALIDAS_FIRMWARE:
         errors.append("Firmware: MAPA_CASA incompleto frente a EXPECTED_MAPA_PINS")
@@ -240,11 +243,13 @@ def validate_firmware_wiring_contract() -> list[str]:
                     f"Firmware: MAPA_CASA.{campo}=GPIO{actual}; contrato esperado GPIO{esperado}"
                 )
         salidas = numbers[len(fields):len(fields) + TOTAL_SALIDAS_FIRMWARE]
-        if salidas != [4, 5, 6, 7, 8]:
-            errors.append(f"Firmware: MAPA_CASA.salidas={salidas}; esperado [4, 5, 6, 7, 8]")
+        if salidas != SALIDAS_ESPERADAS:
+            errors.append(f"Firmware: MAPA_CASA.salidas={salidas}; esperado {SALIDAS_ESPERADAS}")
     for campo, esperado in EXPECTED_MAPA_PINS.items():
-        if campo in ("bomba", "vent"):
-            continue  # Motores fuera de la guía alfa (nota 49, prueba separada)
+        if esperado < 0:
+            continue  # pin libre (sda=-1: LCD descartado, MP3 fuera)
+        if campo == "cultivo":
+            continue  # índice sin etapa física; fuera de la guía alfa (nota 49)
         if f"GPIO{esperado}" not in manual:
             errors.append(
                 f"Guía alfa: no documenta {campo} en GPIO{esperado}"

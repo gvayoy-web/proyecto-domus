@@ -54,7 +54,10 @@ Esta evidencia sustituye las afirmaciones de compilación de versiones anteriore
 - Memoria global: 25,020 bytes / 327,680 disponibles. No mide el pico de heap en ejecución.
 - Archivo: `build/prod_n16r8_v2/casa_inteligente_v4.ino.bin`, 402,528 bytes.
 - SHA-256: `F1C16A4DA8F88D81F559636ED81E9CA28D227393A22AEDEB896A99F8DF5FFCE1`.
-- Perfil predeterminado `DOMUS_SALIDAS_ECONOMICAS=0`: cinco salidas activas LOW.
+- Perfil de esa corrida: `DOMUS_SALIDAS_ECONOMICAS=0`, cinco salidas activas LOW.
+  Hoy el default del fuente es `1` (variante montada: LED directo con "+" hacia
+  el GPIO, activas en HIGH; bomba siempre activa en HIGH) — corregido por el
+  cableado real de la nota 78.
 
 También compiló Windows 4 MB/sin PSRAM/160 MHz/Core 0: 397,180 bytes de
 programa y 24,544 de memoria global. Estas variantes son pruebas de compilación;
@@ -80,6 +83,7 @@ si no existe compilador C++ de escritorio; en Ubuntu se ejecuta con g++.
 
 ## Carga y banco pendientes
 
-La alternativa económica requiere adaptar el mazo según la nota 21 antes de
-definir `DOMUS_SALIDAS_ECONOMICAS=1`. Comprobar arranques, corrientes, sensores,
-paro y bomba en la placa real. Compilar no demuestra estabilidad eléctrica.
+La variante montada (LED directo, nota 21/78) es ya el default
+`DOMUS_SALIDAS_ECONOMICAS=1`. Solo con relé (activo en LOW) definir `0`.
+Comprobar arranques, corrientes, sensores, paro y bomba en la placa real.
+Compilar no demuestra estabilidad eléctrica.

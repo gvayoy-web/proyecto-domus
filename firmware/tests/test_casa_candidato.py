@@ -54,7 +54,8 @@ class CasaCandidatoTests(unittest.TestCase):
 
     def test_mapa_solo_usa_el_lado_utilizable_de_la_placa(self):
         bloque = self.source.split("constexpr MapaPinesCasa MAPA_CASA = {", 1)[1].split("};", 1)[0]
-        pines = {int(x) for x in re.findall(r"\b\d+\b", bloque)}
+        # -1 es el centinela de "pin libre" (sda sin LCD/MP3): no es un GPIO.
+        pines = {int(x) for x in re.findall(r"-?\b\d+\b", bloque) if int(x) >= 0}
         lado_ok = set(range(3, 19))
         self.assertTrue(pines, "MAPA_CASA vacío")
         self.assertEqual(pines - lado_ok, set(),

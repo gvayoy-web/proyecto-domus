@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DOMUS · NEXUS</title>
+<style>
+  :root {
+    --bg: #000;
+    --ink: #fff;
+    --dim: #666;
+    --line: #1a1a1a;
+    --blue: #00a2ff;
+    --blue-dim: #0055aa;
+    --blue-glow: rgba(0,162,255,0.35);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Consolas", "Cascadia Mono", ui-monospace, monospace;
+    background: var(--bg);
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+  /* retícula sutil */
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  /* scanlines */
+  body::after {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 60;
+    background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,0.10) 3px 4px);
+  }
+
+  canvas#net {
+    position: fixed; inset: 0; z-index: 0; opacity: 0.55; pointer-events: none;
+  }
+
+  header {
+    position: relative; z-index: 5;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem; padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid var(--line);
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(6px);
+  }
+  .brand { display: flex; align-items: center; gap: 0.9rem; }
+  /* NÚCLEO NEURONAL */
+  .core {
+    width: 46px; height: 46px; position: relative; flex-shrink: 0;
+  }
+  .core .ring {
+    position: absolute; inset: 0;
+    border: 1.5px solid var(--blue);
+    border-radius: 50%;
+    animation: contract 2.8s ease-in-out infinite;
+    box-shadow: 0 0 12px var(--blue-glow), inset 0 0 8px var(--blue-glow);
+  }
+  .core .ring:nth-child(2) {
+    inset: 7px;
+    border-color: var(--ink);
+    animation-delay: -0.9s;
+    box-shadow: 0 0 8px rgba(255,255,255,0.25);
+  }
+  .core .ring:nth-child(3) {
+    inset: 14px;
+    border-color: var(--blue);
+    background: radial-gradient(circle, var(--blue) 0%, transparent 70%);
+    animation-delay: -1.8s;
+  }
+  .core.speaking .ring { animation-duration: 0.55s; box-shadow: 0 0 22px var(--blue-glow); }
+  @keyframes contract {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.72); opacity: 0.55; }
+  }
+  .brand-text { letter-spacing: 0.2em; font-weight: 700; font-size: 0.92rem; }
+  .brand-text span { color: var(--blue); }
+  .sub { font-size: 0.68rem; color: var(--dim); letter-spacing: 0.1em; margin-top: 2px; }
+  .sub b { color: var(--blue); font-weight: 700; }
+  .sub b.off { color: #444; }
+  .head-actions { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+
+  button {
+    font: inherit; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+    background: transparent; color: var(--ink);
+    border: 1px solid #333; padding: 0.5rem 0.75rem; cursor: pointer;
+    transition: all 0.15s;
+  }
+  button:hover { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 14px var(--blue-glow); }
+  button:active { transform: scale(0.96); }
+  button.primary { background: var(--blue); border-color: var(--blue); color: #000; font-weight: 700; }
+  button.primary:hover { background: var(--ink); border-color: var(--ink); color: #000; box-shadow: 0 0 18px rgba(255,255,255,0.3); }
+  button.danger { border-color: #611; color: #f66; }
+  button.danger:hover { background: #f66; color: #000; border-color: #f66; box-shadow: 0 0 14px rgba(255,80,80,0.4); }
+  button:disabled { opacity: 0.3; cursor: not-allowed; }
+  button.tap { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 18px var(--blue-glow); transform: scale(0.96); }
+
+  main {
+    position: relative; z-index: 5;
+    max-width: 1040px; margin: 0 auto; padding: 1rem;
+    display: grid; gap: 0.85rem;
+  }
+
+  .hud { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.85rem; }
+  .panel {
+    border: 1px solid var(--line);
+    background: linear-gradient(165deg, #0a0a0a, #040404);
+    padding: 0.95rem 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: attr(data-tag);
+    position: absolute; top: -1px; left: 0;
+    background: var(--blue); color: #000;
+    font-size: 0.6rem; letter-spacing: 0.18em; font-weight: 700;
+    padding: 2px 10px; text-transform: uppercase;
+  }
+  .label { font-size: 0.66rem; color: var(--dim); letter-spacing: 0.16em; text-transform: uppercase; margin: 0.45rem 0 0.3rem; }
+  .value {
+    font-size: 2.3rem; font-weight: 700; line-height: 1;
+    color: var(--ink); text-shadow: 0 0 20px var(--blue-glow);
+  }
+  .value small { font-size: 0.8rem; color: var(--dim); }
+  .value .hi { color: var(--blue); }
+  .meter { margin-top: 0.65rem; height: 5px; background: #111; border: 1px solid #222; overflow: hidden; }
+  .meter i {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--blue-dim), var(--blue), var(--ink));
+    box-shadow: 0 0 10px var(--blue-glow);
+    transition: width 0.4s ease;
+  }
+  .rows { display: grid; gap: 0.25rem; margin-top: 0.5rem; font-size: 0.74rem; color: var(--dim); }
+  .rows div { display: flex; justify-content: space-between; }
+  .rows b { color: var(--ink); font-weight: 600; }
+  .badge {
+    display: inline-block; margin-top: 0.6rem;
+    border: 1px solid #333; padding: 0.18rem 0.5rem;
+    font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: #aaa;
+  }
+  .badge.dry { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 10px var(--blue-glow); }
+  .badge.wet { border-color: #333; color: #666; }
+
+  /* chips de estado de salidas */
+  .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+  .chip {
+    border: 1px solid #2a2a2a; padding: 0.3rem 0.65rem;
+    font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #555; background: #060606;
+    transition: all 0.2s;
+  }
+  .chip.on {
+    border-color: var(--blue); color: var(--blue);
+    box-shadow: 0 0 12px var(--blue-glow);
+    text-shadow: 0 0 8px var(--blue-glow);
+  }
+
+  .section-title { font-size: 0.64rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
+  .grid-btns { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 0.4rem; flex: 1; min-width: 240px; }
+
+  /* BOTÓN CIRCULAR · RED NEURONAL */
+  .ctrl-row { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; }
+  .orb-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.55rem; flex-shrink: 0; }
+  .orb {
+    width: 120px; height: 120px; border-radius: 50%; padding: 0;
+    border: 1px solid var(--blue);
+    background: radial-gradient(circle at 50% 42%, #0d1f33 0%, #040404 72%);
+    box-shadow: 0 0 22px var(--blue-glow), inset 0 0 26px rgba(0,162,255,0.18);
+    position: relative; cursor: pointer; transition: box-shadow 0.2s, transform 0.1s;
+  }
+  .orb:hover { box-shadow: 0 0 34px var(--blue-glow), inset 0 0 30px rgba(0,162,255,0.3); }
+  .orb:active { transform: scale(0.95); }
+  .orb .ring {
+    position: absolute; inset: 6px; border-radius: 50%;
+    border: 1.5px solid var(--blue); opacity: 0.9;
+    animation: contract 2.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .orb .ring:nth-child(2) { inset: 17px; border-color: rgba(255,255,255,0.5); animation-delay: -0.9s; }
+  .orb .ring:nth-child(3) { inset: 30px; border-color: var(--blue); animation-delay: -1.8s; background: radial-gradient(circle, rgba(0,162,255,0.35) 0%, transparent 70%); }
+  .orb .hub {
+    position: absolute; inset: 46px; border-radius: 50%;
+    background: radial-gradient(circle, var(--ink) 0%, var(--blue) 55%, transparent 78%);
+    box-shadow: 0 0 16px var(--blue-glow); pointer-events: none;
+    animation: hubpulse 1.8s ease-in-out infinite;
+  }
+  .orb.speaking .ring { animation-duration: 0.5s; box-shadow: 0 0 20px var(--blue-glow); }
+  .orb.tap { box-shadow: 0 0 44px var(--blue-glow), inset 0 0 34px rgba(0,162,255,0.45); }
+  @keyframes hubpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.8); } }
+  .orb-cap { font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--dim); text-align: center; line-height: 1.5; }
+  .core { cursor: pointer; }
+
+  /* pulido general */
+  ::selection { background: var(--blue); color: #000; }
+  :focus-visible { outline: 1px solid var(--blue); outline-offset: 2px; }
+  button { min-height: 34px; }
+  .grid-btns button { padding: 0.55rem 0.4rem; }
+  #log { scrollbar-width: thin; scrollbar-color: #1e1e1e transparent; }
+  #log::-webkit-scrollbar { width: 6px; }
+  #log::-webkit-scrollbar-thumb { background: #1e1e1e; }
+  #log::-webkit-scrollbar-track { background: transparent; }
+  @media (max-width: 560px) {
+    header { flex-wrap: wrap; }
+    .orb { width: 96px; height: 96px; }
+    .orb .hub { inset: 36px; }
+    .orb .ring:nth-child(3) { inset: 24px; }
+    .grid-btns { grid-template-columns: repeat(auto-fill, minmax(94px, 1fr)); }
+  }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 0.9rem 1.2rem; font-size: 0.7rem; color: var(--dim); align-items: baseline; }
+  .stats b { color: var(--blue); font-size: 1.05rem; font-variant-numeric: tabular-nums; margin-left: 0.3rem; }
+  .stats b.plain { color: var(--ink); }
+
+  #log {
+    border: 1px solid var(--line); background: #030303;
+    padding: 0.6rem 0.7rem; font-size: 0.7rem; line-height: 1.55;
+    max-height: 160px; overflow: auto; color: #555;
+  }
+  #log .ev { color: #8ab4ff; }
+  #log .err { color: #ff6b6b; }
+  #log .ir { color: var(--ink); }
+  #log .sens { color: var(--blue); }
+  #log .dim { color: #3a3a3a; }
+  #log .dup { color: #444; }
+
+  /* HUD voz / subtítulo */
+  #hud {
+    position: fixed; left: 50%; bottom: 1.1rem; z-index: 50;
+    transform: translateX(-50%) translateY(140%);
+    width: min(720px, calc(100vw - 1.5rem));
+    transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.25, 1.15);
+    pointer-events: none;
+  }
+  #hud.on { transform: translateX(-50%) translateY(0); }
+  .bubble {
+    border: 1px solid var(--blue);
+    background: rgba(0,0,0,0.96);
+    box-shadow: 0 0 36px var(--blue-glow), 0 18px 48px rgba(0,0,0,0.85);
+    padding: 0.95rem 1.1rem;
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  }
+  .bubble-head {
+    display: flex; justify-content: space-between;
+    font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 0.45rem;
+  }
+  .bubble-head .live { color: var(--blue); display: flex; align-items: center; gap: 0.35rem; }
+  .bubble-head .live i {
+    width: 6px; height: 6px; background: var(--blue); border-radius: 50%;
+    box-shadow: 0 0 8px var(--blue); animation: blink 0.9s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.15; } }
+  #subtitle {
+    font-size: 1.1rem; line-height: 1.42; font-weight: 600;
+    color: var(--ink); text-shadow: 0 0 16px var(--blue-glow);
+  }
+  #subMeta { margin-top: 0.4rem; font-size: 0.68rem; color: var(--dim); letter-spacing: 0.1em; }
+
+  footer {
+    position: relative; z-index: 5;
+    text-align: center; color: #333;
+    font-size: 0.62rem; letter-spacing: 0.14em;
+    padding: 0.4rem 1rem 1.4rem;
+  }
+</style>
+</head>
+<body>
+<canvas id="net"></canvas>
+
+<header>
+  <div class="brand">
+    <div class="core" id="core">
+      <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+    </div>
+    <div>
+      <div class="brand-text">DOMUS <span>//</span> NEXUS</div>
+      <div class="sub">LINK <b class="off" id="linkState">OFFLINE</b> · POLL <b id="pollAge">—</b> · ESP32-S3</div>
+    </div>
+  </div>
+  <div class="head-actions">
+    <button id="btnConnect" class="primary">Conectar COM</button>
+    <button id="btnEstado">Estado</button>
+    <button id="btnMute">Voz ON</button>
+  </div>
+</header>
+
+<main>
+  <section class="hud">
+    <div class="panel" data-tag="SENSOR · SUELO">
+      <div class="label">Humedad de tierra</div>
+      <div class="value"><span id="soilRaw">----</span> <small>ADC</small></div>
+      <div class="meter"><i id="soilBar"></i></div>
+      <div class="rows">
+        <div><span>% relativo</span><b id="soilPct">—</b></div>
+        <div><span>AUTO</span><b>≥4000 seca · ≤3000 húmeda</b></div>
+      </div>
+      <span class="badge" id="soilTag">ESPERANDO</span>
+    </div>
+    <div class="panel" data-tag="SENSOR · LDR">
+      <div class="label">Luz ambiental</div>
+      <div class="value"><span id="luzPct">--</span> <small class="hi">% luz</small></div>
+      <div class="meter"><i id="luzBar"></i></div>
+      <div class="rows">
+        <div><span>ADC crudo</span><b id="ldrRaw">—</b></div>
+        <div><span>Umbrales</span><b>&lt;25 oscuro · &gt;40 claro</b></div>
+      </div>
+      <span class="badge" id="luzTag">ESPERANDO</span>
+    </div>
+    <div class="panel" data-tag="SALIDAS">
+      <div class="label">Estado en vivo (se refresca solo)</div>
+      <div class="chips">
+        <span class="chip" id="cBomba">Bomba</span>
+        <span class="chip" id="cCasa">Casa</span>
+        <span class="chip" id="cPorche">Porche</span>
+        <span class="chip" id="cSpare">Spare</span>
+        <span class="chip" id="cAuto">AUTO</span>
+        <span class="chip" id="cSeguro">PARO</span>
+      </div>
+      <div class="rows" style="margin-top:0.7rem">
+        <div><span>Último IR</span><b id="lastIR">—</b></div>
+        <div><span>Riegos</span><b id="riegoCount">0</b></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-title">// Comandos del firmware</div>
+  <section class="panel" data-tag="CONTROL">
+    <div class="ctrl-row">
+      <div class="orb-wrap">
+        <button id="btnNodo" class="orb" title="Hablar estado en vivo">
+          <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+          <span class="hub"></span>
+        </button>
+        <span class="orb-cap">Nodo Jarvis<br>pulsa · escucha</span>
+      </div>
+      <div class="grid-btns">
+      <button data-cmd="RIEGO_ON">Riego ON</button>
+      <button data-cmd="RIEGO_OFF">Riego OFF</button>
+      <button data-cmd="RIEGO_AUTO">Riego AUTO</button>
+      <button data-cmd="LUZ1_ON">Casa ON</button>
+      <button data-cmd="LUZ1_OFF">Casa OFF</button>
+      <button data-cmd="LUZ2_ON">Porche ON</button>
+      <button data-cmd="LUZ2_OFF">Porche OFF</button>
+      <button data-cmd="SPARE_ON">Spare ON</button>
+      <button data-cmd="SPARE_OFF">Spare OFF</button>
+      <button data-cmd="TODO_ON">Luces ON</button>
+      <button data-cmd="TODO_OFF" class="danger">Todo OFF</button>
+      <button data-cmd="DEMO_ON">Demo ON</button>
+      <button data-cmd="DEMO_OFF">Demo OFF</button>
+      <button data-cmd="MODO_AUTO">AUTO invernadero</button>
+      <button data-cmd="MODO_MANUAL">MANUAL</button>
+      <button data-cmd="PARO" class="danger">PARO</button>
+      <button data-cmd="REARMAR">Rearmar</button>
+      <button id="btnStress" class="primary">Estrés plantas</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-title">// Diagnóstico hablado</div>
+  <section class="panel" data-tag="DIAGNÓSTICO">
+    <div class="grid-btns">
+      <button data-diag="DIAGNOSTICO">Diagnóstico</button>
+      <button data-diag="PRUEBA">Prueba guiada</button>
+      <button data-diag="RECUPERAR">Recuperar</button>
+    </div>
+  </section>
+
+  <section class="panel" data-tag="TELEMETRÍA">
+    <div class="stats">
+      <div>Ciclos riego <b id="riegoN">0</b></div>
+      <div>Próx. lección en <b id="nextIn">4</b></div>
+      <div>Lección <b id="lessonIdx">1</b>/<b class="plain" id="lessonTotal">3</b></div>
+      <div>Poll auto <b class="plain" id="pollCount">0</b></div>
+      <div>Voz <b class="plain" id="voiceName">—</b></div>
+    </div>
+  </section>
+
+  <div class="section-title">// Eventos filtrados</div>
+  <div id="log"></div>
+</main>
+
+<div id="hud">
+  <div class="bubble">
+    <div class="bubble-head">
+      <span class="live"><i></i> JARVIS · SUBTÍTULO</span>
+      <span id="subTag">STANDBY</span>
+    </div>
+    <div id="subtitle"></div>
+    <div id="subMeta"></div>
+  </div>
+</div>
+
+<footer>PALETA NODO // NEGRO · BLANCO · AZUL · RED NEURONAL EN VIVO</footer>
+
+<script>
+"use strict";
+
+/* ================= CONFIG ================= */
+const UMBRAL_SECO = 4000, UMBRAL_HUM = 3000;
+const CICLOS = 4, BAUD = 115200;
+const POLL_MS = 2500;              // ESTADO automático
+const LOG_MAX = 80;
+
+/* ================= SFX (bocinas del PC, estéreo) ================= */
+/* Sintetizador breve con Web Audio: clics, chime de conexión, aciertos,
+   fallos y alarma de PARO. Sale estéreo por las bocinas del PC; si el
+   navegador no lo soporta, todo queda en no-op. */
+const SFX = (() => {
+  const C = typeof window !== "undefined" && (window.AudioContext || window.webkitAudioContext);
+  if (!C) return { blip() {}, blipDiag() {}, ack() {}, error() {}, prewarm() {}, chime() {}, alarm() {} };
+  let ctx = null;
+  const last = {};
+  function ac() {
+    if (!ctx) ctx = new C();
+    if (ctx.state === "suspended") { try { ctx.resume(); } catch (_) {} }
+    return ctx;
+  }
+  function tone(f, t, g, opts) {
+    const o2 = opts || {};
+    try {
+      const c = ac(), now = c.currentTime + (o2.delay || 0);
+      const osc = c.createOscillator(), vol = c.createGain();
+      osc.type = o2.type || "sine";
+      osc.frequency.setValueAtTime(f, now);
+      if (o2.slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, o2.slide), now + t);
+      vol.gain.setValueAtTime(0.0001, now);
+      vol.gain.exponentialRampToValueAtTime(g, now + 0.012);
+      vol.gain.exponentialRampToValueAtTime(0.0001, now + t);
+      let out = vol;
+      if (c.createStereoPanner && o2.pan) {
+        const p = c.createStereoPanner(); p.pan.value = o2.pan;
+        vol.connect(p); out = p;
+      }
+      osc.connect(vol); out.connect(c.destination);
+      osc.start(now); osc.stop(now + t + 0.03);
+    } catch (_) {}
+  }
+  function once(key, ms) {
+    const n = Date.now();
+    if (last[key] && n - last[key] < ms) return false;
+    last[key] = n;
+    return true;
+  }
+  return {
+    blip()     { if (once("blip", 90))  tone(920, 0.05, 0.05); },
+    blipDiag() { if (once("diag", 90))  tone(1240, 0.045, 0.045); },
+    ack()      { if (once("ack", 170)) { tone(1180, 0.05, 0.04); tone(1560, 0.06, 0.035, { delay: 0.06 }); } },
+    error()    { if (once("err", 220))  tone(220, 0.16, 0.07, { type: "square", slide: 130 }); },
+    prewarm()  { try { ac(); } catch (_) {} },
+    chime()    { if (once("chime", 900)) {
+                   tone(523, 0.14, 0.06, { pan: -0.5 });
+                   tone(659, 0.14, 0.06, { pan: 0.5, delay: 0.11 });
+                   tone(1047, 0.22, 0.055, { delay: 0.22 });
+                 } },
+    alarm()    { if (once("alarm", 700)) {
+                   tone(880, 0.18, 0.08, { type: "square", pan: -0.6 });
+                   tone(660, 0.18, 0.08, { type: "square", pan: 0.6, delay: 0.18 });
+                 } }
+  };
+})();
+
+/* 3 lecciones cortas de estrés */
+const LESSONS = [
+  { t: "SEQUÍA · ABA",
+    x: "Suelo arriba de 4000: la planta está seca. Las raíces avisan y las hojas producen ABA; los estomas se cierran para ahorrar agua, y con eso baja la fotosíntesis." },
+  { t: "TURGENCIA",
+    x: "El agua mantiene firme cada célula. Sin turgencia, las hojas caen. Regar no es solo mojar tierra: es devolver presión al tejido vegetal." },
+  { t: "RECUPERACIÓN",
+    x: "Tras el riego no hay cura instantánea: el ABA tarda en bajar y la fotosíntesis tarda horas. El par 4000 encender / 3000 apagar da tiempo a recuperarse." }
+];
+
+/* Teclas IR del mando CAR MP3 (domus_ir_casa.h) → texto para voz */
+const IR_HABLA = {
+  "CH-": "Modo manual.",
+  "CH": "Alterno Spare.",
+  "CH+": "Modo automático invernadero.",
+  "ANTERIOR": "Luz de casa.",
+  "1": "Luz de casa.",
+  "SIGUIENTE": "Luz del porche.",
+  "2": "Luz del porche.",
+  "PLAY": "Alterno todas las luces.",
+  "4": "Todas las luces.",
+  "5": "Riego.",
+  "0": "Todo apagado.",
+  "3": "Alterno Spare.",
+  "6": "Estado de sensores.",
+  "7": "Estado de sensores.",
+  "8": "Estado de sensores.",
+  "9": "Estado completo.",
+  "VOL-": "Riego.",
+  "VOL+": "Alterno demo.",
+  "EQ": "Apagado de emergencia.",
+  "100+": "Alterno modo manual automático.",
+  "200+": "Rearme de seguridad."
+};
+
+/* ================= ESTADO ================= */
+let port = null, keep = false, muted = false;
+let voice = null;
+let soilRaw = null, ldrRaw = null, luzPct = null, humPct = null;
+let riego = 0, lesson = 0;
+let pollTimer = null, lastPoll = 0, pollN = 0;
+let lastLogKey = "", lastLogN = 0;
+/* Diagnóstico hablado: la próxima respuesta que llegue se resume por voz */
+let diagPending = null; // null | ESTADO | DIAGNOSTICO | PRUEBA | SD | MIC | PINTEST
+let pruebaAcciones = "";
+const st = { Bomba: false, Casa: false, Porche: false, Spare: false, auto: false, seguro: false, demo: false };
+
+const $ = (id) => document.getElementById(id);
+const logEl = $("log");
+const hud = $("hud");
+const core = $("core");
+$("lessonTotal").textContent = String(LESSONS.length);
+
+/* ================= LOG FILTRADO ================= */
+function log(text, cls) {
+  const key = text;
+  if (key === lastLogKey) {
+    lastLogN++;
+    const dup = logEl.querySelector(".dup");
+    if (dup) dup.remove();
+    const d = document.createElement("div");
+    d.className = "dup";
+    d.textContent = `  ↳ ×${lastLogN}`;
+    logEl.prepend(d);
+    return;
+  }
+  lastLogKey = key; lastLogN = 1;
+  const t = new Date().toLocaleTimeString("es-ES", { hour12: false });
+  const d = document.createElement("div");
+  d.className = cls || "";
+  d.textContent = `[${t}] ${text}`;
+  logEl.prepend(d);
+  while (logEl.children.length > LOG_MAX) logEl.lastChild.remove();
+}
+
+/* Ruido del puerto: boot del ESP32, bytes rotos, líneas vacías */
+function isNoise(line) {
+  if (!line) return true;
+  if (line.length > 400) return false; // ESTADO/DIAG son largos, útiles
+  // bytes no imprimibles
+  if (/[\x00-\x08\x0B-\x1F\x7F]/.test(line)) return true;
+  // boot del ESP32 / ROM loader
+  if (/^(ets |rst:|boot:|SPI|Reading|Falling|v\d|Pro cpu|entry|brownout|Guru|abort)/i.test(line)) return true;
+  if (/^[�\uFFFD]+$/.test(line)) return true;
+  // basura sin estructura (no tiene ; ni = ni palabra clave conocida)
+  if (!/[;=]|ACK|NACK|IR|EVENTO|ERROR|LOG|DIAGN|ESTADO|PRUEBA|CAL|PINTEST|BANCO|SALIDA|ORDEN|MP3|SD|LCD|DRV|SENSOR|COMANDO|MODO|MIC|DEMO|RIEGO/i.test(line)) return true;
+  return false;
+}
+
+/* ================= UI helpers ================= */
+function setLink(on, txt) {
+  const el = $("linkState");
+  el.textContent = txt;
+  el.className = on ? "" : "off";
+}
+function chip(id, on) { $(id).classList.toggle("on", !!on); }
+
+function updateSoil() {
+  if (soilRaw == null) return;
+  $("soilRaw").textContent = String(soilRaw);
+  const pct = humPct != null ? humPct
+    : Math.max(0, Math.min(100, Math.round((4095 - soilRaw) / 4095 * 100)));
+  $("soilPct").textContent = pct + "%";
+  $("soilBar").style.width = pct + "%";
+  const tag = $("soilTag");
+  if (soilRaw >= UMBRAL_SECO) { tag.textContent = "SECO · RIEGO ON"; tag.className = "badge dry"; }
+  else if (soilRaw <= UMBRAL_HUM) { tag.textContent = "HÚMEDO · OK"; tag.className = "badge wet"; }
+  else { tag.textContent = "HISTÉRESIS"; tag.className = "badge"; }
+}
+
+function updateLuz() {
+  if (luzPct == null) return;
+  $("luzPct").textContent = String(luzPct);
+  $("luzBar").style.width = luzPct + "%";
+  if (ldrRaw != null) $("ldrRaw").textContent = String(ldrRaw);
+  const tag = $("luzTag");
+  if (luzPct < 25) { tag.textContent = "OSCURO"; tag.className = "badge dry"; }
+  else if (luzPct > 40) { tag.textContent = "CLARO"; tag.className = "badge wet"; }
+  else { tag.textContent = "MEDIO"; tag.className = "badge"; }
+}
+
+function updateChips() {
+  chip("cBomba", st.Bomba); chip("cCasa", st.Casa);
+  chip("cPorche", st.Porche); chip("cSpare", st.Spare);
+  chip("cAuto", st.auto); chip("cSeguro", st.seguro);
+}
+
+function updateCycles() {
+  $("riegoCount").textContent = String(riego);
+  $("riegoN").textContent = String(riego);
+  const rem = riego === 0 ? CICLOS : (CICLOS - (riego % CICLOS)) || CICLOS;
+  $("nextIn").textContent = String(rem);
+  $("lessonIdx").textContent = String((lesson % LESSONS.length) + 1);
+}
+
+function touchPoll() {
+  lastPoll = Date.now(); pollN++;
+  $("pollCount").textContent = String(pollN);
+  $("pollAge").textContent = "OK";
+}
+setInterval(() => {
+  if (!port) { $("pollAge").textContent = "—"; return; }
+  const age = Math.round((Date.now() - lastPoll) / 1000);
+  $("pollAge").textContent = age + "s";
+}, 1000);
+
+/* ================= VOZ + SUBTÍTULO ================= */
+function pickVoice() {
+  if (!("speechSynthesis" in window)) return;
+  const vs = speechSynthesis.getVoices();
+  if (!vs.length) {
+    // Chrome carga las voces tarde: reintentar (tope de ~6 s)
+    pickVoice._tries = (pickVoice._tries || 0) + 1;
+    if (pickVoice._tries <= 20) {
+      clearTimeout(pickVoice._t);
+      pickVoice._t = setTimeout(pickVoice, 300);
+    } else {
+      $("voiceName").textContent = "sistema";
+    }
+    return;
+  }
+  pickVoice._tries = 0;
+  // Voz premium: puntúa voces neurales/naturales y las de español de
+  // México/España por encima de cualquier otra (nunca mezcla idiomas).
+  const score = (v) => {
+    let s = 0;
+    const n = v.name || "", l = (v.lang || "").toLowerCase();
+    if (/neural|natural/i.test(n)) s += 100;
+    if (/google/i.test(n)) s += 70;
+    if (/microsoft/i.test(n)) s += 40;
+    if (/jorge|ra[uú]l|pablo|elvira|dalia|helena|sabina|luc[ií]a/i.test(n)) s += 30;
+    if (l.startsWith("es-mx")) s += 60;
+    else if (l.startsWith("es-es")) s += 50;
+    else if (l.startsWith("es")) s += 25;
+    else s -= 200;
+    if (v.localService) s += 5;
+    return s;
+  };
+  const es = vs.filter(v => /^es/i.test(v.lang || "")).sort((a, b) => score(b) - score(a));
+  voice = es[0] ||
+    vs.find(v => /Google español|Spanish/i.test(v.name)) ||
+    null;
+  $("voiceName").textContent = voice ? voice.name.slice(0, 22) : "sistema";
+}
+
+/* Chrome/Edge: cancel() inmediato antes de speak() mata la síntesis.
+   Se deja que el utterance anterior termine de cancelarse (50ms) y se
+   re-sintetiza. onerror se registra para diagnóstico. */
+function speak(text, meta, tag) {
+  $("subtitle").textContent = text;
+  $("subMeta").textContent = meta || "";
+  $("subTag").textContent = tag || "LIVE";
+  hud.classList.add("on");
+  core.classList.add("speaking");
+  const orbEl = $("btnNodo");
+  if (orbEl) orbEl.classList.add("speaking");
+  clearTimeout(speak._t);
+  const dur = Math.min(14000, 2500 + text.length * 42);
+
+  if (muted || !("speechSynthesis" in window)) {
+    speak._t = setTimeout(hide, dur);
+    return;
+  }
+  const gen = ++speak._gen || (speak._gen = 1);
+  const emitir = () => {
+    if (gen !== speak._gen) return; // llegó una orden más nueva
+    try { speechSynthesis.resume(); } catch (_) {}
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = (voice && voice.lang) || "es-MX";
+      u.rate = 1.0; u.pitch = 0.95; u.volume = 1; // narrador pausado y claro
+      if (voice) u.voice = voice;
+      u.onend = () => { if (gen === speak._gen) hide(); };
+      u.onerror = (e) => {
+        const err = e && e.error ? e.error : "error";
+        // cancel()/speak encadenados generan "interrupted": es ruido esperado
+        if (!/interrupted|canceled|canceled-not-allowed/.test(err)) {
+          log("TTS: " + err, "err");
+        }
+        if (gen === speak._gen && !/interrupted|canceled/.test(err)) hide();
+      };
+      speechSynthesis.speak(u);
+    } catch (e) { log("TTS excepción: " + e.message, "err"); }
+  };
+  clearTimeout(speak._sab);
+  let enVuelo = false;
+  try {
+    // Si hay frase en vuelo hay que cancelar y ceder 50 ms (bug Chrome):
+    // si no, se sintetiza YA sin espera — así el audio llega al instante.
+    enVuelo = !!(speechSynthesis.speaking || speechSynthesis.pending);
+    speechSynthesis.cancel();
+    if (enVuelo) speechSynthesis.resume(); // cancel puede dejarlo pausado
+  } catch (_) { enVuelo = true; }
+  if (enVuelo) speak._sab = setTimeout(emitir, 50);
+  else emitir();
+  // fallback si onend no llega
+  speak._t = setTimeout(hide, dur + 2500);
+}
+function hide() {
+  hud.classList.remove("on");
+  core.classList.remove("speaking");
+  const orbEl = $("btnNodo");
+  if (orbEl) orbEl.classList.remove("speaking");
+}
+
+function speakLesson(i) {
+  lesson = ((i % LESSONS.length) + LESSONS.length) % LESSONS.length;
+  updateCycles();
+  const L = LESSONS[lesson];
+  speak(L.x, L.t + " · ciclo " + riego, "EDU");
+  log("LECCION " + L.t, "ev");
+}
+function maybeLesson() {
+  updateCycles();
+  if (riego > 0 && riego % CICLOS === 0) speakLesson(riego / CICLOS - 1);
+}
+
+/* ================= PARSE ================= */
+function field(line, key) {
+  const m = line.match(new RegExp("(?:^|;)" + key + "=([^;]+)"));
+  return m ? m[1] : null;
+}
+
+/* ACK genérico: ACK;CMD;VAL  (VAL = 0|1|AUTO|vacío) */
+function applyAck(cmd, val) {
+  if (!/PARPADEO/.test(cmd)) SFX.ack();
+  const on = val === "1";
+  const isAuto = val === "AUTO";
+  const luces = (v) => { st.Casa = st.Porche = st.Spare = v; };
+
+  // salidas individuales (incluye variantes IR_ y *_AUTO_ON/OFF)
+  const map = [
+    [/RIEGO/, "Bomba"],
+    [/LUZ1|CASA/, "Casa"],
+    [/LUZ2|PORCHE/, "Porche"],
+    [/SPARE/, "Spare"]
+  ];
+  // TODO_ON enciende luces 1,2,4 (NO bomba). TODO_OFF apaga TODO (bomba incluida)
+  if (cmd === "TODO_ON") {
+    luces(true); updateChips();
+    log("ACK TODO_ON → Casa+Porche+Spare ON", "ev");
+    return;
+  }
+  if (cmd === "TODO_OFF" || cmd === "IR_TODO_OFF") {
+    luces(false); st.Bomba = false; updateChips();
+    log("ACK TODO_OFF → todo OFF", "ev");
+    return;
+  }
+  // parpadeo de transición AUTO: no spamear ni contar ciclos
+  if (/PARPADEO/.test(cmd)) return;
+  // ANTES de los genéricos LUCES_*: este comando contiene "LUCES_OFF"
+  if (/MODO_AUTO_LUCES_OFF/.test(cmd)) {
+    luces(false); st.auto = true; updateChips();
+    log("ACK MODO_AUTO_LUCES_OFF → AUTO + luces OFF", "ev");
+    return;
+  }
+  if (/LUCES_TODAS_ON|LUCES_ON|TODAS_ON/.test(cmd)) { luces(true); updateChips(); log("Luces todas ON", "ev"); return; }
+  if (/LUCES_TODAS_OFF|LUCES_OFF|TODAS_OFF/.test(cmd)) { luces(false); updateChips(); log("Luces todas OFF", "ev"); return; }
+  if (/REARME_OK/.test(cmd) || (cmd === "REARMAR" && val === "SEGURO")) {
+    st.seguro = false; updateChips();
+    speak("Sistema rearmado.", "REARMAR", "SEG");
+    log("ACK REARMAR → seguro", "ev");
+    return;
+  }
+
+  for (const [re, key] of map) {
+    if (re.test(cmd)) {
+      if (isAuto) { log(cmd + " → AUTO", "ev"); return; }
+      st[key] = on;
+      updateChips();
+      const prev = riego;
+      if (key === "Bomba" && on) { riego++; updateCycles(); if (riego > prev) maybeLesson(); }
+      log(`ACK ${cmd} → ${key}=${on ? "ON" : "OFF"}`, "ev");
+      return;
+    }
+  }
+  if (/MODO_AUTO/.test(cmd)) { st.auto = true; updateChips(); speak("Modo automático. Invernadero activo.", "MODO_AUTO", "MODO"); log("ACK MODO_AUTO", "ev"); return; }
+  if (/MODO_MANUAL/.test(cmd)) { st.auto = false; updateChips(); speak("Modo manual.", "MODO_MANUAL", "MODO"); log("ACK MODO_MANUAL", "ev"); return; }
+  if (cmd === "DEMO_ON") { st.demo = true; log("ACK DEMO_ON", "ev"); return; }
+  if (cmd === "DEMO_OFF") { st.demo = false; log("ACK DEMO_OFF", "ev"); return; }
+  if (cmd === "RIEGO_AUTO") { st.auto = true; log("ACK RIEGO_AUTO (volver AUTO)", "ev"); return; }
+  if (cmd === "RECUPERAR") {
+    if (val === "SEGURO") speak("Recuperación ejecutada. Sistema en modo seguro.", "RECUPERAR", "SEG");
+    else if (val === "YA_ESTABLE") speak("El sistema ya estaba estable.", "RECUPERAR", "OK");
+    log("ACK RECUPERAR;" + val, "ev");
+    return;
+  }
+  if (cmd === "SD_PRUEBA" && val === "ENCOLADA") {
+    speak("Probando la tarjeta microSD.", "SD_PRUEBA", "RUN");
+    diagPending = "SD";
+    setTimeout(() => writeLine("ESTADO", true), 1200);
+    log("ACK SD_PRUEBA encolada → consulta de resultado", "ev");
+    return;
+  }
+
+  log("ACK " + cmd + (val ? ";" + val : ""), "ev");
+}
+
+function speakNack(cmd) {
+  if (/limite_de_frecuencia|buffer_excedido|no_reconocido/.test(cmd)) return; // no hablar ruido
+  if (/OCUPADO|TECLA_DESCONOCIDA/.test(cmd)) { log("NACK " + cmd, "dim"); return; }
+  const mapa = [
+    [/paro_emergencia/, "No se puede: paro de emergencia activo."],
+    [/modo_seguro/, "No se puede: modo seguro activo."],
+    [/bloqueado_por_paro/, "No se puede: paro de emergencia activo."],
+    [/gpio_no_confirmado/, "El GPIO no confirmó el nivel. Revisa el cable de esa salida."],
+    [/driver_no_listo/, "Sin driver de motores validado."],
+    [/salida_no_instalada/, "Esa salida no tiene etapa instalada."],
+    [/watchdog_no_disponible/, "Recuperación no disponible: watchdog no disponible."],
+    [/memoria_insuficiente/, "Recuperación cancelada: memoria insuficiente."],
+    [/NO_DISPONIBLE/, "Tarjeta microSD no disponible."]
+  ];
+  for (const [re, txt] of mapa) {
+    if (re instanceof RegExp && re.test(cmd)) { SFX.error(); speak(txt, "NACK · " + cmd, "ERR"); log("NACK " + cmd, "err"); return; }
+  }
+  SFX.error();
+  speak("No funciono.", "NACK · " + cmd, "ERR");
+  log("NACK " + cmd, "err");
+}
+
+function handleIr(line) {
+  const tecla = field(line, "TECLA") || "?";
+  const cmd = field(line, "CMD") || "";
+  const rep = field(line, "REP") || "0";
+  $("lastIR").textContent = tecla + (cmd ? " " + cmd : "");
+  log(`IR tecla=${tecla} cmd=${cmd}`, "ir");
+  if (rep === "1") return; // repetición del mando: no spamear voz
+  const txt = IR_HABLA[tecla];
+  if (txt) speak(txt, "IR · tecla " + tecla, "IR");
+  else if (tecla !== "?" && tecla !== "NINGUNA") speak("Tecla " + tecla, "IR " + cmd, "IR");
+}
+
+function handleEstado(line) {
+  touchPoll();
+  bumpPulse();
+  const b = field(line, "Bomba"), c = field(line, "Casa"),
+        p = field(line, "Porche"), s = field(line, "Spare");
+  if (b != null) st.Bomba = b === "1";
+  if (c != null) st.Casa = c === "1";
+  if (p != null) st.Porche = p === "1";
+  if (s != null) st.Spare = s === "1";
+  const seg = field(line, "EMERGENCIA");
+  const seg2 = field(line, "MODO_SEGURO");
+  if (seg != null) st.seguro = seg === "ON";
+  else if (seg2 != null) st.seguro = seg2 === "ON";
+  updateChips();
+
+  const hum = field(line, "HUM");
+  const hp = field(line, "HUM_PCT");
+  const lz = field(line, "LUZ_PCT");
+  if (hum != null && hum !== "-1") soilRaw = parseInt(hum, 10);
+  if (hp != null && hp !== "-1") humPct = parseInt(hp, 10);
+  if (lz != null && lz !== "-1") luzPct = parseInt(lz, 10);
+  updateSoil(); updateLuz();
+
+  // Respuesta pedida con intención de escucharla (barras del diagnóstico)
+  if (diagPending === "ESTADO") { diagPending = null; hablarEstado(); }
+  else if (diagPending === "SD") {
+    diagPending = null;
+    const sd = field(line, "SD");
+    speak(sd === "ON"
+      ? "Prueba de tarjeta completada. La microSD está montada y operativa."
+      : "Prueba de tarjeta completada. La microSD no está montada.",
+      "SD_PRUEBA", sd === "ON" ? "OK" : "WARN");
+  }
+}
+
+function handleDiag(line) {
+  touchPoll();
+  // typo del firmware: ADC_SUELRO
+  const a = field(line, "ADC_SUELRO") ?? field(line, "ADC_SUELO");
+  const l = field(line, "ADC_LDR");
+  if (a != null && a !== "-1") soilRaw = parseInt(a, 10);
+  if (l != null && l !== "-1") { ldrRaw = parseInt(l, 10); }
+  const calS = field(line, "CAL_SECO"), calH = field(line, "CAL_HUMEDO");
+  updateSoil();
+  // LDR % a partir de calibración si está disponible
+  const lo = field(line, "CAL_OSCURO"), lc = field(line, "CAL_CLARO");
+  if (ldrRaw != null && lo != null && lc != null) {
+    const loN = +lo, lcN = +lc, L = ldrRaw;
+    if (loN !== lcN) {
+      const pct = Math.round((L - lcN) / (loN - lcN) * 100);
+      luzPct = Math.max(0, Math.min(100, pct));
+      updateLuz();
+    }
+  }
+
+  if (diagPending === "DIAGNOSTICO") {
+    diagPending = null;
+    const p = ["Diagnóstico completo."];
+    const seg = field(line, "MODO_SEGURO");
+    if (seg === "ON") {
+      const motivo = field(line, "MOTIVO_SEGURO");
+      p.push("Modo seguro activo" + (motivo && motivo !== "ninguno" ? ", motivo " + motivo : "") + ".");
+    } else p.push("Modo seguro desactivado.");
+    const wd = field(line, "WATCHDOG");
+    if (wd === "ON") p.push("Watchdog activo.");
+    else if (wd != null) p.push("¡Atención! Watchdog en fallo.");
+    const err = field(line, "ERRORES_TOTAL"), ultimo = field(line, "ULTIMO_ERROR");
+    if (err === "0") p.push("Cero errores.");
+    else if (err != null) p.push(err + " errores" + (ultimo && ultimo !== "ninguno" ? ", último " + ultimo : "") + ".");
+    const sd = field(line, "SD_PRUEBA");
+    if (sd === "1") p.push("Tarjeta microSD verificada.");
+    else if (sd === "-1") p.push("¡Atención! Fallos en la tarjeta microSD.");
+    const hp = field(line, "ADC_SUELRO");
+    if (hp != null && hp !== "-1") {
+      soilRaw = parseInt(hp, 10);
+      humPct = Math.max(0, Math.min(100, Math.round((4095 - soilRaw) / 4095 * 100)));
+      p.push("Suelo al " + humPct + " por ciento.");
+      updateSoil();
+    }
+    p.push(field(line, "BOMBA_ETAPA") === "GPIO_DIRECTO"
+      ? "Bomba por GPIO directo." : "Bomba por driver.");
+    speak(p.join(" "), "DIAGNOSTICO", "DIAG");
+    log(line.slice(0, 200), "dim");
+  }
+}
+
+function handleLine(raw) {
+  const line = raw.replace(/\r/g, "").trim();
+  if (isNoise(line)) return;
+
+  // DIAGNOSTICO / ESTADO primero (son largos)
+  if (line.startsWith("ESTADO;")) { handleEstado(line); return; }
+  if (line.startsWith("DIAGNOSTICO;")) { handleDiag(line); return; }
+
+  if (line.startsWith("IR;")) { handleIr(line); return; }
+
+  if (line.startsWith("ACK;")) {
+    const parts = line.split(";");
+    // ACK;CMD;VAL   o   ACK;IR;MODO_AUTO  o  ACK;IR_GRABAR;...
+    if (parts[1] === "IR") {
+      // ACK;IR;MODO_AUTO / ACK;IR;LUCES_TODAS_ON / ACK;IR;TODO_OFF ...
+      applyAck(parts[2] || "", parts[3] || "");
+      return;
+    }
+    if (parts[1] === "IR_GRABAR" || parts[1] === "IR_BORRAR") {
+      log(line, "ir"); return;
+    }
+    applyAck(parts[1], parts[2] || "");
+    return;
+  }
+
+  if (line.startsWith("NACK;")) { speakNack(line.slice(5)); return; }
+  if (line.startsWith("EVENTO;")) {
+    log(line, "ev");
+    if (/PARO_EMERGENCIA/.test(line)) { st.seguro = true; updateChips(); SFX.alarm(); speak("Paro de emergencia activo.", "EVENTO", "ERR"); }
+    if (/BOMBA_TIMEOUT/.test(line)) { st.Bomba = false; updateChips(); speak("Riego detenido por tiempo máximo.", "BOMBA_TIMEOUT", "ERR"); }
+    return;
+  }
+  if (line.startsWith("PRUEBA;")) {
+    log(line, "dim");
+    const acc = field(line, "ACCIONES");
+    if (acc) pruebaAcciones = acc;
+    if (line.startsWith("PRUEBA;FIN") && diagPending === "PRUEBA") {
+      diagPending = null;
+      const trad = { TAPA_LDR: "tapa el sensor de luz", PULSA_MODO: "pulsa el botón de modo",
+                     PRUEBA_IR: "prueba el mando infrarrojo", PULSA_STOP: "pulsa parar" };
+      const accion = (pruebaAcciones || "TAPA_LDR,PULSA_MODO,PRUEBA_IR,PULSA_STOP")
+        .split(",").map(t => trad[t.trim()] || t.trim()).join(", ");
+      speak("Reporte de prueba listo. Ahora: " + accion + ".", "PRUEBA", "DIAG");
+    }
+    return;
+  }
+  if (line.startsWith("MIC;")) {
+    log(line, "ev");
+    if (diagPending === "MIC") {
+      diagPending = null;
+      speak(line.split(";")[1] === "ON" ? "Micrófono habilitado." : "Micrófono deshabilitado.",
+            "MIC_ESTADO", "DIAG");
+    }
+    return;
+  }
+  if (line.startsWith("PINTEST;")) {
+    log(line, "dim");
+    if (line.startsWith("PINTEST;FIN") && diagPending === "PINTEST") {
+      diagPending = null;
+      speak("Barrido de pines completado. El reporte está en el panel.", "PINTEST_ALL", "DIAG");
+    }
+    return;
+  }
+  if (line.startsWith("LECCION")) { log(line, "ev"); return; }
+
+  // resto con estructura → log silencioso
+  log(line.slice(0, 180), "dim");
+}
+
+/* ================= SERIAL ================= */
+async function openPort(p) {
+  try {
+    port = p;
+    if (!port.readable && !port.writable) await port.open({ baudRate: BAUD });
+    keep = true;
+    setLink(true, "ONLINE");
+    SFX.chime();
+    log("Puerto ABIERTO a " + BAUD + " baud", "sens");
+    pickVoice();
+    port.ondisconnect = () => {
+      keep = false;
+      log("Puerto desconectado (físico)", "err");
+      setLink(false, "OFFLINE");
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    };
+    readLoop();
+    // primer poll
+    await writeLine("ESTADO", true);
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(() => { if (port && port.writable) writeLine("ESTADO", true); }, POLL_MS);
+    return true;
+  } catch (e) {
+    log("Error: " + e.message, "err");
+    setLink(false, "OFFLINE");
+    return false;
+  }
+}
+
+async function connect() {
+  if (!("serial" in navigator)) {
+    alert("Web Serial no disponible. Usa Chrome/Edge.");
+    return;
+  }
+  try {
+    const p = await navigator.serial.requestPort();
+    await openPort(p);
+  } catch (e) {
+    log("Error: " + e.message, "err");
+    setLink(false, "OFFLINE");
+  }
+}
+
+/* Reconexión automática si el navegador ya autorizó este puerto */
+if ("serial" in navigator && navigator.serial.getPorts) {
+  navigator.serial.getPorts().then(ps => {
+    if (ps.length) {
+      log("Puerto autorizado previo → reconectando…", "sens");
+      openPort(ps[0]);
+    }
+  }).catch(() => {});
+}
+
+async function readLoop() {
+  const dec = new TextDecoder();
+  let buf = "";
+  while (port && port.readable && keep) {
+    const reader = port.readable.getReader();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          handleLine(buf.slice(0, i));
+          buf = buf.slice(i + 1);
+        }
+      }
+    } catch (e) { log("read: " + e.message, "err"); }
+    finally { try { reader.releaseLock(); } catch (_) {} }
+  }
+}
+
+/* Frases locales por comando (feedback inmediato tipo IR) */
+const CMD_HABLA = {
+  RIEGO_ON: "Riego encendido.", RIEGO_OFF: "Riego apagado.", RIEGO_AUTO: "Riego automático.",
+  LUZ1_ON: "Luz de casa encendida.", LUZ1_OFF: "Luz de casa apagada.",
+  LUZ2_ON: "Luz del porche encendida.", LUZ2_OFF: "Luz del porche apagada.",
+  SPARE_ON: "Spare encendido.", SPARE_OFF: "Spare apagado.",
+  TODO_ON: "Todas las luces encendidas.", TODO_OFF: "Todo apagado.",
+  DEMO_ON: "Demostración encendida.", DEMO_OFF: "Demostración apagada.",
+  MODO_AUTO: "Modo automático invernadero.", MODO_MANUAL: "Modo manual.",
+  PARO: "Paro de emergencia.", REARMAR: "Rearme de seguridad."
+};
+
+/* writeLine: devuelve true si se envió; si no hay puerto, avisa (nunca en silencio) */
+async function writeLine(text, quiet) {
+  if (!port || !port.writable) {
+    if (!quiet) {
+      log("SIN CONEXIÓN COM — no se envió: " + text, "err");
+      setLink(false, "OFFLINE");
+      SFX.error();
+      speak("Sin conexión. Conecta el puerto COM.", "SERIAL", "WARN");
+    }
+    return false;
+  }
+  bumpPulse();
+  try {
+    const w = port.writable.getWriter();
+    try { await w.write(new TextEncoder().encode(text + "\n")); }
+    finally { w.releaseLock(); }
+    return true;
+  } catch (e) {
+    log("write: " + e.message, "err");
+    SFX.error();
+    speak("Error de escritura en el puerto.", "SERIAL", "ERR");
+    return false;
+  }
+}
+
+/* ================= EVENTOS UI ================= */
+$("btnConnect").addEventListener("click", connect);
+$("btnEstado").addEventListener("click", () => { diagPending = "ESTADO"; writeLine("ESTADO"); });
+$("btnMute").addEventListener("click", () => {
+  muted = !muted;
+  if (muted && "speechSynthesis" in window) speechSynthesis.cancel();
+  $("btnMute").textContent = muted ? "Voz OFF" : "Voz ON";
+  log(muted ? "TTS mute (solo subtítulo)" : "TTS activo", "dim");
+});
+$("btnStress").addEventListener("click", () => speakLesson(lesson));
+
+/* Nodo circular: habla el estado en vivo (misma voz que IR) */
+function hablarEstado() {
+  log("Nodo: consulta de estado", "ir");
+  if (!port || !port.writable) {
+    setLink(false, "OFFLINE");
+    speak("Sin conexión al ESP32. Conecta el puerto COM.", "NODO", "WARN");
+    return;
+  }
+  const p = [];
+  if (st.seguro) p.push("¡paro de emergencia activo!");
+  p.push(st.Bomba ? "riego encendido" : "riego en espera");
+  const on = [];
+  if (st.Casa) on.push("casa");
+  if (st.Porche) on.push("porche");
+  if (st.Spare) on.push("spare");
+  p.push(on.length ? "luces de " + on.join(", ") + " encendidas" : "todas las luces apagadas");
+  p.push(st.auto ? "modo automático" : "modo manual");
+  if (soilRaw != null) {
+    const pct = humPct != null ? humPct : Math.max(0, Math.min(100, Math.round((4095 - soilRaw) / 4095 * 100)));
+    p.push("suelo al " + pct + " por ciento");
+  }
+  bumpPulse();
+  speak(p.join(", ") + ".", "NODO · estado", "LIVE");
+}
+$("btnNodo").addEventListener("click", hablarEstado);
+$("btnNodo").addEventListener("pointerdown", () => $("btnNodo").classList.add("tap"));
+$("btnNodo").addEventListener("pointerup", () => setTimeout(() => $("btnNodo").classList.remove("tap"), 240));
+core.addEventListener("click", hablarEstado); // núcleo del header también es clicable
+
+/* Comandos cuyo ACK ya habla: no duplicar frase local */
+const CMD_ACK_VOICE = new Set(["MODO_AUTO", "MODO_MANUAL", "REARMAR", "PARO"]);
+
+document.querySelectorAll("[data-cmd]").forEach(btn => {
+  let cd = 0;
+  btn.addEventListener("click", () => {
+    const now = Date.now();
+    if (now - cd < 350) return; // anti-rebote / anti rate-limit
+    cd = now;
+    const cmd = btn.getAttribute("data-cmd");
+    btn.classList.add("tap");
+    SFX.blip();
+    setTimeout(() => btn.classList.remove("tap"), 240);
+    // feedback optimista local (se corrige con el siguiente ESTADO/ACK)
+    if (cmd === "LUZ1_ON") { st.Casa = true; updateChips(); }
+    else if (cmd === "LUZ1_OFF") { st.Casa = false; updateChips(); }
+    else if (cmd === "LUZ2_ON") { st.Porche = true; updateChips(); }
+    else if (cmd === "LUZ2_OFF") { st.Porche = false; updateChips(); }
+    else if (cmd === "SPARE_ON") { st.Spare = true; updateChips(); }
+    else if (cmd === "SPARE_OFF") { st.Spare = false; updateChips(); }
+    else if (cmd === "TODO_ON") { st.Casa = st.Porche = st.Spare = true; updateChips(); }
+    else if (cmd === "TODO_OFF") { st.Casa = st.Porche = st.Spare = st.Bomba = false; updateChips(); }
+    else if (cmd === "PARO") { st.seguro = true; updateChips(); }
+    else if (cmd === "MODO_AUTO") { st.auto = true; updateChips(); }
+    else if (cmd === "MODO_MANUAL") { st.auto = false; updateChips(); }
+    // frase local = misma voz que el mando IR (writeLine avisa si no hay puerto)
+    const frase = CMD_HABLA[cmd];
+    if (frase && !CMD_ACK_VOICE.has(cmd)) speak(frase, "UI · " + cmd, "BTN");
+    writeLine(cmd);
+  });
+});
+
+/* Botones de diagnóstico: envían y la respuesta llega hablada (diagPending) */
+document.querySelectorAll("[data-diag]").forEach(btn => {
+  let cd = 0;
+  btn.addEventListener("click", async () => {
+    const now = Date.now();
+    if (now - cd < 350) return;
+    cd = now;
+    const cmd = btn.getAttribute("data-diag");
+    btn.classList.add("tap");
+    SFX.blipDiag();
+    setTimeout(() => btn.classList.remove("tap"), 240);
+    diagPending = cmd === "SD_PRUEBA" ? null
+      : cmd === "MIC_ESTADO" ? "MIC"
+      : cmd === "PINTEST_ALL" ? "PINTEST"
+      : cmd;
+    const ok = await writeLine(cmd);
+    if (!ok && diagPending) diagPending = null; // sin puerto: writeLine ya avisó
+  });
+});
+
+/* Clic en "Voz" (telemetría): cicla entre las voces en español del PC */
+$("voiceName").style.cursor = "pointer";
+$("voiceName").title = "Clic para cambiar la voz";
+$("voiceName").addEventListener("click", () => {
+  if (!("speechSynthesis" in window)) return;
+  const es = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang || ""));
+  if (!es.length) { pickVoice(); return; }
+  const i = voice ? es.indexOf(voice) : -1;
+  voice = es[(i + 1) % es.length];
+  $("voiceName").textContent = voice.name.slice(0, 22);
+  speak("Hola, soy Jarvis. Así suena mi voz.", "VOZ · prueba", "LIVE");
+});
+
+if ("speechSynthesis" in window) {
+  speechSynthesis.onvoiceschanged = pickVoice;
+  pickVoice();
+
+  // Motor caliente: si la síntesis quedó pausada (bug de Chrome a mitad
+  // de frases largas) se reanuda en cuanto sea posible.
+  setInterval(() => {
+    try {
+      if (speechSynthesis.paused) { speechSynthesis.resume(); return; }
+      if (speechSynthesis.speaking || speechSynthesis.pending) return;
+      const warm = new SpeechSynthesisUtterance(" ");
+      warm.volume = 0; warm.rate = 2;
+      speechSynthesis.speak(warm); // latencia mínima en la siguiente frase
+    } catch (_) {}
+  }, 10000);
+}
+
+/* Prewarm al primer gesto del usuario: calienta TTS + AudioContext para
+   que el primer sonido/primer habla salga al instante. */
+let audioPrewarmDone = false;
+function prewarmAudio() {
+  if (audioPrewarmDone) return;
+  audioPrewarmDone = true;
+  try { SFX.prewarm(); } catch (_) {}
+  if ("speechSynthesis" in window) {
+    pickVoice();
+    try {
+      const u = new SpeechSynthesisUtterance(" ");
+      u.volume = 0; u.rate = 2;
+      speechSynthesis.speak(u);
+    } catch (_) {}
+  }
+}
+addEventListener("pointerdown", prewarmAudio, { once: true });
+addEventListener("click", prewarmAudio, { once: true });
+
+/* ================= RED NEURONAL (canvas) ================= */
+const cv = $("net"), cx = cv.getContext("2d");
+let W = 0, H = 0, nodes = [], links = [];
+function resize() {
+  W = cv.width = innerWidth;
+  H = cv.height = innerHeight;
+  const n = Math.min(46, Math.floor(W * H / 28000));
+  nodes = Array.from({ length: n }, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
+    r: 1.2 + Math.random() * 1.8, ph: Math.random() * Math.PI * 2
+  }));
+}
+addEventListener("resize", resize);
+resize();
+
+let pulse = 0; // pulso azul que viaja al recibir datos
+function bumpPulse() { pulse = 1; }
+
+function tick(t) {
+  cx.clearRect(0, 0, W, H);
+  const speakSpeed = core.classList.contains("speaking") ? 2.4 : 1;
+
+  // mover nodos
+  for (const p of nodes) {
+    p.x += p.vx * speakSpeed; p.y += p.vy * speakSpeed;
+    if (p.x < 0 || p.x > W) p.vx *= -1;
+    if (p.y < 0 || p.y > H) p.vy *= -1;
+  }
+  // enlaces
+  cx.lineWidth = 1;
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < 180 * 180) {
+        const al = (1 - Math.sqrt(d2) / 180) * 0.35;
+        cx.strokeStyle = `rgba(0,162,255,${al.toFixed(3)})`;
+        cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke();
+      }
+    }
+  }
+  // nodos con respiración
+  for (const p of nodes) {
+    const br = 0.55 + 0.45 * Math.sin(t / 600 + p.ph);
+    cx.fillStyle = `rgba(0,162,255,${(br * 0.9).toFixed(3)})`;
+    cx.beginPath(); cx.arc(p.x, p.y, p.r * (1 + pulse * 0.8), 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = `rgba(255,255,255,${(br * 0.5).toFixed(3)})`;
+    cx.beginPath(); cx.arc(p.x, p.y, p.r * 0.45, 0, Math.PI * 2); cx.fill();
+  }
+  // pulso de dato
+  if (pulse > 0) pulse = Math.max(0, pulse - 0.02);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ================= INIT ================= */
+updateChips();
+updateCycles();
+log("NEXUS en línea · sensores SUELO+LDR · poll auto cada " + (POLL_MS/1000) + "s", "sens");
+log("Abre Chrome/Edge → Conectar COM → ESP32. El monitor del IDE puede quedarse abierto si no reclama el puerto.", "dim");
+</script>
+</body>
+</html>

@@ -80,23 +80,21 @@ flowchart TB
     V33 --> LV[LV del adaptador I2C]
     BUS5 --> HV[HV del adaptador I2C]
 
-    ESP5 -->|GPIO1| SOIL[Suelo AO]
-    ESP5 -->|GPIO2| WATER[Nivel AO]
+    ESP5 -->|GPIO15| SOIL[Suelo AO]
+    ESP5 -->|GPIO16| WATER[Nivel AO, sin sensor]
     ESP5 -->|GPIO3| LDR[LDR divisor]
-    ESP5 -->|GPIO9| PIR[PIR OUT]
-    ESP5 -->|GPIO10/11/12| BTN[PARO / MIC OFF / DEMO]
+    ESP5 -->|GPIO9| SILENCIO[Switch MIC OFF]
+    ESP5 -->|GPIO10 / 9 / 18| BTN[PARO / SILENCIO / DEMO]
+    ESP5 -->|GPIO12 reservado| IR[Receptor IR HX1838]
     ESP5 -->|GPIO14| DHT[DHT DATA]
-    ESP5 <-->|GPIO21 SDA + GPIO13 SCL| LEVEL[I2C bidireccional]
-    LEVEL <--> LCD5
+    ESP5 -.->|GPIO13 SCL; SDA libre (LCD quemado)| LEVEL[I2C sin periféricos]
 
-    ESP5 -->|GPIO4 por 1 kOhm| Q1[S8050]
+    ESP5 -->|GPIO17 por 1 kOhm| Q1[S8050]
     Q1 --> COIL
     COIL --> R1[Contacto NO del rele]
     R1 --> LOAD5
-    ESP5 -.->|GPIO5 a GPIO8| OFF[Sin etapa fisica; bloqueados]
-
-    ESP5 -->|GPIO17 SCK + GPIO15 WS| MIC3
-    MIC3 -->|SD a GPIO16| ESP5
+    ESP5 -->|GPIO5 / GPIO8 / GPIO6| LEDS[LEDs Casa, Porche y Spare; activos en HIGH]
+    ESP5 -.->|GPIO7| CULT[Cultivo: sin etapa fisica]
     ESP5 -.->|GPIO40 BCLK + 41 LRC + 42 DOUT propuestos| AMP5
     AMP5 --> SPK[Altavoz entre SPK+ y SPK−]
     ESP5 <-.->|GPIO38/39/47/48 SPI propuesto| SD3
@@ -170,26 +168,26 @@ esquina sin comparar la serigrafía con el pinout del fabricante.
 | `5V/VIN` | `5V_BUS` | alimentación de placa |
 | `GND` | barra `GND` | obligatorio |
 | `3V3` | sensores/lógica 3.3 V | salida, no para motores |
-| `GPIO1` | AO humedad de suelo | activo; calibrar |
-| `GPIO2` | AO nivel de agua | activo provisional; calibrar |
+| `GPIO1` | libre (el suelo ya no va aquí) | sin uso |
+| `GPIO2` | libre (el nivel ya no va aquí) | sin uso |
 | `GPIO3` | nodo del divisor LDR | activo |
-| `GPIO4` | resistencia 1 kOhm -> base S8050 -> rele bomba | bloqueado hasta B06 |
-| `GPIO5` | sin etapa, luz sala futura | bloqueado |
-| `GPIO6` | sin etapa, luz dormitorio futura | bloqueado |
-| `GPIO7` | sin etapa, ventilador futuro | bloqueado |
-| `GPIO8` | sin etapa, luz invernadero futura | bloqueado |
-| `GPIO9` | OUT PIR | activo provisional |
+| `GPIO4` | DRV8833 AIN1 (reserva; la bomba salió del DRV) | fuera del camino |
+| `GPIO5` | LED Casa (2 azul) | activo, HIGH = ON |
+| `GPIO6` | LED Spare (Jarvis) | activo, HIGH = ON |
+| `GPIO7` | cultivo: sin etapa física | `SALIDA_FISICA=false` |
+| `GPIO8` | LED Porche (2 azul) | activo, HIGH = ON |
+| `GPIO9` | switch SILENCIO / MIC OFF a GND (antes PIR) | activo, `INPUT_PULLUP` |
 | `GPIO10` | botón PARO a GND | activo, `INPUT_PULLUP` |
-| `GPIO11` | switch MIC OFF a GND | activo, `INPUT_PULLUP` |
-| `GPIO12` | botón DEMO a GND | activo, `INPUT_PULLUP` |
+| `GPIO11` | no existe en la placa (nota 80) | no cablear |
+| `GPIO12 reservado` | señal del receptor IR HX1838 | activo; no usar para algo más |
 | `GPIO13` | I2C SCL, lado LV del adaptador | activo provisional |
 | `GPIO14` | DATA DHT | activo |
-| `GPIO15` | WS/LRCLK del INMP441 | PoC deshabilitado |
-| `GPIO16` | SD/DOUT del INMP441 hacia ESP32 | PoC deshabilitado |
-| `GPIO17` | SCK/BCLK del INMP441 | PoC deshabilitado |
-| `GPIO18` | RX del ESP32 desde TX de DFPlayer | respaldo deshabilitado |
+| `GPIO15` | AO humedad de suelo | activo; calibrar |
+| `GPIO16` | AO nivel de agua (reserva, sin sensor en inventario) | sin leer |
+| `GPIO17` | bomba directa (S8050); GPIO ALTO = riego ON | activo; timeout 120 s |
+| `GPIO18` | botón DEMO/… y TX hacia DFPlayer (compartido) | activo |
 | `GPIO19` | TX del ESP32 hacia RX de DFPlayer | respaldo; conflicto USB posible |
-| `GPIO21` | I2C SDA, lado LV del adaptador | activo |
+| `GPIO21` | I2C SDA; LCD 1602 quemado y descartado (`sda=-1`) | sin periféricos |
 | `GPIO38` | microSD SCK | propuesto, deshabilitado |
 | `GPIO39` | microSD MISO | propuesto, deshabilitado |
 | `GPIO40` | MAX98357A BCLK | propuesta, sin firmware final |
@@ -200,6 +198,10 @@ esquina sin comparar la serigrafía con el pinout del fabricante.
 | sin asignar | WS2812 DATA | no cablear hasta asignar y probar |
 
 ## 4. LCD1602 con backpack I2C de cuatro pines
+
+> [!WARNING]
+> El LCD 1602 se **quemó y quedó descartado** (nota 80): `MAPA_CASA.sda = -1`
+> y el firmware no inicia I2C. Esta sección queda como referencia de montaje.
 
 ### Diagrama exacto recomendado si el backpack trabaja a 5 V
 
@@ -257,7 +259,7 @@ orden en la cara frontal: no todos los módulos conservan el mismo orden físico
 |---|---|
 | `VCC` | `3V3` |
 | `GND` | `GND` |
-| `AO` | `GPIO1` |
+| `AO` | `GPIO15` |
 | `DO` | no conectar |
 
 Usar `AO`, calibrar seco/mojado y mantener la sonda fuera del depósito. Para la
@@ -270,7 +272,7 @@ entre lecturas para reducir corrosión.
 |---|---|
 | `+ / VCC` | `3V3` |
 | `− / GND` | `GND` |
-| `S / AO` | `GPIO2` |
+| `S / AO` | `GPIO16` (reserva: no hay sensor de nivel en el inventario) |
 
 Medir `S` en mínimo y máximo: nunca debe superar 3.3 V. El firmware bloquea la
 bomba ante nivel bajo o lectura inválida, pero el umbral requiere calibración.
@@ -285,7 +287,12 @@ bomba ante nivel bajo o lectura inválida, pero el umbral requiere calibración.
 No conectar una LDR directamente entre GPIO y 5 V. Registrar ADC con oscuridad
 y luz intensa para completar la calibración.
 
-### PIR típico de tres pines
+### PIR (descartado: no hay PIR en el inventario)
+
+> [!WARNING]
+> El PIR quedó fuera del inventario confirmado (nota 01). GPIO9 hoy es el
+> switch SILENCIO / MIC OFF. La tabla siguiente queda solo como referencia
+> histórica de montaje.
 
 | Pin | Conexión |
 |---|---|
@@ -301,19 +308,23 @@ usar divisor/adaptador antes del GPIO.
 | Control | Terminal 1 | Terminal 2 | Comportamiento |
 |---|---|---|---|
 | PARO | `GPIO10` | `GND` | pulsar lleva a LOW y apaga todo |
-| MIC OFF | `GPIO11` | `GND` | cerrado mantiene voz bloqueada |
-| DEMO | `GPIO12` | `GND` | pulsación alterna luz de sala |
+| MIC OFF | `GPIO9` | `GND` | cerrado mantiene voz bloqueada |
+| DEMO | `GPIO18` | `GND` | pulsación alterna luz de sala |
 
 No llevar 5 V a los botones: el firmware usa resistencias internas
 `INPUT_PULLUP`. Montar PARO separado, visible y accesible.
 
 ## 7. Bomba de 3-6 V mediante S8050
 
+> [!IMPORTANT]
+> La bomba va hoy por **GPIO17 directo** (GPIO ALTO = riego ON, `BOMBA_DIRECTA_S8050`);
+> el DRV8833 quedó fuera de su camino. Se conserva el S8050 como etapa de conmutación.
+
 ### Driver directo del motor
 
 | Desde | Componente | Hacia |
 |---|---|---|
-| `GPIO4` | resistencia `1 kOhm` | base `B` del S8050 |
+| `GPIO17` | resistencia `1 kOhm` | base `B` del S8050 |
 | emisor `E` S8050 | cable | `GND` comun |
 | colector `C` S8050 | cable | negativo `-` de bomba |
 | `5V_BUS` | cable | positivo `+` de bomba |

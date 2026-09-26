@@ -1,4 +1,4 @@
-﻿# 68 - Resumen implementación v4.0: nuevas características y archivos obsoletos
+# 68 - Resumen implementación v4.0: nuevas características y archivos obsoletos
 
 **Fecha:** 2026-09-16
 **Perfil actual:** BANCO_COMPLETO_S8050_IR

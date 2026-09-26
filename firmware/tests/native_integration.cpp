@@ -62,7 +62,7 @@ constexpr bool MP3_HABILITADO=false;
 constexpr unsigned long TIEMPO_MAXIMO_BOMBA_MS=120000, MEMORIA_LIBRE_RECUPERACION_BYTES=65536;
 enum PropietarioActuador {PROPIETARIO_NINGUNO, PROPIETARIO_MANUAL_ON,
                          PROPIETARIO_MANUAL_OFF, PROPIETARIO_AUTOMATICO};
-int PINES_SALIDAS[5]={4,5,8,7,8}, gpio[64]={};
+int PINES_SALIDAS[5]={17,5,8,7,8}, gpio[64]={};
 bool estadoSalidas[5]={}, SALIDA_ACTIVA_EN_BAJO[5]={true,true,true,true,true};
 int fallosVerificacionSalida[5]={};
 const char *NOMBRES_SALIDAS[5]={"Bomba","Casa","Porche","Cultivo","Spare"};
@@ -75,9 +75,9 @@ struct MapaPinesCasa {
 };
 constexpr MapaPinesCasa MAPA_CASA = {
   15, 16, 3,
-  4, 5, 8, 7, 8,
-  10, 9, 18, 13, 14, 17, 12,
-  {4, 5, 8, 7, 8}};
+  17, 5, 8, 7, 8,
+  10, 9, 18, 13, 14, -1, 12,
+  {17, 5, 8, 7, 8}};
 // Fakes de perfil (nota 54): máscara con TODAS las etapas + driver validado,
 // para probar la lógica de despacho/seguridad/timeout con actuadores presentes.
 // El rechazo sin etapa y sin driver lo cubren test_casa_candidato.py, el
